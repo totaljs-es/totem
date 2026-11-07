@@ -2318,6 +2318,30 @@ Test.push('recipes of Totem', function(next) {
 	next();
 });
 
+Test.push('the package: data folder and release check', function(next) {
+
+	var bin = require(Total.Path.join(ROOT, 'bin/totem.js'));
+	check('in a clone the data stays in the folder of the application', bin.datafolder({}) === '');
+	check('--data chooses the folder', bin.datafolder({ data: '/tmp/somewhere' }) === '/tmp/somewhere');
+
+	var check2 = require(Total.Path.join(ROOT, 'scripts/release-check.js'));
+	var pkg = JSON.parse(Total.Fs.readFileSync(Total.Path.join(ROOT, 'package.json'), 'utf8'));
+	var found = check2.problems('v' + pkg.version);
+	check('the version of package.json is the one of config and CHANGELOG.md, total5 is exact and the package is not private', !found.some(p => /config|CHANGELOG|total5|private|files of the package/.test(p)));
+	check('a tag that is not v<version> is refused', check2.problems('v9.9.9').some(p => /The tag is v9.9.9/.test(p)));
+	check('a README that says that nothing is published is not ready', check2.problems('').length === 0 || check2.problems('').every(p => /Nothing is published/.test(p)));
+
+	var tmp = Total.Path.join(TMP, 'release');
+	Total.Fs.mkdirSync(tmp, { recursive: true });
+	Total.Fs.writeFileSync(Total.Path.join(tmp, 'package.json'), JSON.stringify({ name: 'x', version: '1.0.0', private: true, dependencies: { total5: 'beta' }, files: ['databases'] }));
+	Total.Fs.writeFileSync(Total.Path.join(tmp, 'config'), 'version : 0.9.0\n');
+	Total.Fs.writeFileSync(Total.Path.join(tmp, 'CHANGELOG.md'), '# Changelog\n');
+	Total.Fs.writeFileSync(Total.Path.join(tmp, 'README.md'), 'Nothing is published\n');
+	var bad = check2.problems('v1.0.1', tmp).join('\n');
+	check('every problem of a release is found', /private/.test(bad) && /The tag is v1.0.1/.test(bad) && /config is version 0.9.0/.test(bad) && /no heading/.test(bad) && /total5 is "beta"/.test(bad) && /Nothing is published/.test(bad) && /files of the package/.test(bad));
+	next();
+});
+
 Test.push('worktrees', async function(next) {
 
 	var repo = Total.Path.join(TMP, 'wt-repo');

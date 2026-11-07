@@ -4,14 +4,16 @@ on:
   push:
     branches: [main]
   pull_request:
+  # The workflow that publishes a release runs the same tests first
+  workflow_call:
 
 jobs:
   unit:
     name: Unit tests
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-node@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
           node-version: 22
       - run: npm ci
@@ -21,8 +23,8 @@ jobs:
     name: Docker image
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-node@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
           node-version: 22
       - name: Build the image

@@ -1,0 +1,131 @@
+name: release
+
+# Publishes a release: the package totaljs-totem on npm and the image ghcr.io/totaljs-es/totem in the GitHub Container Registry. It runs when a release is
+# published on GitHub; the tag of the release has to be v<version> of package.json (see "Releasing" in docs/delivery.md). Nothing publishes from a branch.
+#
+# npm: the package totaljs-totem has a trusted publisher on npmjs.com (GitHub Actions, totaljs-es/totem, this file release.yml): no secret at all, and
+# npm adds the provenance by itself. A trusted publisher is set up on a package that exists, so the first version is published by hand (see "Releasing" in
+# docs/delivery.md); this workflow skips a version that npm already has, so the release of that first version only publishes the image.
+# The image needs no secrets: the workflow uses the GITHUB_TOKEN of the repository.
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: read
+
+env:
+  IMAGE: ghcr.io/${{ github.repository }}
+
+jobs:
+  # The version, the tag, the changelog and the README: it says what is wrong before anything is published
+  check:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+      - run: node scripts/release-check.js "$GITHUB_REF_NAME"
+
+  # The same tests that run on every push: the unit tests and the smoke test of the image
+  tests:
+    uses: ./.github/workflows/test.yml
+
+  npm:
+    needs: [check, tests]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      # The identity of this workflow: trusted publishing and the provenance of the package are made of it
+      id-token: write
+    env:
+      NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          registry-url: https://registry.npmjs.org
+
+      - run: npm ci
+
+      # A version that npm already has (the first one, published by hand) is not published again
+      - name: Is this version on npm already?
+        id: exists
+        run: |
+          if npm view "totaljs-totem@$(node -p "require('./package.json').version")" version > /dev/null 2>&1; then
+            echo "published=true" >> "$GITHUB_OUTPUT"
+            echo "This version is on npm already: nothing to publish."
+          else
+            echo "published=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      # Makes the bundle of components that the package ships, and lists what goes in the package
+      - run: npm run bundle
+      - run: npm pack --dry-run
+
+      # Trusted publishing needs npm 11.5.1 or newer
+      - name: npm for trusted publishing
+        if: steps.exists.outputs.published != 'true' && env.NPM_TOKEN == ''
+        run: |
+          npm install --global npm@^11.5.1
+          npm --version
+
+      - name: Publish with the token
+        if: steps.exists.outputs.published != 'true' && env.NPM_TOKEN != ''
+        run: npm publish --provenance --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Publish with trusted publishing
+        if: steps.exists.outputs.published != 'true' && env.NPM_TOKEN == ''
+        run: npm publish --access public
+
+  image:
+    needs: [check, tests]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: docker/setup-qemu-action@v3
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Log in to the GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Image name and tags
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.IMAGE }}
+          tags: |
+            type=raw,value=latest
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+          labels: |
+            org.opencontainers.image.title=Total.js Totem
+            org.opencontainers.image.description=An AI coding environment written as a Total.js 5 application
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

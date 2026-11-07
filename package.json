@@ -1,21 +1,64 @@
 {
-	"name": "totem",
-	"version": "0.0.1",
-	"description": "Total.js Totem: an AI coding environment written as a Total.js 5 application",
-	"main": "index.js",
-	"private": true,
+	"name": "totaljs-totem",
+	"version": "0.1.0",
+	"description": "Total.js Totem: an AI coding environment written as a Total.js 5 application. An agent with tools, a diff you review, any model, and the knowledge of Total.js built in.",
+	"keywords": [
+		"totaljs",
+		"total.js",
+		"totem",
+		"ai",
+		"agent",
+		"coding-agent",
+		"llm",
+		"ollama",
+		"mcp",
+		"jcomponent",
+		"developer-tools"
+	],
+	"homepage": "https://github.com/totaljs-es/totem#readme",
+	"bugs": {
+		"url": "https://github.com/totaljs-es/totem/issues"
+	},
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/totaljs-es/totem.git"
+	},
+	"author": "Spanish Total.js Platform",
 	"license": "MIT",
-	"scripts": {
-		"start": "node index.js 8000",
-		"test": "node tests/run.js"
-	},
-	"dependencies": {
-		"total5": "beta"
-	},
+	"main": "index.js",
 	"bin": {
 		"totem": "bin/totem.js"
 	},
 	"engines": {
 		"node": ">=22"
+	},
+	"files": [
+		"index.js",
+		"config",
+		"bin",
+		"controllers",
+		"definitions",
+		"modules",
+		"schemas",
+		"plugins",
+		"views",
+		"resources",
+		"private",
+		"public",
+		"CHANGELOG.md",
+		"!**/__pycache__",
+		"!**/*.pyc",
+		"!**/.DS_Store"
+	],
+	"scripts": {
+		"start": "node index.js 8000",
+		"test": "node tests/run.js",
+		"bundle": "node scripts/bundle.js",
+		"release-check": "node scripts/release-check.js",
+		"prepack": "node scripts/bundle.js",
+		"prepublishOnly": "node scripts/release-check.js"
+	},
+	"dependencies": {
+		"total5": "0.0.20-1"
 	}
 }

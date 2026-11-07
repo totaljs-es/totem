@@ -15,9 +15,33 @@
 var Child = require('child_process');
 var Http = require('http');
 var Net = require('net');
+var Os = require('os');
 var Path = require('path');
 
 var ROOT = Path.join(__dirname, '..');
+
+// Where the data goes. In a clone it stays in the folder of the application (databases/), which is what a developer expects. Installed from npm the
+// folder of the application is not for what changes (it can be read only, and an update replaces it), so the data goes to a folder of the person.
+function datafolder(opt) {
+
+	if (opt && opt.data && opt.data !== true)
+		return Path.resolve(opt.data);
+
+	if (Path.relative(ROOT, __dirname) !== 'bin' || ROOT.split(Path.sep).indexOf('node_modules') === -1)
+		return '';
+
+	var home = Os.homedir();
+
+	if (process.platform === 'darwin')
+		return Path.join(home, 'Library', 'Application Support', 'Totem');
+
+	if (process.platform === 'win32')
+		return Path.join(process.env.APPDATA || Path.join(home, 'AppData', 'Roaming'), 'Totem');
+
+	return Path.join(home, '.local', 'share', 'totem');
+}
+
+exports.datafolder = datafolder;
 
 function usage() {
 	console.log([
@@ -33,7 +57,10 @@ function usage() {
 		'  --url <address>      a running server (default: a temporary local server)',
 		'  --token <token>      the access token of the server, when it has one',
 		'  --auto-accept        file edits run without asking',
-		'  --yes                every other question is answered "allow once"'
+		'  --yes                every other question is answered "allow once"',
+		'',
+		'Options of serve and run:',
+		'  --data <folder>      where the data goes (installed from npm: a folder of your user)'
 	].join('\n'));
 }
 
@@ -91,8 +118,8 @@ function freeport() {
 	});
 }
 
-function serve(port, quiet) {
-	var child = Child.spawn(process.execPath, [Path.join(ROOT, 'index.js'), String(port)], { cwd: ROOT, stdio: quiet ? 'ignore' : 'inherit', detached: true });
+function serve(port, quiet, data) {
+	var child = Child.spawn(process.execPath, [Path.join(ROOT, 'index.js'), String(port)].concat(data ? ['--data', data] : []), { cwd: ROOT, stdio: quiet ? 'ignore' : 'inherit', detached: true });
 	var stop = function() {
 		try {
 			process.kill(-child.pid);
@@ -137,7 +164,7 @@ async function run(opt) {
 	if (!url) {
 		var port = await freeport();
 		url = 'http://127.0.0.1:' + port;
-		server = serve(port, true);
+		server = serve(port, true, datafolder(opt));
 	}
 
 	if (!await waitfor(url, token)) {
@@ -253,7 +280,7 @@ async function main() {
 	if (command === 'config') {
 		console.log('Application: ' + ROOT);
 		console.log('Config file: ' + Path.join(ROOT, 'config'));
-		console.log('Data folder: ' + Path.join(ROOT, 'databases'));
+		console.log('Data folder: ' + (datafolder(opt) || Path.join(ROOT, 'databases')));
 		return 0;
 	}
 
@@ -262,7 +289,7 @@ async function main() {
 
 	if (command === 'serve' || !command) {
 		var port = parseInt(opt._[1] || '8000');
-		var server = serve(port, false);
+		var server = serve(port, false, datafolder(opt));
 		if (!command) {
 			var url = 'http://127.0.0.1:' + port + '/';
 			if (await waitfor(url))
@@ -277,7 +304,9 @@ async function main() {
 	return 2;
 }
 
-main().then(code => process.exit(code), function(err) {
-	console.error(err.message);
-	process.exit(1);
-});
+if (require.main === module) {
+	main().then(code => process.exit(code), function(err) {
+		console.error(err.message);
+		process.exit(1);
+	});
+}
