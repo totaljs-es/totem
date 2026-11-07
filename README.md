@@ -8,6 +8,7 @@
 
 <p align="center">
   <a href="https://github.com/totaljs-es/totem/actions/workflows/test.yml"><img src="https://github.com/totaljs-es/totem/actions/workflows/test.yml/badge.svg" alt="Tests"></a>
+  <a href="https://www.npmjs.com/package/totaljs-totem"><img src="https://img.shields.io/npm/v/totaljs-totem" alt="npm version"></a>
   <img src="https://img.shields.io/badge/license-MIT-blue" alt="MIT license">
   <img src="https://img.shields.io/badge/node-%E2%89%A5%2022-3C873A" alt="Node.js 22 or newer">
   <img src="https://img.shields.io/badge/Total.js-5-3F8F2A" alt="Total.js 5">
@@ -35,13 +36,20 @@ Totem is one application with three ways to run: a command, a Docker container a
 You need [Node.js](https://nodejs.org) 22 or newer.
 
 ```bash
+npm install -g totaljs-totem
+totem
+```
+
+The browser opens on <http://127.0.0.1:8000>. Installed from npm, your data (providers, projects, sessions) lives in a folder of your user (`totem config` prints it) and not in the package, so an update never touches it. To run it from the source instead:
+
+```bash
 git clone https://github.com/totaljs-es/totem.git
 cd totem
 npm install
 node index.js 8000
 ```
 
-Open <http://127.0.0.1:8000>, press **Settings**, and add a model:
+Press **Settings** and add a model:
 
 - **A model on your computer.** Install [Ollama](https://ollama.com), pull a model (`ollama pull qwen2.5-coder`), and press *Look for servers on this computer*.
 - **A cloud model.** Add a provider, paste the key (it is stored encrypted on your computer and never shown again) and choose the models you want.
@@ -51,10 +59,11 @@ Then **Open a folder**, write what you want, and watch it work.
 ### The command
 
 ```bash
-npm link                    # once: makes the `totem` command
 totem                       # starts the server and opens the browser
 totem run "explain this project" --project ~/code/app --model ollama:qwen2.5-coder
 ```
+
+(From a clone, `npm link` makes the `totem` command.)
 
 | Command | What it does |
 |---|---|
@@ -63,18 +72,19 @@ totem run "explain this project" --project ~/code/app --model ollama:qwen2.5-cod
 | `totem run "prompt" [options]` | One prompt without the interface: the answer goes to stdout, the tool calls to stderr, the exit code says if it finished |
 | `totem config` | Prints the folders that Totem uses |
 
-Options of `run`: `--project <folder>`, `--model <provider:model>`, `--url <server>`, `--token <token>`, `--auto-accept` (file edits run without asking), `--yes` (every other question is answered "allow once"). Without `--url` a temporary local server is started.
+Options of `run`: `--project <folder>`, `--model <provider:model>`, `--url <server>`, `--token <token>`, `--auto-accept` (file edits run without asking), `--yes` (every other question is answered "allow once"). Without `--url` a temporary local server is started. `--data <folder>` chooses where the data goes.
 
 ### Docker
 
 ```bash
-docker build -t totem .
 echo "a-long-random-token" > token.txt
 docker run --rm -p 127.0.0.1:8000:8000 \
   -v "$PWD/token.txt:/run/secrets/totem_token:ro" \
   -v "$PWD:/workspace/project" \
-  -v totem-data:/data totem
+  -v totem-data:/data ghcr.io/totaljs-es/totem
 ```
+
+(To build it yourself: `docker build -t totem .` in a clone.)
 
 The container listens on all interfaces, so it **refuses to start without an access token**. Your projects are mounted under `/workspace`, the data is a volume, and everything runs as a user that is not root, which makes it the isolated way to try untrusted models. There is a [compose example](docs/docker-compose.yml) and the [delivery notes](docs/delivery.md).
 
@@ -158,7 +168,7 @@ Run the tests with `npm test` (about 50 seconds, with temporary folders: it neve
 
 ## Status
 
-Phases 1 to 5 of the [roadmap](docs/roadmap.md) are built: the agent and its tools, the interface, the knowledge of Total.js, the terminal, diagnostics, the Docker image, scheduled prompts, worktrees and the hardening of a shared server. Still to come: native windows with signed installers (phase 6), the published image and package, and accounts with their own projects. Nothing is published to npm or a container registry yet: you run it from the source.
+Phases 1 to 5 of the [roadmap](docs/roadmap.md) are built: the agent and its tools, the interface, the knowledge of Total.js, the terminal, diagnostics, the Docker image, scheduled prompts, worktrees and the hardening of a shared server. Version 0.1.0 is the first one published: the package [`totaljs-totem`](https://www.npmjs.com/package/totaljs-totem) on npm and the image `ghcr.io/totaljs-es/totem` for `linux/amd64` and `linux/arm64`. Still to come: native windows with signed installers (phase 6) and accounts with their own projects. See the [changelog](CHANGELOG.md).
 
 ## Documentation
 
