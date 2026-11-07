@@ -21,6 +21,8 @@ function check(message, ok) {
 }
 
 function api(schema, data) {
+	if (/^sessions_prompt\//.test(schema))
+		promptmark[schema.split('/')[1]] = eventcount;
 	return new Promise(function(resolve) {
 		RESTBuilder.POST(URL, { schema: schema, data: data }).exec(function(err, response) {
 			resolve({ err: err, response: response });
@@ -75,6 +77,9 @@ function fake(ai, callback) {
 
 // Collects the events the interface would receive
 var events = [];
+var eventcount = 0;
+// The number of events when a prompt was sent: idle() waits for an idle that comes after it, never for the one of the run before
+var promptmark = {};
 
 function until(fn, ms) {
 	return new Promise(function(resolve) {
@@ -95,7 +100,7 @@ Test.push('boot', function(next) {
 	ON('ready', function() {
 		NEWAIMODEL('fake', fake);
 		// The data is copied: a part keeps changing after the event, like on the wire
-		FUNC.onevent = (sessionid, type, data) => events.push({ sessionid: sessionid, type: type, data: JSON.parse(JSON.stringify(data)) });
+		FUNC.onevent = (sessionid, type, data) => events.push({ n: ++eventcount, sessionid: sessionid, type: type, data: JSON.parse(JSON.stringify(data)) });
 		check('the application starts', true);
 		check('the tools are registered as actions', !!F.actions['Tools|read'] && !!F.actions['Tools|bash']);
 
@@ -259,7 +264,8 @@ function session(options) {
 }
 
 function idle(id) {
-	return until(() => events.filter(e => e.sessionid === id && e.type === 'session.status' && e.data.status === 'idle').length > 0);
+	var mark = promptmark[id] || 0;
+	return until(() => events.filter(e => e.n > mark && e.sessionid === id && e.type === 'session.status' && e.data.status === 'idle').length > 0);
 }
 
 Test.push('diff', function(next) {
