@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.1.4
+
+A small model no longer answers a greeting with a code example.
+
+- **Primer:** the two code examples are gone from the system prompt: the recipes bring the code when a request is about it. A greeting, a thanks or a question that is not about code gets a short answer.
+- **Reminder:** "answer with the code" is no longer added to commands (`/init`) or to prompts shorter than 12 characters.
+- **Tests:** `idle()` waits for the idle of the run that was just started.
+- Knowledge evaluation with `qwen2.5:1.5b`: 18/29 (it was 16/29).
+
 ## 0.1.3
 
 A small local model no longer answers every prompt with the same example, and `/init` no longer loops.

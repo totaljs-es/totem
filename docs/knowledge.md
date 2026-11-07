@@ -73,6 +73,9 @@ How the score went up while the knowledge was built (one run per case, so read i
 | The primer and the skill only | 3/29 |
 | Reminder without jComponent, new primer, retry of empty answers | 12/29 |
 | More recipes, Forge with the pipe in action names, fairer cases | 16/29 |
+| No code examples in the primer (the recipes bring them), no "answer with the code" for greetings and commands (0.1.4) | 18/29 |
+
+The last row is one run with Totem 0.1.4: routes 4/4, actions 2/3, storage 2/2, jComponent 3/5, structure 2/4, style 0/3, auth 0/1, views 0/1. The change came from a bug seen by using Totem: with the two code examples in the primer and a reminder that always asked for code, the model answered "Hola" with the example of an action. Greetings now get a greeting, and the score did not go down.
 
 Routes, actions, storage and jComponent pass without counting style. What still fails is the model: a template literal where ES5 is asked, `require` for a setting, a syntax error in a longer example, a function that does not exist.
 

@@ -6,23 +6,7 @@ What you write depends on the request:
 
 A new project has this shape: `package.json` (dependency `total5`), `index.js`, `config`, and the folders `controllers/` (routes), `schemas/` (actions), `definitions/`, `modules/`, `plugins/`, `views/`, `public/`, `resources/`.
 
-```js
-// schemas/tickets.js: an action. The name has a pipe: Collection|verb
-NEWACTION('Tickets|list', {
-	name: 'List tickets',
-	action: async function($) {
-		var items = await NOSQL('tickets').find().promise($);
-		$.callback(items);
-	}
-});
-```
-
-```js
-// controllers/api.js: the routes. POST /api/ with { schema: 'tickets' }
-exports.install = function() {
-	ROUTE('+API ? -tickets --> Tickets|list');
-};
-```
+The code for a task comes with the recipes that this prompt has when the request is about one. Without a request for code (a greeting, a thanks, a question about the project) answer in a sentence or two, with no code.
 
 Rules:
 - ES5: `var`, `function`, classic loops, `'{0}'.format()`. No `=>`, `const`, `let` or template literals. TABS for indentation, never spaces. Semicolons. Short names: `id`, `name`, `dtcreated`.

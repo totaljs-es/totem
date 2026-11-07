@@ -979,7 +979,7 @@ Test.push('Total.js by default, with Forge in front of the prompt', async functi
 	await idle(id);
 	clearInterval(rejecter);
 	var system = requests[0].messages[0].content;
-	check('a new folder gets the Total.js primer with the jComponent warning', system.indexOf('not Java Swing') !== -1 && system.indexOf('NEWACTION(\'Tickets|list\'') !== -1 && system.indexOf('never needs a user interface') !== -1);
+	check('a new folder gets the Total.js primer with the jComponent warning', system.indexOf('not Java Swing') !== -1 && system.indexOf('NEWACTION(') === -1 && /Without a request for code/.test(system) && system.indexOf('never needs a user interface') !== -1);
 
 	events.length = 0;
 	requests.length = 0;
@@ -1340,6 +1340,22 @@ Test.push('small models: temperature, reminder, and Forge for every project', as
 	clearInterval(rejecter);
 	last = requests[0].messages[requests[0].messages.length - 1];
 	check('a question about a route gets the reminder of the style and no word of jComponent', /TABS/.test(last.content) && /ES5/.test(last.content) && !/jComponent/.test(last.content) && /use tools only to read or change files/.test(last.content));
+
+	// A greeting and a command do not get "answer with the code" (the permission to start Forge is rejected, as above)
+	rejecter = setInterval(() => events.filter(e => e.type === 'permission.ask').forEach(e => api('permissions_reply/' + e.data.id, { reply: 'reject' })), 30);
+	events.length = 0;
+	requests.length = 0;
+	script = [{ content: 'Hola' }];
+	await api('sessions_prompt/' + tid, { text: 'Hola' });
+	await idle(tid);
+	check('a greeting does not get the reminder', requests[0].messages[requests[0].messages.length - 1].content === 'Hola');
+	events.length = 0;
+	requests.length = 0;
+	script = [{ content: 'ok' }];
+	await api('sessions_prompt/' + tid, { text: '/init' });
+	await idle(tid);
+	check('a command does not get the reminder', !/TABS|Total\.js 5/.test(requests[0].messages[requests[0].messages.length - 1].content));
+	clearInterval(rejecter);
 
 	// A model that says nothing (the server swallowed a broken tool call) gets the same request without tools, once
 	events.length = 0;

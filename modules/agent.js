@@ -125,6 +125,12 @@ function reminderof(content) {
 	return UIWORDS.test(text) ? REMINDERUI : REMINDER;
 }
 
+// The last prompt of the user is too short to be a request for code ("hola", "thanks")
+function shortprompt(messages) {
+	var last = messages[messages.length - 1];
+	return !!last && last.role === 'user' && contentsize(last.content) < 12;
+}
+
 // The last message, when it is the one of the user, ends with the reminder
 function withreminder(messages) {
 
@@ -470,7 +476,8 @@ function request(run, finish, fail) {
 
 	// A small model follows the end of the conversation better than the beginning: the prompt of the user, in a Total.js project, carries a
 	// short reminder in the request (it is not stored and the user does not see it)
-	if (MODS.instructions.istotaljs(run.root))
+	// Not for a command (its text is a fixed instruction) and not for a greeting: "answer with the code" makes a small model write code for anything
+	if (MODS.instructions.istotaljs(run.root) && !run.command && !shortprompt(ai.payload.messages))
 		ai.payload.messages = withreminder(ai.payload.messages);
 
 	if (meta.vision === false)

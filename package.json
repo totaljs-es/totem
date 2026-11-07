@@ -1,6 +1,6 @@
 {
 	"name": "totaljs-totem",
-	"version": "0.1.3",
+	"version": "0.1.4",
 	"description": "Total.js Totem: an AI coding environment written as a Total.js 5 application. An agent with tools, a diff you review, any model, and the knowledge of Total.js built in.",
 	"keywords": [
 		"totaljs",
