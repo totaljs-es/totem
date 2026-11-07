@@ -208,6 +208,10 @@ The [website](https://totaljs-es.github.io/totem/) has the guide to get started,
 
 [Vision](docs/vision.md) · [Architecture](docs/architecture.md) · [Agent loop](docs/agent-loop.md) · [Interface](docs/interface.md) · [Protocol](docs/protocol.md) · [Security](docs/security.md) · [Knowledge](docs/knowledge.md) · [Delivery](docs/delivery.md) · [Roadmap](docs/roadmap.md) · [Decisions](docs/decisions.md)
 
+## Inspiration
+
+Totem was inspired by [OpenCode](https://opencode.ai), and it is written from scratch to do something else: to be the coding agent of Total.js.
+
 ## License
 
 [MIT](LICENSE). Made by the Spanish Total.js Platform.
