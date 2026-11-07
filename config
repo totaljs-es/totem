@@ -1,5 +1,5 @@
 name                        : Total.js Totem
-version                     : 0.1.1
+version                     : 0.1.2
 $api                        : /api/
 
 // The address the server listens on. Only this computer by default; anything else (0.0.0.0 in the Docker image) needs `token`, and the server refuses to start without one

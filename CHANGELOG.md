@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.1.2
+
+The page of the package says what the repository says.
+
+- **README:** the link to the new website, a screenshot, and the install with npm and with `docker pull`.
+- **Package:** `homepage` points to the website (<https://totaljs-es.github.io/totem/>).
+- **Website:** it lives in its own branch, `site`, and is not part of the package or the image.
+- No change in the application.
+
 ## 0.1.1
 
 Totem installed from npm runs like an installed program.
