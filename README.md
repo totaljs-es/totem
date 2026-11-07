@@ -24,8 +24,8 @@
 
 <p align="center">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="site/img/shots/chat-dark.webp">
-    <img src="site/img/shots/chat-light.webp" alt="Totem answering a question about Total.js with an action and a route" width="900">
+    <source media="(prefers-color-scheme: dark)" srcset="https://totaljs-es.github.io/totem/img/shots/chat-dark.webp">
+    <img src="https://totaljs-es.github.io/totem/img/shots/chat-light.webp" alt="Totem answering a question about Total.js with an action and a route" width="900">
   </picture>
 </p>
 

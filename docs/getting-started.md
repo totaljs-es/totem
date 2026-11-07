@@ -25,7 +25,7 @@ Installed from npm, your data (providers, projects, sessions) lives in a folder 
 
 Press **Settings** at the bottom left.
 
-![Settings with the theme, the language and the providers](../site/img/shots/settings-light.webp)
+![Settings with the theme, the language and the providers](https://totaljs-es.github.io/totem/img/shots/settings-light.webp)
 
 - **A model on your computer.** Install Ollama, pull a model (`ollama pull qwen2.5-coder` is a good start), and press **Look for servers on this computer**. Totem finds Ollama, LM Studio and llama.cpp, lists their models and tells you which can call tools or think. Press **Add**.
 - **A cloud model.** **Add a provider**, choose it from the list, paste the key and choose the models you want. The key is stored encrypted on your computer and never shown again.
@@ -47,7 +47,7 @@ Try this in Plan mode, in a Total.js project:
 
 > Create an API route and its action that lists tickets.
 
-![Totem answering with an action, a route and the recipes it used](../site/img/shots/chat-light.webp)
+![Totem answering with an action, a route and the recipes it used](https://totaljs-es.github.io/totem/img/shots/chat-light.webp)
 
 The line "Knowledge used" says what Totem put in front of the model: its own recipes and the pages of [Forge](https://forge.totaljs.es). Every code box has a button to copy it. The first time, Totem asks to connect to Forge: **Allow once** or **Always allow**, as you prefer.
 
@@ -55,13 +55,13 @@ The line "Knowledge used" says what Totem put in front of the model: its own rec
 
 Switch to **Build** and ask for a change: *Add a route GET /ping that answers pong.* Totem asks before it edits a file:
 
-![A permission request to edit a file](../site/img/shots/permission-light.webp)
+![A permission request to edit a file](https://totaljs-es.github.io/totem/img/shots/permission-light.webp)
 
 **Allow once** lets this change through, **Always allow** remembers it for this project, **Reject** tells the model that you do not want it. The box **Auto-accept edits** lets file changes through without asking for the session; commands still ask.
 
 When the step ends, press **Changes** to see what happened:
 
-![The diff of an edit with the tool calls and Undo](../site/img/shots/changes-light.webp)
+![The diff of an edit with the tool calls and Undo](https://totaljs-es.github.io/totem/img/shots/changes-light.webp)
 
 Every file has its diff (unified or split). **Undo these changes** puts the files back as they were, and **Redo** brings the changes again.
 

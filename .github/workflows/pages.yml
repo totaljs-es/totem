@@ -1,15 +1,14 @@
 name: website
 
-# The website (https://totaljs-es.github.io/totem/) is the documentation: it is published again whenever the documentation or the site change.
-# Set up once: Settings, Pages, Source: GitHub Actions.
+# The website (https://totaljs-es.github.io/totem/) is made from two branches: the pages of the documentation are in main (docs/, the changelog, the version) and
+# everything else (templates, styles, images, the script that builds it) is in the branch site, apart from the application. See "The website" in docs/delivery.md.
+# Set up once: Settings, Pages, Source: GitHub Actions. A push to the branch site runs this workflow too (the workflow of that branch asks for it).
 
 on:
   push:
     branches: [main]
     paths:
       - 'docs/**'
-      - 'site/**'
-      - 'scripts/build-site.js'
       - 'README.md'
       - 'CHANGELOG.md'
       - 'package.json'
@@ -28,14 +27,23 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v7
+      - name: The application (the text of the pages)
+        uses: actions/checkout@v7
+        with:
+          path: app
+
+      - name: The website
+        uses: actions/checkout@v7
+        with:
+          ref: site
+          path: site
 
       - uses: actions/setup-node@v7
         with:
           node-version: 24
 
-      # Every page, link and image of the website: a link that leads nowhere stops the build
-      - run: node scripts/build-site.js
+      # Every page, link, image and section: a problem stops the build
+      - run: node site/scripts/build-site.js --app app --out dist
 
       - uses: actions/configure-pages@v6
 

@@ -32,7 +32,7 @@ Every path is resolved inside the project, symbolic links included: the agent ca
 - **Always allow** stores a rule for the project (`bash` with `git status*`, for example). Rules can also deny.
 - **Changes.** The panel lists the files that the agent changed, with the diff. **Undo** restores them, **Redo** brings them back. If the folder is a git repository you also see its branch and its changed files.
 
-![The diff of an edit with the tool calls and Undo](../site/img/shots/changes-light.webp)
+![The diff of an edit with the tool calls and Undo](https://totaljs-es.github.io/totem/img/shots/changes-light.webp)
 
 ## Models
 
@@ -57,17 +57,17 @@ The cost of each step is shown when the model has a price; a free or local model
 
 The **Terminal** panel has two parts. *Commands* lists what the agent ran, and the background ones with their output. **Shell** is a real shell, in the project folder, that you open with **Open shell**. It stays alive when you reload the page. It works on macOS and Linux (and in the Docker image).
 
-![The terminal with an interactive shell and the commands of the agent](../site/img/shots/terminal-light.webp)
+![The terminal with an interactive shell and the commands of the agent](https://totaljs-es.github.io/totem/img/shots/terminal-light.webp)
 
 ## Work in parallel
 
 **Worktrees.** *New session in a git worktree* gives the session its own checkout of the project on its own branch, so two sessions never change the same files. When you like the result, **Merge into the project** commits what the session left and merges the branch (a conflict is undone and the project stays as it was); **Discard the worktree** throws it away. Totem never deletes work by itself.
 
-![A session in a worktree with Merge into the project and Discard](../site/img/shots/worktree-light.webp)
+![A session in a worktree with Merge into the project and Discard](https://totaljs-es.github.io/totem/img/shots/worktree-light.webp)
 
 **Scheduled prompts.** The clock next to Settings opens the list of prompts that Totem sends by itself, every N minutes or every day at a time, each in a new session. Nobody is there to answer, so they run in Plan mode (they only read) unless you choose Build, and anything that would ask for permission is refused.
 
-![The dialog of scheduled prompts](../site/img/shots/schedules-light.webp)
+![The dialog of scheduled prompts](https://totaljs-es.github.io/totem/img/shots/schedules-light.webp)
 
 ## Totem and other tools
 

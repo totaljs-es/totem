@@ -73,6 +73,11 @@ Shell technology is an open decision ([decisions](decisions.md)). Whatever it is
 
 ## The website
 
-`https://totaljs-es.github.io/totem/` is made from this repository, with the look of the Spanish Total.js websites (the styles of the CDN and `site/css/corp.css`, the header and the footer of those websites, Toto). The home page is `site/index.html`; every page of `docs/` and the changelog become a page, around the menu of `scripts/build-site.js`. `node scripts/build-site.js` writes `dist/`, and a link or an image that leads nowhere stops the build. The workflow `pages.yml` publishes it when the documentation or the site change. Set up once: Settings of the repository, Pages, Source: GitHub Actions.
+`https://totaljs-es.github.io/totem/` is made from two places, so that the application and its website stay apart.
 
-The screenshots are made by `node scripts/screenshots.js` (it needs Google Chrome and Ollama with a small model): a temporary Totem with a made-up project, the answer about Total.js from a real model, and a scripted demo model for the edits, the permissions, the worktree and the terminal, light and dark. The social card is `node scripts/og.js`. Both write in `site/img/`.
+- **The branch `site`** has the website: the templates, the styles and images (the look of the Spanish Total.js websites: the styles of the CDN and `css/corp.css`, the header and the footer of those websites, Toto), the screenshots, and the scripts that build it (`scripts/build-site.js`), take the screenshots (`scripts/screenshots.js`) and make the card for the social networks (`scripts/og.js`). It has no history in common with `main`, and nothing of it goes in the npm package or in the Docker image.
+- **The branch `main`** keeps the text: every page of `docs/`, the changelog and the version are the pages of the website. They live next to the code that they describe, and the website is built from them.
+
+The workflow `.github/workflows/pages.yml` of `main` checks out both branches, runs `node scripts/build-site.js --app <main>` of the branch `site` and publishes the result. It runs when the documentation, the README, the changelog or the version change, and when the workflow of the branch `site` asks for it (a push to that branch). A link, an image or a section that leads nowhere, an icon that the font of the websites does not have, or a placeholder that was not filled stops the build. Set up once: Settings of the repository, Pages, Source: GitHub Actions.
+
+To work on the website: `git worktree add ../totem-site site`, then `node scripts/build-site.js --app ../totem` in that folder writes `dist/`.
