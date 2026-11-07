@@ -1,5 +1,8 @@
 <p align="center">
-  <img src="assets/totem-buttom.svg" alt="Total.js Totem" width="128" height="128">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="public/img/totem-dark.svg">
+    <img src="public/img/totem-light.svg" alt="Total.js Totem" width="128" height="128">
+  </picture>
 </p>
 
 <h1 align="center">Total.js Totem</h1>
@@ -15,6 +18,15 @@
   <a href="https://forge.totaljs.es"><img src="https://img.shields.io/badge/jComponent-20-3F8F2A" alt="jComponent 20"></a>
   <a href="https://github.com/totaljs-es/totem/pkgs/container/totem"><img src="https://img.shields.io/badge/docker-ghcr.io-2496ED" alt="Docker image on ghcr.io"></a>
   <a href="https://github.com/totaljs-es/totem/tree/main/resources"><img src="https://img.shields.io/badge/languages-en%20%C2%B7%20es%20%C2%B7%20sk-informational" alt="Languages: English, Spanish, Slovak"></a>
+</p>
+
+<p align="center"><b><a href="https://totaljs-es.github.io/totem/">Website</a></b> · <a href="https://totaljs-es.github.io/totem/docs/getting-started.html">Getting started</a> · <a href="https://totaljs-es.github.io/totem/docs/guide.html">User guide</a> · <a href="https://totaljs-es.github.io/totem/docs/help.html">Help</a></p>
+
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="site/img/shots/chat-dark.webp">
+    <img src="site/img/shots/chat-light.webp" alt="Totem answering a question about Total.js with an action and a route" width="900">
+  </picture>
 </p>
 
 Totem is one application with three ways to run: a command, a Docker container and (next) a native window. The server is plain Total.js: actions, a few controllers, NoSQL for its own data, and jComponent 20 for the interface. There is no build step.
@@ -191,6 +203,8 @@ Run the tests with `npm test` (about 50 seconds, with temporary folders: it neve
 Phases 1 to 5 of the [roadmap](docs/roadmap.md) are built: the agent and its tools, the interface, the knowledge of Total.js, the terminal, diagnostics, the Docker image, scheduled prompts, worktrees and the hardening of a shared server. Version 0.1.0 is the first one published: the package [`totaljs-totem`](https://www.npmjs.com/package/totaljs-totem) on npm and the image `ghcr.io/totaljs-es/totem` for `linux/amd64` and `linux/arm64`. Still to come: native windows with signed installers (phase 6) and accounts with their own projects. See the [changelog](CHANGELOG.md).
 
 ## Documentation
+
+The [website](https://totaljs-es.github.io/totem/) has the guide to get started, the user guide and the help, with screenshots. The pages that explain how it works:
 
 [Vision](docs/vision.md) · [Architecture](docs/architecture.md) · [Agent loop](docs/agent-loop.md) · [Interface](docs/interface.md) · [Protocol](docs/protocol.md) · [Security](docs/security.md) · [Knowledge](docs/knowledge.md) · [Delivery](docs/delivery.md) · [Roadmap](docs/roadmap.md) · [Decisions](docs/decisions.md)
 

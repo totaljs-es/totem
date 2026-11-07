@@ -70,3 +70,9 @@ Shell technology is an open decision ([decisions](decisions.md)). Whatever it is
 3. Create a release on GitHub with the tag `v<version>`. The workflow skips the version that npm already has (the first one), and publishes the image.
 4. **The first image only:** the package `totem` appears in the packages of the organization as private. Make it public in its settings (*Change visibility*), or `docker pull` asks for a login.
 5. From then on, every release publishes both without anything by hand.
+
+## The website
+
+`https://totaljs-es.github.io/totem/` is made from this repository, with the look of the Spanish Total.js websites (the styles of the CDN and `site/css/corp.css`, the header and the footer of those websites, Toto). The home page is `site/index.html`; every page of `docs/` and the changelog become a page, around the menu of `scripts/build-site.js`. `node scripts/build-site.js` writes `dist/`, and a link or an image that leads nowhere stops the build. The workflow `pages.yml` publishes it when the documentation or the site change. Set up once: Settings of the repository, Pages, Source: GitHub Actions.
+
+The screenshots are made by `node scripts/screenshots.js` (it needs Google Chrome and Ollama with a small model): a temporary Totem with a made-up project, the answer about Total.js from a real model, and a scripted demo model for the edits, the permissions, the worktree and the terminal, light and dark. The social card is `node scripts/og.js`. Both write in `site/img/`.

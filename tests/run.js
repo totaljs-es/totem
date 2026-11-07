@@ -1274,10 +1274,6 @@ Test.push('the icons of the providers are all the same', function(next) {
 		!ok && wrong.push(name);
 	});
 	check('every icon has the same box, colour and size, and is centered' + (wrong.length ? ' (not: ' + wrong.join(', ') + ')' : ''), wrong.length === 0);
-
-	// The files are what the script writes from the originals
-	var result = require('child_process').spawnSync(process.execPath, [Total.Path.join(ROOT, 'scripts/normalize-icons.js'), '--check']);
-	check('the files of the folder are what the script writes from assets/providers', result.status === 0);
 	next();
 });
 
@@ -2345,6 +2341,81 @@ Test.push('the package: data folder and release check', function(next) {
 	Total.Fs.writeFileSync(Total.Path.join(tmp, 'README.md'), 'Nothing is published\n');
 	var bad = check2.problems('v1.0.1', tmp).join('\n');
 	check('every problem of a release is found', /private/.test(bad) && /The tag is v1.0.1/.test(bad) && /config is version 0.9.0/.test(bad) && /no heading/.test(bad) && /total5 is "beta"/.test(bad) && /Nothing is published/.test(bad) && /files of the package/.test(bad));
+	next();
+});
+
+Test.push('the website', function(next) {
+
+	var dist = Total.Path.join(TMP, 'dist');
+	var site = require(Total.Path.join(ROOT, 'scripts/build-site.js'));
+	var built = null;
+	var error = '';
+
+	try {
+		built = site.build(dist);
+	} catch (e) {
+		error = e.message;
+	}
+
+	check('the website builds without a link or an image that leads nowhere' + (error ? ' (' + error.substring(0, 300) + ')' : ''), !!built && built.pages >= 18);
+
+	if (!built) {
+		next();
+		return;
+	}
+
+	var read = file => Total.Fs.readFileSync(Total.Path.join(dist, file), 'utf8');
+	var walk = function(dir) {
+		var found = [];
+		Total.Fs.readdirSync(dir, { withFileTypes: true }).forEach(item => item.isDirectory() ? (found = found.concat(walk(Total.Path.join(dir, item.name)))) : (/\.html$/.test(item.name) && found.push(Total.Path.join(dir, item.name))));
+		return found;
+	};
+	var pages = walk(dist);
+	var home = read('index.html');
+
+	// The screenshots: every one, light and dark, is in the home page and in the site
+	var shots = ['chat', 'changes', 'permission', 'worktree', 'terminal', 'schedules', 'settings'];
+	check('the home page shows the seven screenshots, light and dark, and they are in the site', shots.every(name => ['light', 'dark'].every(theme => home.indexOf('img/shots/' + name + '-' + theme + '.webp') !== -1 && Total.Fs.existsSync(Total.Path.join(dist, 'img/shots/' + name + '-' + theme + '.webp')))));
+	check('the home page has its social card', Total.Fs.existsSync(Total.Path.join(dist, 'img/og.jpg')) && /og:image" content="https:\/\/totaljs-es\.github\.io\/totem\/img\/og\.jpg/.test(home));
+
+	// Nothing is left of the templates
+	check('no page has a placeholder that was not filled', pages.every(file => !/\{\{[a-z]+\}\}/.test(Total.Fs.readFileSync(file, 'utf8')) && !/@\{|@\(/.test(Total.Fs.readFileSync(file, 'utf8').replace(/<code[\s\S]*?<\/code>/g, ''))));
+
+	// Every link to a section of a page of the website leads to a section that exists
+	var anchors = {};
+	var missing = [];
+
+	pages.forEach(function(file) {
+		var html = Total.Fs.readFileSync(file, 'utf8');
+		anchors[file] = {};
+		(html.match(/ id="[^"]+"/g) || []).forEach(id => anchors[file][id.slice(5, -1)] = true);
+	});
+
+	pages.forEach(function(file) {
+		var html = Total.Fs.readFileSync(file, 'utf8');
+		(html.match(/href="[^"]*#[^"]+"/g) || []).forEach(function(link) {
+			var href = link.slice(6, -1);
+			if (/^https?:/.test(href))
+				return;
+			var parts = href.split('#');
+			var target = parts[0] ? Total.Path.join(Total.Path.dirname(file), parts[0]) : file;
+			if (!anchors[target] || !anchors[target][parts[1]])
+				missing.push(Total.Path.relative(dist, file) + ' -> ' + href);
+		});
+	});
+
+	check('every link to a section of the website leads to a section that exists' + (missing.length ? ' (' + missing.slice(0, 4).join('; ') + ')' : ''), missing.length === 0);
+
+	// The icons are the ones that the font of the websites has
+	var known = 'arrow-down arrow-left arrow-right arrow-up balance-scale bars bluesky book-open building caret-down caret-up check check-circle chevron-down code code-branch comment cookie database desktop devto envelope eye eye-slash facebook github graduation-cap grid info-circle instagram linkedin lock magic-alt mastodon minus play plus robot rss-square search send server spin spinner star star-alt stars telegram threads tiktok times times-circle totaljs twitter-x user warning youtube'.split(' ');
+	var used = {};
+	pages.forEach(file => (Total.Fs.readFileSync(file, 'utf8').match(/ti ti-[a-z0-9-]+/g) || []).forEach(name => used[name.slice(6)] = true));
+	var unknown = Object.keys(used).filter(name => known.indexOf(name) === -1 && name !== 'st-diagonal');
+	check('the pages use only icons that the font of the websites has' + (unknown.length ? ' (not: ' + unknown.join(', ') + ')' : ''), unknown.length === 0);
+
+	var map = read('sitemap.xml');
+	check('the sitemap, the robots file and the page for a missing address are there', pages.filter(file => !/404\.html$/.test(file)).every(file => map.indexOf(Total.Path.relative(dist, file).replace(/index\.html$/, '')) !== -1) && /Sitemap:/.test(read('robots.txt')) && /Page not found/.test(read('404.html')));
+	check('the copy button of the code boxes and the styles of the websites are loaded', /site\.js/.test(read('docs/guide.html')) && /cdn\.totaljs\.es\/ui\/1\.6\.2\/web\.min\.css/.test(home) && Total.Fs.existsSync(Total.Path.join(dist, 'css/corp.css')) && Total.Fs.existsSync(Total.Path.join(dist, 'vendor/fonts/manrope-latin.woff2')));
 	next();
 });
 

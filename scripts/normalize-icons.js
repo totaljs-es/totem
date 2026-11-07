@@ -1,18 +1,17 @@
 'use strict';
 
 // Makes every provider icon the same: a viewBox of 24 by 24, the drawing scaled to fit in a box of 20 by 20 and centered, one colour
-// (currentColor, so the interface paints it with the colour of the text), no fixed size and no style. The originals are in
-// assets/providers/ as they were received; the result goes to public/img/providers/.
+// (currentColor, so the interface paints it with the colour of the text), no fixed size and no style. It works in place on
+// public/img/providers/: a new icon is dropped there as it was received and this script makes it like the others (running it again changes nothing).
 // This is a tooling script that runs with plain Node.js: it is not part of the Total.js application.
 //
-//   node scripts/normalize-icons.js           writes public/img/providers/*.svg
+//   node scripts/normalize-icons.js           normalizes public/img/providers/*.svg
 //   node scripts/normalize-icons.js --check   exits with 1 when a file of public/img/providers/ differs from what it would write
 
 var Fs = require('fs');
 var Path = require('path');
 
 var ROOT = Path.join(__dirname, '..');
-var SOURCE = Path.join(ROOT, 'assets/providers');
 var TARGET = Path.join(ROOT, 'public/img/providers');
 var BOX = 20;
 var SIZE = 24;
@@ -270,10 +269,10 @@ if (require.main === module) {
 	var check = process.argv.indexOf('--check') !== -1;
 	var different = [];
 
-	Fs.readdirSync(SOURCE).filter(file => /\.svg$/.test(file)).sort().forEach(function(file) {
+	Fs.readdirSync(TARGET).filter(file => /\.svg$/.test(file)).sort().forEach(function(file) {
 
 		var id = file.replace(/\.svg$/, '');
-		var result = exports.normalize(Fs.readFileSync(Path.join(SOURCE, file), 'utf8'), names[id] || id);
+		var result = exports.normalize(Fs.readFileSync(Path.join(TARGET, file), 'utf8'), names[id] || id);
 		var target = Path.join(TARGET, file);
 
 		if (check) {

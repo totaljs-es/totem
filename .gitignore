@@ -8,3 +8,5 @@ index.js.json
 index.js.map
 index.pid
 public/ui-*
+
+dist/

@@ -15,3 +15,5 @@ tests
 scripts
 Dockerfile
 .dockerignore
+site
+dist

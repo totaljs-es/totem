@@ -1,0 +1,57 @@
+name: website
+
+# The website (https://totaljs-es.github.io/totem/) is the documentation: it is published again whenever the documentation or the site change.
+# Set up once: Settings, Pages, Source: GitHub Actions.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'docs/**'
+      - 'site/**'
+      - 'scripts/build-site.js'
+      - 'README.md'
+      - 'CHANGELOG.md'
+      - 'package.json'
+      - '.github/workflows/pages.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: github-pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+
+      # Every page, link and image of the website: a link that leads nowhere stops the build
+      - run: node scripts/build-site.js
+
+      - uses: actions/configure-pages@v6
+
+      - uses: actions/upload-pages-artifact@v5
+        with:
+          path: dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-24.04
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v5
