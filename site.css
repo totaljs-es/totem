@@ -20,8 +20,8 @@ html { scroll-behavior: smooth; scroll-padding-top: 110px; }
 .tm-shot.wide { grid-column: 1 / -1; }
 .tm-honest { margin-top: 26px; font-size: 13px; color: var(--t-muted); max-width: 760px; }
 
-.tm-three { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-top: 34px; }
-.tm-card { background: var(--t-card); border: 1px solid var(--t-border); border-radius: 14px; padding: 24px; }
+.tm-three { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; margin-top: 34px; }
+.tm-card { min-width: 0; background: var(--t-card); border: 1px solid var(--t-border); border-radius: 14px; padding: 24px; }
 .tm-card h3 { font-size: 19px; margin: 0 0 10px; }
 .tm-card p { margin: 0 0 12px; color: var(--t-muted); font-size: 15px; line-height: 1.65; }
 .tm-card p:last-child { margin-bottom: 0; }
@@ -29,7 +29,8 @@ html { scroll-behavior: smooth; scroll-padding-top: 110px; }
 .tm-card .tm-tag { display: inline-block; font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--t-brand); margin-bottom: 10px; }
 
 .tm-chips { display: flex; flex-wrap: wrap; gap: 10px; margin: 30px 0 0; padding: 0; list-style: none; }
-.tm-chips li { border: 1px solid var(--t-border); background: var(--t-card); border-radius: 999px; padding: 8px 16px; font-size: 14px; font-weight: 600; }
+.tm-chips li { display: inline-flex; align-items: center; gap: 8px; border: 1px solid var(--t-border); background: var(--t-card); border-radius: 999px; padding: 8px 16px 8px 12px; font-size: 14px; font-weight: 600; }
+.tm-chips li i { flex: none; width: 18px; height: 18px; background: currentColor; -webkit-mask: var(--i) center / contain no-repeat; mask: var(--i) center / contain no-repeat; opacity: .85; }
 .tm-chips li.local { border-color: var(--t-brand); color: var(--t-brand); }
 
 .tm-list { margin: 24px 0 0; padding: 0; list-style: none; display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px 40px; }
@@ -112,3 +113,8 @@ html { scroll-behavior: smooth; scroll-padding-top: 110px; }
 
 @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } .doc .code .tm-copy { transition: none; } }
 @media (prefers-color-scheme: dark) { .doc .code pre, .tm-cmd { background: #0d1318; } }
+
+/* The commands in a card wrap instead of hiding the copy button; the notes under a group of boxes breathe */
+.tm-card .tm-cmd { overflow-x: visible; align-items: flex-start; }
+.tm-card .tm-cmd code { white-space: pre-wrap; overflow-wrap: anywhere; min-width: 0; }
+.tm-chips + .tm-honest, .tm-three + p { margin-top: 22px; }
