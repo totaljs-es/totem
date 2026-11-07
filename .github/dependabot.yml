@@ -5,6 +5,11 @@ updates:
     directory: /
     schedule:
       interval: weekly
+    # Totem runs on the LTS of Node.js (22): a new major version of Node.js is a decision of a person (24 is the next LTS), not a pull request.
+    # The security releases of the pinned version (the digest of node:22-alpine) keep coming.
+    ignore:
+      - dependency-name: node
+        update-types: ["version-update:semver-major"]
   - package-ecosystem: github-actions
     directory: /
     schedule:
