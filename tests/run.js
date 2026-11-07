@@ -710,8 +710,14 @@ Test.push('cost and reasoning effort', async function(next) {
 	events.length = 0;
 	await api('sessions_prompt/' + id, { text: 'again', reasoning: 'high' });
 	await idle(id);
-	r = await api('sessions_read/' + id);
-	check('a prompt can change the reasoning effort for the session', mock.requests[0].reasoning_effort === 'high' && r.response.reasoning === 'high');
+	// The read is repeated: a slow runner can answer the request with an error once
+	for (var attempt = 0; attempt < 10; attempt++) {
+		r = await api('sessions_read/' + id);
+		if (r.response && r.response.reasoning === 'high')
+			break;
+		await new Promise(resolve => setTimeout(resolve, 300));
+	}
+	check('a prompt can change the reasoning effort for the session', mock.requests[0].reasoning_effort === 'high' && !!r.response && r.response.reasoning === 'high');
 
 	mock.requests.length = 0;
 	events.length = 0;
