@@ -13,8 +13,10 @@ node index.js 8000
 
 | Command | Does |
 |---|---|
-| `totem` | Starts the server on port 8000 and opens the browser |
-| `totem serve [port]` | Starts only the server |
+| `totem [port]` | Starts the server on port 8000, or the one you give (`totem 4524`), in the background, shows the banner and the address, opens the browser and gives the terminal back. The process, the port and the log are in `totem-server.json` and `totem.log` of the data folder |
+| `totem start [port]` | The same, without opening the browser |
+| `totem stop`, `totem status`, `totem restart` | Stop the server that `totem` started, say where it runs, or both |
+| `totem serve [port]` | Runs the server in this terminal until Ctrl+C. `--verbose` shows the whole output |
 | `totem run "prompt" [--project path] [--model name] [--url server] [--token t] [--auto-accept] [--yes]` | Headless: creates a session, subscribes to its events, sends the prompt, prints the answer on stdout and tool calls on stderr, exits 0 when the run ends idle and 1 otherwise. Without `--url` it starts a temporary local server. Permission questions are rejected unless `--yes` (allow once) or `--auto-accept` (file edits) is given |
 | `totem config` | Prints the path of the config and data folders |
 

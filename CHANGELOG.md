@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.1.1
+
+Totem installed from npm runs like an installed program.
+
+- **The `totem` command:** `totem` (or `totem 4524` for another port) starts the server in the background, shows the banner and where it listens, opens the browser and gives the terminal back. New: `totem stop`, `totem status` and `totem restart`. `totem serve` keeps the server in the terminal until Ctrl+C. When it cannot start it says why (port in use, no permission, a broken installation) and where the log is.
+- **Installed from npm:** `totem` starts the application without the development watcher, so nothing is written in the folder of the package and a package in a read only folder (a global install by an administrator) works. The data already went to a folder of your user.
+- **Publishing:** the workflow no longer fails when npm already has the version that was published by hand.
+- No other change in the application.
+
 ## 0.1.0
 
 The first version.

@@ -33,15 +33,22 @@ Totem is one application with three ways to run: a command, a Docker container a
 
 ## Quick start
 
+Three ways: **npm** (below), **Docker** (`docker pull ghcr.io/totaljs-es/totem:latest`, see [Docker](#docker)) or the **source**.
+
+### With npm
+
 You need [Node.js](https://nodejs.org) 22 or newer.
 
 ```bash
 npm install -g totaljs-totem
 totem            # starts Totem in the background and opens the browser
+totem 4524       # the same, on another port
 totem stop       # stops it
 ```
 
-The browser opens on <http://127.0.0.1:8000>, and the terminal is yours again. Installed from npm, your data (providers, projects, sessions) lives in a folder of your user (`totem config` prints it) and not in the package, so an update never touches it. To run it from the source instead:
+The browser opens on <http://127.0.0.1:8000>, and the terminal is yours again. Installed from npm, your data (providers, projects, sessions) lives in a folder of your user (`totem config` prints it) and not in the package, so an update never touches it.
+
+### From the source
 
 ```bash
 git clone https://github.com/totaljs-es/totem.git
@@ -50,6 +57,8 @@ npm install
 node index.js 8000
 ```
 
+### Then, in the browser
+
 Press **Settings** and add a model:
 
 - **A model on your computer.** Install [Ollama](https://ollama.com), pull a model (`ollama pull qwen2.5-coder`), and press *Look for servers on this computer*.
@@ -57,10 +66,9 @@ Press **Settings** and add a model:
 
 Then **Open a folder**, write what you want, and watch it work.
 
-### The command
+### The `totem` command
 
 ```bash
-totem                       # starts the server and opens the browser
 totem run "explain this project" --project ~/code/app --model ollama:qwen2.5-coder
 ```
 
@@ -68,11 +76,11 @@ totem run "explain this project" --project ~/code/app --model ollama:qwen2.5-cod
 
 | Command | What it does |
 |---|---|
-| `totem` | Starts the server on port 8000 **in the background**, shows where it listens and opens the browser. The terminal is free |
-| `totem start [port]` | The same, without opening the browser |
+| `totem [port]` | Starts the server on port 8000 (or the one you give: `totem 4524`) **in the background**, shows where it listens and opens the browser. The terminal is free |
+| `totem start [port]` | The same, without opening the browser (`--port 4524` also works) |
 | `totem stop` | Stops the server that `totem` started |
 | `totem status` | Says if it runs and where (pid, address, log) |
-| `totem restart` | Stops it and starts it again |
+| `totem restart` | Stops it and starts it again, on the same port |
 | `totem serve [port]` | Runs the server in this terminal until Ctrl+C (for a server, a script or when you develop Totem). `--verbose` shows its whole output |
 | `totem run "prompt" [options]` | One prompt without the interface: the answer goes to stdout, the tool calls to stderr, the exit code says if it finished |
 | `totem config` | Prints the folders that Totem uses |
@@ -82,16 +90,22 @@ Options of `run`: `--project <folder>`, `--model <provider:model>`, `--url <serv
 ### Docker
 
 ```bash
+docker pull ghcr.io/totaljs-es/totem:latest
+```
+
+Then run it with a token and your project mounted:
+
+```bash
 echo "a-long-random-token" > token.txt
 docker run --rm -p 127.0.0.1:8000:8000 \
   -v "$PWD/token.txt:/run/secrets/totem_token:ro" \
   -v "$PWD:/workspace/project" \
-  -v totem-data:/data ghcr.io/totaljs-es/totem
+  -v totem-data:/data ghcr.io/totaljs-es/totem:latest
 ```
 
-(To build it yourself: `docker build -t totem .` in a clone.)
+Open <http://127.0.0.1:8000>, sign in with the token, and open the folder `/workspace/project`. The image is for `linux/amd64` and `linux/arm64`. The tags are `latest`, the exact version (`0.1.1`) and the minor (`0.1`): pin one when you want updates only when you choose. The page of the image is [on GitHub](https://github.com/totaljs-es/totem/pkgs/container/totem).
 
-The container listens on all interfaces, so it **refuses to start without an access token**. Your projects are mounted under `/workspace`, the data is a volume, and everything runs as a user that is not root, which makes it the isolated way to try untrusted models. There is a [compose example](docs/docker-compose.yml) and the [delivery notes](docs/delivery.md).
+The container listens on all interfaces, so it **refuses to start without an access token**. Your projects are mounted under `/workspace`, the data is a volume, and everything runs as a user that is not root, which makes it the isolated way to try untrusted models. There is a [compose example](docs/docker-compose.yml) and the [delivery notes](docs/delivery.md). To build it yourself: `docker build -t totem .` in a clone.
 
 ## The interface
 

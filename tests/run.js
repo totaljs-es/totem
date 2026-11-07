@@ -2323,6 +2323,12 @@ Test.push('the package: data folder and release check', function(next) {
 	var bin = require(Total.Path.join(ROOT, 'bin/totem.js'));
 	check('in a clone the data stays in the folder of the application', bin.datafolder({}) === '');
 	check('--data chooses the folder', bin.datafolder({ data: '/tmp/somewhere' }) === '/tmp/somewhere');
+	check('a clone is not an installed package: it keeps the watcher of the development', bin.installed() === false);
+	check('the port: 8000, the number after the command, --port, and nothing that is not a port', bin.portof({ _: [] }) === 8000 && bin.portof({ _: ['', '4524'] }) === 4524 && bin.portof({ _: [], port: '4525' }) === 4525 && bin.portof({ _: ['start', '99999'] }) === 0 && bin.portof({ _: ['start', 'abc'] }) === 0 && bin.portof({ _: ['start', '0'] }) === 0);
+	check('a port in use is explained with the way out', /port 8000 is already in use/.test(bin.explain('Error: listen EADDRINUSE: address already in use 127.0.0.1:8000', 8000)) && /totem serve 8001/.test(bin.explain('EADDRINUSE', 8000)));
+	check('a folder that cannot be written is explained', /no permission/.test(bin.explain('Error: EACCES: permission denied, mkdir', 8000)));
+	check('a broken installation is explained', /Install Totem again/.test(bin.explain("Error: Cannot find module 'total5'", 8000)));
+	check('another error shows its own line', bin.explain('fine\nERROR ======= TypeError: x is not a function\nfine', 8000).indexOf('TypeError') !== -1);
 
 	var check2 = require(Total.Path.join(ROOT, 'scripts/release-check.js'));
 	var pkg = JSON.parse(Total.Fs.readFileSync(Total.Path.join(ROOT, 'package.json'), 'utf8'));

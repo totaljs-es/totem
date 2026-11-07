@@ -3,8 +3,11 @@
 
 // The totem command. It is a tooling script that runs with plain Node.js 22 or newer: it is not part of the Total.js application.
 //
-//   totem                         starts the server and opens the browser
-//   totem serve [port]            starts only the server (default port 8000)
+//   totem [port]                  starts the server in the background, opens the browser and gives the terminal back (8000, or totem 4524)
+//   totem start [port]            the same, without opening the browser
+//   totem stop                    stops the server that `totem` started
+//   totem status                  says if it runs
+//   totem serve [port]            runs the server in this terminal until Ctrl+C (default port 8000)
 //   totem run "prompt" [options]  runs one prompt without the interface and prints what happens
 //   totem config                  prints the folders that Totem uses
 //   totem --help
@@ -13,6 +16,7 @@
 // local server), --token <token>, --auto-accept (edits run without asking), --yes (every question is answered "allow once").
 
 var Child = require('child_process');
+var Fs = require('fs');
 var Http = require('http');
 var Net = require('net');
 var Os = require('os');
@@ -43,11 +47,22 @@ function datafolder(opt) {
 
 exports.datafolder = datafolder;
 
+// Installed from npm (not a clone): the application runs without the watcher, which writes files next to index.js and restarts the server when a file changes.
+// Both are for the development of Totem, not for using it, and the folder of an installed package can be read only.
+function installed() {
+	return Path.relative(ROOT, __dirname) === 'bin' && ROOT.split(Path.sep).indexOf('node_modules') !== -1;
+}
+
+exports.installed = installed;
+
 function usage() {
 	console.log([
 		'Usage:',
-		'  totem                         start the server and open the browser',
-		'  totem serve [port]            start only the server (default port 8000)',
+		'  totem [port]                  start the server in the background and open the browser (port: 8000, or for example totem 4524)',
+		'  totem start [port]            the same, without opening the browser (also --port 4524)',
+		'  totem stop                    stop the server that totem started',
+		'  totem status                  say if it runs, and where',
+		'  totem serve [port]            run the server in this terminal until Ctrl+C (default port 8000)',
 		'  totem run "prompt" [options]  run a prompt without the interface',
 		'  totem config                  print the folders that Totem uses',
 		'',
@@ -60,7 +75,8 @@ function usage() {
 		'  --yes                every other question is answered "allow once"',
 		'',
 		'Options of serve and run:',
-		'  --data <folder>      where the data goes (installed from npm: a folder of your user)'
+		'  --data <folder>      where the data goes (installed from npm: a folder of your user)',
+		'  --verbose            show the whole output of the server'
 	].join('\n'));
 }
 
@@ -108,6 +124,35 @@ function request(url, token, schema, data) {
 	});
 }
 
+// Why the server did not start, in a sentence, from what it printed
+function explain(output, port) {
+
+	if (/EADDRINUSE|address already in use/i.test(output))
+		return 'The port ' + port + ' is already in use (is Totem already running?). Open http://127.0.0.1:' + port + ' or start another one with: totem serve ' + (port + 1);
+
+	if (/EACCES|permission denied/i.test(output))
+		return 'The server has no permission to use the port ' + port + ' or to write its data. Try another port (totem serve 8001) or a data folder of yours (totem --data <folder>).';
+
+	if (/Cannot find module/i.test(output))
+		return 'A file of the installation is missing. Install Totem again (npm install -g totaljs-totem).';
+
+	var lines = output.split('\n').map(line => line.trim()).filter(line => /error/i.test(line)).slice(-3);
+	return lines.length ? lines.join('\n') : 'The server stopped before it answered.';
+}
+
+exports.explain = explain;
+
+// Is something listening on the port?
+function busy(port) {
+	return new Promise(function(resolve) {
+		var socket = Net.connect({ host: '127.0.0.1', port: port });
+		socket.setTimeout(800);
+		socket.on('connect', () => (socket.destroy(), resolve(true)));
+		socket.on('timeout', () => (socket.destroy(), resolve(false)));
+		socket.on('error', () => resolve(false));
+	});
+}
+
 function freeport() {
 	return new Promise(function(resolve) {
 		var server = Net.createServer();
@@ -118,8 +163,20 @@ function freeport() {
 	});
 }
 
-function serve(port, quiet, data) {
-	var child = Child.spawn(process.execPath, [Path.join(ROOT, 'index.js'), String(port)].concat(data ? ['--data', data] : []), { cwd: ROOT, stdio: quiet ? 'ignore' : 'inherit', detached: true });
+function serve(port, quiet, data, capture) {
+	var child = Child.spawn(process.execPath, [Path.join(ROOT, 'index.js'), String(port)].concat(installed() ? ['--release'] : []).concat(data ? ['--data', data] : []), { cwd: ROOT, stdio: capture ? ['ignore', 'pipe', 'pipe'] : (quiet ? 'ignore' : 'inherit'), detached: true });
+	var output = '';
+
+	// The output of the server is kept (the end of it) to say why it failed; with --verbose it is shown as it comes
+	if (capture) {
+		var keep = function(chunk) {
+			output = (output + chunk.toString('utf8')).slice(-20000);
+			capture === 'show' && process.stdout.write(chunk);
+		};
+		child.stdout.on('data', keep);
+		child.stderr.on('data', keep);
+	}
+
 	var stop = function() {
 		try {
 			process.kill(-child.pid);
@@ -128,11 +185,11 @@ function serve(port, quiet, data) {
 	process.on('exit', stop);
 	process.on('SIGINT', () => process.exit(130));
 	process.on('SIGTERM', () => process.exit(143));
-	return { child: child, stop: stop };
+	return { child: child, stop: stop, output: () => output };
 }
 
-async function waitfor(url, token) {
-	for (var i = 0; i < 100; i++) {
+async function waitfor(url, token, tries) {
+	for (var i = 0; i < (tries || 100); i++) {
 		try {
 			await request(url, token, 'account');
 			return true;
@@ -266,11 +323,206 @@ async function run(opt) {
 	return status;
 }
 
+// The port: `totem 4524`, `totem start 4524`, `totem serve 4524` or `--port 4524`. 8000 without one. Returns 0 when it is not a port.
+function portof(opt, fallback) {
+	var value = opt._[1] || (opt.port && opt.port !== true ? opt.port : '') || fallback || '8000';
+	var port = /^\d+$/.test(String(value)) ? parseInt(value) : 0;
+	return port >= 1 && port <= 65535 ? port : 0;
+}
+
+exports.portof = portof;
+
+// The state of the server that `totem` starts in the background: its process, its port and its log, in the data folder
+function statefile(data) {
+	return Path.join(data || Path.join(ROOT, 'databases'), 'totem-server.json');
+}
+
+function readstate(data) {
+	try {
+		return JSON.parse(Fs.readFileSync(statefile(data), 'utf8'));
+	} catch (e) {
+		return null;
+	}
+}
+
+function alive(pid) {
+	try {
+		process.kill(pid, 0);
+		return true;
+	} catch (e) {
+		return e.code === 'EPERM';
+	}
+}
+
+// The banner of the framework: what the server printed until it said where it listens
+function banner(output) {
+	var lines = output.split('\n');
+	var end = lines.findIndex(line => /^https?:\/\//.test(line.trim()));
+	return (end === -1 ? lines.slice(0, 25) : lines.slice(0, end + 1)).join('\n').trim();
+}
+
+// The server prints its banner a moment after it answers: wait for the line that says where it listens (not for long)
+async function waitbanner(read) {
+	for (var i = 0; i < 20 && !/^https?:\/\//m.test(read()); i++)
+		await new Promise(resolve => setTimeout(resolve, 100));
+	return read();
+}
+
+async function waitready(url, isdead) {
+	for (var i = 0; i < 200; i++) {
+		if (isdead())
+			return false;
+		if (await waitfor(url, '', 1))
+			return true;
+		await new Promise(resolve => setTimeout(resolve, 150));
+	}
+	return false;
+}
+
+function message(url, port, data) {
+	console.log('Total.js Totem ' + require(Path.join(ROOT, 'package.json')).version + ' is ready');
+	console.log('  Open:  ' + url + '  (or http://localhost:' + port + '/)');
+	console.log('  Data:  ' + (data || Path.join(ROOT, 'databases')));
+}
+
+// The port is taken: by a Totem that runs already, or by another program. Returns the exit code, or null when the port is free.
+async function taken(port, url, open_) {
+
+	if (!await busy(port))
+		return null;
+
+	if (await waitfor(url, '', 3)) {
+		console.log('Totem is already running: ' + url + (open_ ? '' : ''));
+		open_ && open(url);
+		return 0;
+	}
+
+	console.error('The port ' + port + ' is used by another program. Start Totem on another port: totem start ' + (port + 1));
+	return 1;
+}
+
+// In the background: the terminal is given back
+async function start(opt, show) {
+
+	var port = portof(opt);
+
+	if (!port) {
+		console.error('That is not a port: use a number from 1 to 65535, for example: totem 4524');
+		return 2;
+	}
+
+	var data = datafolder(opt);
+	var url = 'http://127.0.0.1:' + port + '/';
+	var busycode = await taken(port, url, show);
+
+	if (busycode !== null)
+		return busycode;
+
+	var file = statefile(data);
+	var log = Path.join(Path.dirname(file), 'totem.log');
+	Fs.mkdirSync(Path.dirname(file), { recursive: true });
+
+	var fd = Fs.openSync(log, 'w');
+	var child = Child.spawn(process.execPath, [Path.join(ROOT, 'index.js'), String(port)].concat(installed() ? ['--release'] : []).concat(data ? ['--data', data] : []), { cwd: ROOT, stdio: ['ignore', fd, fd], detached: true });
+	var exited = false;
+
+	child.on('exit', () => exited = true);
+	child.unref();
+	Fs.closeSync(fd);
+	Fs.writeFileSync(file, JSON.stringify({ pid: child.pid, port: port, url: url, log: log, started: new Date().toISOString() }));
+
+	var ready = await waitready(url, () => exited);
+	var readlog = function() {
+		try {
+			return Fs.readFileSync(log, 'utf8');
+		} catch (e) {
+			return '';
+		}
+	};
+	var output = ready ? await waitbanner(readlog) : readlog();
+
+	if (!ready) {
+		console.error('Totem could not start.\n' + explain(output, port) + '\nThe whole output of the server is in ' + log);
+		try {
+			process.kill(-child.pid);
+		} catch (e) {}
+		Fs.rmSync(file, { force: true });
+		return 1;
+	}
+
+	var shown = banner(output);
+	shown && console.log(shown + '\n');
+	message(url, port, data);
+	console.log('  Log:   ' + log);
+	console.log('  It keeps running in the background. Stop it with: totem stop');
+	show && open(url);
+	return 0;
+}
+
+async function stop(opt) {
+
+	var data = datafolder(opt);
+	var state = readstate(data);
+
+	if (!state || !alive(state.pid)) {
+		Fs.rmSync(statefile(data), { force: true });
+		var port = portof(opt) || 8000;
+		if (await busy(port) && await waitfor('http://127.0.0.1:' + port + '/', '', 2))
+			console.log('A Totem answers on port ' + port + ' but it was not started by `totem` (it runs in a terminal: stop it there with Ctrl+C).');
+		else
+			console.log('Totem is not running.');
+		return 0;
+	}
+
+	try {
+		process.kill(-state.pid, 'SIGTERM');
+	} catch (e) {
+		try {
+			process.kill(state.pid, 'SIGTERM');
+		} catch (e2) {}
+	}
+
+	for (var i = 0; i < 50 && alive(state.pid); i++)
+		await new Promise(resolve => setTimeout(resolve, 100));
+
+	if (alive(state.pid)) {
+		try {
+			process.kill(-state.pid, 'SIGKILL');
+		} catch (e) {}
+	}
+
+	Fs.rmSync(statefile(data), { force: true });
+	console.log('Totem stopped (' + state.url + ').');
+	return 0;
+}
+
+async function status(opt) {
+
+	var data = datafolder(opt);
+	var state = readstate(data);
+
+	if (state && alive(state.pid) && await waitfor(state.url, '', 3)) {
+		console.log('Totem is running: ' + state.url + '  (pid ' + state.pid + ', since ' + state.started + ')');
+		console.log('  Log: ' + state.log);
+		console.log('  Stop it with: totem stop');
+		return 0;
+	}
+
+	console.log('Totem is not running. Start it with: totem');
+	return 1;
+}
+
 async function main() {
 
 	var args = process.argv.slice(2);
 	var opt = options(args);
 	var command = opt._[0];
+
+	// `totem 4524` is `totem` on the port 4524
+	if (/^\d+$/.test(command || '')) {
+		opt._ = ['', command];
+		command = '';
+	}
 
 	if (opt.help || command === 'help' || args.indexOf('-h') !== -1) {
 		usage();
@@ -287,15 +539,66 @@ async function main() {
 	if (command === 'run')
 		return await run(opt);
 
-	if (command === 'serve' || !command) {
-		var port = parseInt(opt._[1] || '8000');
-		var server = serve(port, false, datafolder(opt));
-		if (!command) {
-			var url = 'http://127.0.0.1:' + port + '/';
-			if (await waitfor(url))
-				open(url);
+	if (!command || command === 'start')
+		return await start(opt, !command);
+
+	if (command === 'stop')
+		return await stop(opt);
+
+	if (command === 'restart') {
+		var before = readstate(datafolder(opt));
+		!opt._[1] && !opt.port && before && before.port && (opt._[1] = String(before.port));
+		await stop(opt);
+		return await start(opt, false);
+	}
+
+	if (command === 'status')
+		return await status(opt);
+
+	// In this terminal until Ctrl+C: the banner of the framework, then where it listens (a server, a container, a developer)
+	if (command === 'serve') {
+
+		var port = portof(opt);
+
+		if (!port) {
+			console.error('That is not a port: use a number from 1 to 65535, for example: totem serve 4524');
+			return 2;
 		}
-		await new Promise(resolve => server.child.on('exit', resolve));
+
+		var data = datafolder(opt);
+		var url = 'http://127.0.0.1:' + port + '/';
+		var busycode = await taken(port, url, false);
+
+		if (busycode !== null)
+			return busycode;
+
+		var server = serve(port, false, data, opt.verbose ? 'show' : 'keep');
+		var exited = false;
+
+		server.child.on('exit', () => exited = true);
+
+		if (!await waitready(url, () => exited)) {
+			console.error('Totem could not start.\n' + explain(server.output(), port) + (opt.verbose ? '' : '\nRun it again with --verbose to see the whole output of the server.'));
+			server.stop();
+			return 1;
+		}
+
+		if (!opt.verbose) {
+			var shown = banner(await waitbanner(() => server.output()));
+			shown && console.log(shown + '\n');
+		}
+
+		message(url, port, data);
+		console.log('  Press Ctrl+C to stop it.');
+
+		var end = await new Promise(resolve => server.child.on('exit', (code, signal) => resolve({ code: code, signal: signal })));
+
+		// Stopped by itself with an error: say why
+		if (end.code) {
+			console.error('Totem stopped.\n' + explain(server.output(), port));
+			return 1;
+		}
+
 		return 0;
 	}
 
