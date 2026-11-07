@@ -61,7 +61,7 @@ jobs:
       - name: Is this version on npm already?
         id: exists
         run: |
-          if npm view "totaljs-totem@$(node -p "require('./package.json').version")" version > /dev/null 2>&1; then
+          if npm view "totaljs-totem@$(node -p "require('./package.json').version")" version --registry https://registry.npmjs.org > /dev/null 2>&1; then
             echo "published=true" >> "$GITHUB_OUTPUT"
             echo "This version is on npm already: nothing to publish."
           else
@@ -79,15 +79,35 @@ jobs:
           npm install --global npm@^11.5.1
           npm --version
 
+      # npm can take a minute to show a version that was just published by hand, so the check above can miss it: the answer of npm is what counts.
+      # "You cannot publish over the previously published versions" is not an error here, any other one is.
       - name: Publish with the token
         if: steps.exists.outputs.published != 'true' && env.NPM_TOKEN != ''
-        run: npm publish --provenance --access public
+        run: |
+          set +e
+          output=$(npm publish --provenance --access public 2>&1)
+          code=$?
+          echo "$output"
+          if [ $code -ne 0 ] && echo "$output" | grep -q "cannot publish over the previously published"; then
+            echo "This version is on npm already: nothing to publish."
+            exit 0
+          fi
+          exit $code
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       - name: Publish with trusted publishing
         if: steps.exists.outputs.published != 'true' && env.NPM_TOKEN == ''
-        run: npm publish --access public
+        run: |
+          set +e
+          output=$(npm publish --access public 2>&1)
+          code=$?
+          echo "$output"
+          if [ $code -ne 0 ] && echo "$output" | grep -q "cannot publish over the previously published"; then
+            echo "This version is on npm already: nothing to publish."
+            exit 0
+          fi
+          exit $code
 
   image:
     needs: [check, tests]
