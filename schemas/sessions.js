@@ -279,6 +279,46 @@ NEWACTION('Sessions|undo', {
 	}
 });
 
+// A code block of an answer that starts with its path as a comment (// schemas/system.js) can be saved by the user with one click. A small model
+// does not always call the write tool: this is the same write, with its snapshot (so it can be undone) and the same protections, and the click of the
+// user is the permission.
+NEWACTION('Sessions|saveblock', {
+	name: 'Save a code block of an answer as a file of the project',
+	params: '*id',
+	input: '*messageid:String, *path:String, *content:Text, replace:Boolean',
+	action: async function($, model) {
+
+		if (MAIN.running[$.params.id]) {
+			$.invalid('@(The session is running)');
+			return;
+		}
+
+		var session = await NOSQL('sessions').read().where('id', $.params.id).error(404).promise($);
+		var project = await NOSQL('projects').read().where('id', session.projectid).error(404).promise($);
+		project = FUNC.sessionproject(session, project);
+
+		var relative = model.path.replace(/\\/g, '/').replace(/^\.\//, '');
+		var path = FUNC.resolve(project.path, relative);
+
+		if (!path || !relative || /(^|\/)\.git(\/|$)/.test(relative) || (/(^|\/)\.env(\.[^\/]*)?$/.test(relative) && !/\.(example|sample|template)$/.test(relative))) {
+			$.invalid('@(The path is outside the project or protected)');
+			return;
+		}
+
+		// A file that exists is replaced only when the user says so (the old content stays in the undo of the message)
+		if (!model.replace && Total.Fs.existsSync(path)) {
+			$.callback({ exists: true, path: relative });
+			return;
+		}
+
+		MODS.snapshots.before({ sessionid: session.id, messageid: model.messageid, root: project.path }, relative, path);
+		Total.Fs.mkdirSync(Total.Path.dirname(path), { recursive: true });
+		Total.Fs.writeFileSync(path, model.content, 'utf8');
+		MODS.formatter.run(project.path, path);
+		$.callback({ path: relative, lines: model.content.split('\n').length });
+	}
+});
+
 NEWACTION('Sessions|redo', {
 	name: 'Redo the last undo',
 	params: '*id',

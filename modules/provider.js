@@ -140,6 +140,19 @@ exports.openai = function(ai, callback) {
 	if (ai.payload.tools && ai.payload.tools.length)
 		body.tools = ai.payload.tools;
 
+	// Ollama behind a gateway (LiteLLM): the gateway does not know the size of the prompt, and Ollama cuts it at its default window (2048 or 4096
+	// tokens), which takes the instructions away from the model. The window and the penalty for repeating go as parameters of the request, which the
+	// gateway passes on to Ollama.
+	if (/^ollama(_chat)?\//.test(ai.payload.underlying || '')) {
+		body.num_ctx = CONF.ollamactx || 16384;
+		if (CONF.ollamarepeat)
+			body.repeat_penalty = CONF.ollamarepeat;
+	}
+
+	// A model of up to 4 billion parameters never needs a long answer, and it is the one that does not stop: the same limit as Ollama's, as max_tokens
+	if (CONF.ollamapredictsmall && (ai.payload.small || MODS.agent.smallmodel(config.model)) && !body.max_tokens)
+		body.max_tokens = CONF.ollamapredictsmall;
+
 	// Code needs a steady hand: the servers of this computer (Ollama, llama.cpp, vLLM, LM Studio) are asked for a low temperature, because
 	// their default (0.7 or 0.8) makes a small model drift from the instructions. A remote provider keeps its own default: some models
 	// (the reasoning ones) refuse any other value.
@@ -250,6 +263,10 @@ exports.ollama = function(ai, callback) {
 
 	if (CONF.ollamapredict)
 		options.num_predict = CONF.ollamapredict;
+
+	// A model of up to 4 billion parameters does not need long answers (a recipe is a few hundred tokens), and it is the one that never stops: a lower limit
+	if (CONF.ollamapredictsmall && (ai.payload.small || MODS.agent.smallmodel(config.model)))
+		options.num_predict = Math.min(options.num_predict || CONF.ollamapredictsmall, CONF.ollamapredictsmall);
 
 	var body = { model: config.model, messages: exports.toollama(ai.payload.messages), stream: true, options: options };
 

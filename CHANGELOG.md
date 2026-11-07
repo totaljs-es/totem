@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.1.5
+
+Totem with a model of 1 GB, used the way a person uses it.
+
+- **Forge without MCP:** the documentation of Forge comes from its `llms.txt` and its pages in Markdown, read with a GET. The search runs in Totem, so the prompt is not sent anywhere, there is no server to start and no permission to ask (the first "Hola" no longer stops at a question). The MCP server is the fallback, and an extra with `forgemcp : true`. `forgedocs : false` turns it off.
+- **Small models** (up to 4 billion parameters, also behind LiteLLM or another gateway): the code of their older answers is left out of the history, their answers have a lower limit (`ollamapredictsmall`), a request to show something with a recipe in front of them goes without tools, and when they answer a request to make files with the code, the files that do not exist yet are written with the write tool. The correction of their code stays on and its request no longer carries the reminder of the style.
+- **Save as:** every code block that starts with its path (`// schemas/system.js`) has a button that saves it as that file. A file that exists is replaced only if you confirm, and the old content stays in Undo.
+- **`/new <name>`** creates the files of a minimal Total.js 5 application. **`/init`** with a small model writes `AGENTS.md` from the files of the project instead of asking the model.
+- **Recipes:** system information (`Total.Os`) and starting an application, and the Spanish is understood in any form (autenticados, protejo, usuarios).
+- **The write tool** leaves out a first line that only names the file and would break it (`# index.js` in a `.js` file).
+- **LiteLLM:** tried with a real proxy in front of Ollama. The model behind the name is read from `/model/info`, and Totem sends the window (`num_ctx`) that Ollama needs behind a gateway. In the config of LiteLLM write `ollama_chat/<model>`.
+- **Tests:** `idle()` waits for the idle of the run that was just started. 498 tests.
+- Knowledge evaluation with `qwen2.5:1.5b`: 20/29 (it was 18/29).
+
 ## 0.1.4
 
 A small model no longer answers a greeting with a code example.

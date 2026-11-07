@@ -1,5 +1,5 @@
 name                        : Total.js Totem
-version                     : 0.1.4
+version                     : 0.1.5
 $api                        : /api/
 
 // The address the server listens on. Only this computer by default; anything else (0.0.0.0 in the Docker image) needs `token`, and the server refuses to start without one
@@ -31,6 +31,8 @@ ollamactxmax      (Number)  : 32768
 // answer after this many tokens (0 is no limit).
 ollamarepeat      (Number)  : 1.1
 ollamapredict     (Number)  : 8192
+// The same limit for a model of up to 4 billion parameters (qwen2.5:1.5b, llama3.2:3b), which tends to write a list that never ends
+ollamapredictsmall (Number) : 1536
 
 // Agent limits
 maxsteps          (Number)  : 50
@@ -51,9 +53,16 @@ recipes                     : true
 
 // The code in the answer of the model is checked against the conventions (syntax, style, invented functions) and the model corrects it once. false turns it off.
 selfcheck                   : true
+// The correction of the code is asked from a model of up to 4 billion parameters too (it fixed the indentation in 3 more cases of 29); false leaves it out.
+selfchecksmall              : true
 reciperesults     (Number)  : 2
 forgepages        (Number)  : 2
 forgechars        (Number)  : 3500
+// The documents of Forge (llms.txt and the pages in Markdown) are read directly, with no MCP server: false goes back to the MCP server only. forgeurl is where Forge is.
+forgedocs                   : true
+forgeurl                    : https://forge.totaljs.es
+// The MCP server of Forge (its tools search, read and verify names) is started only when this is true, and it asks permission once. The documents above are enough for most prompts.
+forgemcp                    : false
 conventions                 : true
 
 // Run the formatter of the project (a local prettier, gofmt, rustfmt, ruff or .totem/formatters.json) after a file is written

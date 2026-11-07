@@ -207,7 +207,9 @@ function litellm(provider, callback) {
 				vision: typeof(info.supports_vision) === 'boolean' ? info.supports_vision : null,
 				free: input === null ? null : input === 0,
 				price: input === null ? null : { input: input, output: output || 0 },
-				size: null
+				size: null,
+				// The model behind the name of the gateway (ollama/qwen2.5:1.5b): the name that the team chose says nothing about its size
+				underlying: (m.litellm_params && m.litellm_params.model) || info.key || null
 			});
 		});
 

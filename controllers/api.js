@@ -25,6 +25,7 @@ exports.install = function() {
 	ROUTE('+API    ?    -sessions_abort/{id}        --> Sessions|abort');
 	ROUTE('+API    ?    -sessions_diff/{id}         --> Sessions|diff');
 	ROUTE('+API    ?    +sessions_undo/{id}         --> Sessions|undo');
+	ROUTE('+API    ?    +sessions_saveblock/{id}    --> Sessions|saveblock');
 	ROUTE('+API    ?    -sessions_jobs/{id}         --> Sessions|jobs');
 	ROUTE('+API    ?    +sessions_jobstop/{id}      --> Sessions|jobstop');
 	ROUTE('+API    ?    +sessions_terminal/{id}     --> Sessions|terminal');

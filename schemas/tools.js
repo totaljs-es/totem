@@ -147,11 +147,30 @@ NEWACTION('Tools|write', {
 			return;
 		}
 
+		// A model copies the name of the file as the first line of its code (# index.js in a .js file, // package.json in a JSON file): that line is
+		// not part of the file and breaks it, so it is left out. Only that line, only when it is the name of this file.
+		var content = model.content;
+		var base = Total.Path.basename(model.path).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+		var first = content.split('\n')[0];
+		var named = new RegExp('^\\s*(#|//|<!--)\\s*(?:[\\w./-]*/)?' + base + '\\s*(-->)?\\s*$');
+		var dropped = '';
+
+		// The comment style that the language of the file allows: js //, html <!--, json and css none. A line in another style would break the file.
+		var ext = (Total.Path.extname(model.path) || '').toLowerCase();
+		var style = (first.match(/^\s*(#|\/\/|<!--)/) || [])[1];
+		var allowed = { '.js': '//', '.mjs': '//', '.cjs': '//', '.html': '<!--' }[ext];
+		var breaks = style && ['.js', '.mjs', '.cjs', '.html', '.json', '.css'].indexOf(ext) !== -1 && style !== allowed;
+
+		if (breaks && named.test(first)) {
+			content = content.split('\n').slice(1).join('\n');
+			dropped = '\nThe first line was the name of the file, not code: it was left out.';
+		}
+
 		MODS.snapshots.before($.user, model.path, path);
 		Total.Fs.mkdirSync(Total.Path.dirname(path), { recursive: true });
-		Total.Fs.writeFileSync(path, model.content, 'utf8');
+		Total.Fs.writeFileSync(path, content, 'utf8');
 		var note = MODS.formatter.run($.user.root, path) + MODS.diagnostics.run($.user.root, path);
-		$.callback('Written {0} ({1} lines)'.format(model.path, model.content.split('\n').length) + note + MODS.conventions.review(path, model.content));
+		$.callback('Written {0} ({1} lines)'.format(model.path, content.split('\n').length) + dropped + note + MODS.conventions.review(path, content));
 	}
 });
 

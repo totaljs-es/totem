@@ -19,7 +19,7 @@ The usual problems, and what to do. If yours is not here, [open an issue](https:
 |---|---|
 | There is no model to choose | **Settings**, then add a provider, or *Look for servers on this computer* with Ollama or LM Studio running |
 | A small model seems to ignore the instructions | Check `ollamactx` in `config`: Ollama must get a real context (Totem asks for 16384 by default) |
-| A model repeats itself until it stops | Totem asks Ollama to penalize repeating and to stop one answer after a limit (`ollamarepeat`, `ollamapredict`) |
+| A model repeats itself until it stops | Totem asks Ollama to penalize repeating and to stop one answer after a limit (`ollamarepeat`, `ollamapredict`, and a lower `ollamapredictsmall` for models up to 4B) |
 | The model answers with code in spaces and not tabs | Totem checks the code of the answer and asks the model to correct it once. A very small model does not always manage |
 | A model does not call tools | It does not support them: Totem sends it the request without tools. Choose another model for editing |
 
@@ -29,7 +29,9 @@ The usual problems, and what to do. If yours is not here, [open an issue](https:
 |---|---|
 | The agent asks to start Forge | It is the connection to the documentation. Allow it once for every project, or set `forge : false` |
 | The agent mentions jComponent in server code | Totem's recipes and its reminder keep the interface out of server questions, but a small model may slip. Tell it; or use a bigger one |
+| LiteLLM in front of Ollama: the model answers with JSON, or forgets what I asked | In the config of LiteLLM write the model as `ollama_chat/<model>` (not `ollama/`). Totem sends the window (`num_ctx`) by itself |
 | I do not want the recipes or the code check | `recipes : false` and `selfcheck : false` in `config` |
+| I want Forge only through its MCP server, or not at all | `forgedocs : false` (MCP only, asks to start) or `forge : false`; `forgemcp : true` adds the MCP tools to the documents |
 
 ## The interface
 

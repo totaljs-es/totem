@@ -1,7 +1,7 @@
 ---
 title: Authentication: AUTH and the + and - routes
-keywords: auth, authentication, authenticate, login, signin, user, users, session, token, protect, authorize, permission, permissions, autenticacion, sesion, proteger
-strong: auth, authentication, autenticacion, authorize
+keywords: autentic*, proteg*, protej*, usuari*, sesi*, permis*, contrase*, auth, authentication, authenticate, login, signin, user, users, session, token, protect, authorize, permission, permissions, autenticacion, sesion, proteger
+strong: auth, authentication, autenticacion, authorize, autentic*
 ---
 `AUTH()` runs for every request and decides who the user is. It is in a file of `definitions/`.
 

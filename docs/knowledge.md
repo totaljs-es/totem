@@ -10,8 +10,8 @@ A project counts as Total.js when its `package.json` depends on `total5`, or whe
 |---|---|---|
 | **Primer** | `private/prompts/totaljs.txt`, in the system prompt | The rules: server code never needs the interface, ES5 and tabs, the shape of a project, one action with its route, and when to use the tools |
 | **Recipes** | `private/recipes/*.md`, after the primer | Up to two short answers for the task of the request (routes, actions, NoSQL, config, RESTBuilder, auth, CRON, WebSockets, views, ids, modules, jComponent, plugins...) |
-| **Forge** | The MCP server of [Forge](https://forge.totaljs.es), after the recipes | The two pages of the documentation that best match the request. Totem asks before it starts the connection. The names of actions are written with the pipe of the conventions before the model reads them |
-| **Reminder** | The end of the prompt of the user, never stored | The style (tabs, ES5, `Total.Fs`), not to invent functions, and to answer with the code in plain text. It mentions jComponent only when the request is about an interface: a reminder that always says "jComponent" makes a model put jComponent in a route |
+| **Forge** | The documents of [Forge](https://forge.totaljs.es) (`llms.txt` and its pages in Markdown), after the recipes | The page of the documentation that best matches the request (two, or one for a small model that already has a recipe). The search runs in Totem over the index, so the prompt never leaves the computer, there is no server to start and nothing to allow. The names of actions are written with the pipe of the conventions. The MCP server of Forge is the fallback, and an extra when `forgemcp : true` |
+| **Reminder** | The end of the prompt of the user, never stored; not for a greeting, a command or the request to correct code | The style (tabs, ES5, `Total.Fs`, `Total.Os`), to look in the documentation and ask the user when nothing is found, not to invent functions, to answer in the language of the user, and to answer with the code in plain text (or to make the files, when the request is to make something). It mentions jComponent only when the request is about an interface: a reminder that always says "jComponent" makes a model put jComponent in a route |
 | **Skill** | `private/skills/totaljs-conventions` | The conventions and where to look things up, loaded on demand |
 
 The conversation shows what was used ("Knowledge used": the recipes and the pages of Forge).
@@ -20,7 +20,12 @@ The conversation shows what was used ("Knowledge used": the recipes and the page
 
 1. **Files** that the agent writes or edits go through the checker of the conventions (`private/conventions/check.js`, a copy of the one in the [conventions repository](https://github.com/totaljs-es/conventions)) and, when the project has them, through its formatter and its own checks (`diagnostics`). The findings go back to the model in the result of the tool, in the same step.
 2. **The code in an answer** (a fenced `js` or `html` block) is checked the same way, plus a test of the syntax and one of the functions in capital letters: one that Total.js 5 does not have (`VALIDATE_EMAIL()`) is an invention. If something is wrong the model is asked, once, to answer again with the corrected code. The conversation shows a note with the rules. `selfcheck : false` turns it off.
-3. **An empty answer** (a small model tries a tool call with a broken JSON and the server swallows its text) is asked again without tools, once.
+3. **A model of up to 4 billion parameters** (qwen2.5:1.5b, llama3.2:3b) is helped where it fails: the code of its older answers is left out of the history (it copies it for any prompt), its answers have a lower limit (`ollamapredictsmall`), the request to correct its code does not carry the reminder of the style (a model of 1.5B answered the complaint and the reminder with themselves; `selfchecksmall : false` does not ask it at all), a request to show or explain with a recipe in front of it goes without tools (it goes to read files that do not exist), and when it was asked to make files and answered with the code, the blocks with a path (`// schemas/system.js`, or the file that the line before names and the user named) that do not exist yet are written with the write tool, with its permission and its diff. In the chat every code block with a path has a button *Save as <path>* (a file that exists is replaced only if the user confirms, and the old content stays in Undo).
+4. **An empty answer** (a small model tries a tool call with a broken JSON and the server swallows its text) is asked again without tools, once.
+
+## Commands that do not need the model
+
+`/new <name>` writes the files of a minimal Total.js 5 application (package.json with `total5`, index.js, config and a first route) and never replaces a file that exists. `/init` with a model of up to 4 billion parameters writes `AGENTS.md` from the files of the project (folders, scripts, dependencies and the conventions of Total.js) instead of asking the model, which cannot write it; with a bigger model the command is a prompt as before, with the facts of the project in it. An `AGENTS.md` that exists is never replaced.
 
 ## Recipes
 
@@ -74,8 +79,9 @@ How the score went up while the knowledge was built (one run per case, so read i
 | Reminder without jComponent, new primer, retry of empty answers | 12/29 |
 | More recipes, Forge with the pipe in action names, fairer cases | 16/29 |
 | No code examples in the primer (the recipes bring them), no "answer with the code" for greetings and commands (0.1.4) | 18/29 |
+| Forge documents without MCP, recipes for system information and for starting an application, one page when there is a recipe, the correction of the code with a clean request (0.1.5) | 20/29 |
 
-The last row is one run with Totem 0.1.4: routes 4/4, actions 2/3, storage 2/2, jComponent 3/5, structure 2/4, style 0/3, auth 0/1, views 0/1. The change came from a bug seen by using Totem: with the two code examples in the primer and a reminder that always asked for code, the model answered "Hola" with the example of an action. Greetings now get a greeting, and the score did not go down.
+The 0.1.4 row is one run: routes 4/4, actions 2/3, storage 2/2, jComponent 3/5, structure 2/4, style 0/3, auth 0/1, views 0/1. The change came from a bug seen by using Totem: with the two code examples in the primer and a reminder that always asked for code, the model answered "Hola" with the example of an action. Greetings now get a greeting, and the score did not go down.
 
 Routes, actions, storage and jComponent pass without counting style. What still fails is the model: a template literal where ES5 is asked, `require` for a setting, a syntax error in a longer example, a function that does not exist.
 

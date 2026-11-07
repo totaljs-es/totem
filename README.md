@@ -166,7 +166,9 @@ Settings live in the file [`config`](config) (never in environment variables). T
 | `ollamactx`, `ollamactxmax` | `16384`, `32768` | Context asked to Ollama |
 | `maxsteps`, `bashtimeout` | `50`, `120000` | Limits of the agent loop |
 | `totaljs` | `auto` | `always` or `never` to decide for every project |
-| `forge`, `recipes`, `selfcheck`, `conventions` | `true` | The parts of the Total.js knowledge |
+| `forge`, `forgedocs`, `recipes`, `selfcheck`, `conventions` | `true` | The parts of the Total.js knowledge (`forgedocs`: the documents of Forge, with no MCP server) |
+| `forgemcp` | `false` | The MCP server of Forge as an extra (it asks to start) |
+| `selfchecksmall` | `true` | The correction of the code is asked from models up to 4B too |
 | `formatter`, `diagnostics` | `true` | Run the formatter and the checks that the project already has after a write |
 | `terminalshell` | empty | The shell of the Terminal (empty: your `SHELL`) |
 | `$mcp` | `false` | Totem as an MCP server for other agents |

@@ -21,7 +21,9 @@ Patterns: for `bash` the command line (`git status*`), for file tools the path r
 | `.env` and `.env.*` (read, write, edit; `.env.example`, `.sample` and `.template` are fine) | ask |
 | any path outside the project root | deny |
 | every tool that changes files or runs a command, in Plan mode | deny (code, not a prompt) |
-| MCP servers of the project, and Forge in Total.js projects | ask before each one starts (`mcp-start`: a project file can start a program; the question says where a remote one goes) |
+| MCP servers of the project (and the MCP server of Forge when `forgemcp : true`) | ask before each one starts (`mcp-start`: a project file can start a program; the question says where a remote one goes) |
+| The documents of Forge in Total.js projects (`forgedocs`) | no question: Totem downloads two public files (`llms.txt` once a day and the page that matches) with a GET to `forgeurl`; the search runs in Totem, so the text of the prompt is not sent. `forgedocs : false` or `forge : false` turn it off |
+| *Save as* on a code block (the user's click), and `/new` | the click or the command is the permission; same protections as the write tool (inside the project, never `.git` or `.env`), a file that exists is replaced only after a confirmation, and the old content stays in Undo |
 | MCP tools | ask before each call |
 
 A session can run in **auto-accept edits** mode (write/edit/patch become allow for that session); it never changes `bash` or `fetch`.

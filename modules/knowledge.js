@@ -1,5 +1,7 @@
 // The knowledge that Totem puts in front of the model for the request of the user: first its own recipes (private/recipes, short and exact, they
-// work without a connection), then the documentation of Forge.
+// work without a connection), then the documentation of Forge: its llms.txt (the index of every page, in plain text) and the pages in Markdown,
+// read with a plain GET, with no MCP server and no permission to ask. The search runs here, so the prompt never leaves this computer. The MCP
+// server of Forge is the fallback when the documents are not available.
 //
 // The documentation of Forge for the request of the user. When the Forge server is connected, its search runs with the text of the
 // prompt and the best pages are read and kept for the system prompt. A small model does not call tools well, but it writes well
@@ -47,6 +49,14 @@ function loadrecipes() {
 	return RECIPES;
 }
 
+function stems(words, stem) {
+	for (var word in words) {
+		if (word.indexOf(stem) === 0)
+			return true;
+	}
+	return false;
+}
+
 // The recipes for a text, the best first: [{ id, title, body }]
 exports.recipes = function(text, max) {
 
@@ -60,7 +70,8 @@ exports.recipes = function(text, max) {
 
 	return loadrecipes().map(function(recipe) {
 		var score = 0;
-		var hit = keyword => words[keyword] || (/[._-]/.test(keyword) && lower.indexOf(keyword) !== -1);
+		// A keyword that ends with * is a stem (autentic* is autenticar, autenticados, autenticación...)
+		var hit = keyword => keyword.slice(-1) === '*' ? stems(words, keyword.slice(0, -1)) : (words[keyword] || (/[._-]/.test(keyword) && lower.indexOf(keyword) !== -1));
 		// A word of the topic itself counts three, a word that goes with it one: two of those are needed, one of the first is enough
 		recipe.strong.forEach(keyword => hit(keyword) && (score += 3));
 		recipe.keywords.forEach(keyword => hit(keyword) && recipe.strong.indexOf(keyword) === -1 && score++);
@@ -73,8 +84,19 @@ exports.recipes = function(text, max) {
 var STOP = ('quiero quisiera necesito puedo puedes hacer haz crear crea escribe escribir un una unos unas el la los las de del en con para por como cual que y o a al lo es me mi tu su se no si ' +
 	'i want would like need make write create build the an and or to of in on for with how do does can could you please my me is are it this that there some a').split(' ').reduce((map, word) => (map[word] = 1, map), {});
 
+// The same by the start of the word: the Spanish of the topic in any form (autenticados, protejo, usuarios...)
+var ESSTEM = [['autentic', 'authentication'], ['proteg', 'protect'], ['protej', 'protect'], ['usuari', 'user'], ['sesi', 'session'], ['permis', 'permission'], ['contrase', 'password'], ['archiv', 'file'], ['descarg', 'download'], ['correo', 'email'], ['notific', 'notification'], ['formular', 'form'], ['cifr', 'encrypt'], ['encript', 'encrypt'], ['tarea', 'job'], ['programad', 'schedule'], ['validac', 'validation'], ['valida', 'validate'], ['lectur', 'read'], ['imagen', 'image'], ['busca', 'search'], ['paginac', 'pagination'], ['cach', 'cache'], ['traduc', 'translate'], ['idioma', 'language']];
+
+function stemof(word) {
+	for (var i = 0; i < ESSTEM.length; i++) {
+		if (word.indexOf(ESSTEM[i][0]) === 0)
+			return ESSTEM[i][1];
+	}
+	return '';
+}
+
 // The pages of Forge are in English: the words of the topic that people write in Spanish are translated
-var ES = { componente: 'component', componentes: 'component', formulario: 'form', formularios: 'form', ruta: 'route', rutas: 'route', 'acción': 'action', accion: 'action', esquema: 'schema', pantalla: 'page', 'botón': 'button', boton: 'button', tabla: 'table', lista: 'list', vista: 'view', vistas: 'view', 'validación': 'validation', 'autenticación': 'authentication', 'sesión': 'session', archivo: 'file', archivos: 'file', subir: 'upload', estilos: 'css', 'diseño': 'design' };
+var ES = { componente: 'component', componentes: 'component', formulario: 'form', formularios: 'form', ruta: 'route', rutas: 'route', 'acción': 'action', accion: 'action', esquema: 'schema', pantalla: 'page', 'botón': 'button', boton: 'button', tabla: 'table', lista: 'list', vista: 'view', vistas: 'view', 'validación': 'validation', 'autenticación': 'authentication', 'sesión': 'session', archivo: 'file', archivos: 'file', subir: 'upload', estilos: 'css', 'diseño': 'design', memoria: 'memory', sistema: 'system', libre: 'free', usuario: 'user', usuarios: 'user', 'contraseña': 'password', correo: 'email', fecha: 'date', 'configuración': 'config', configuracion: 'config', 'servidor': 'server', 'base': 'database' };
 
 // The pages of Forge still write some action names with a slash (Products/query). The conventions of Total.js 5 use a pipe (Products|query), and a small
 // model copies what it reads: the text of a page is put right before it goes to the model.
@@ -89,7 +111,7 @@ exports.conventions = conventions;
 // The words of the prompt that matter, and the product of Forge that the prompt is about
 function route(text) {
 
-	var words = text.toLowerCase().replace(/[^a-z0-9áéíóúñü._-]+/g, ' ').split(' ').filter(word => word.length > 2 && !STOP[word]).map(word => ES[word] || word);
+	var words = text.toLowerCase().replace(/[^a-z0-9áéíóúñü._-]+/g, ' ').split(' ').filter(word => word.length > 2 && !STOP[word]).map(word => ES[word] || stemof(word) || word);
 	var product = '';
 
 	// Someone who wants to make a component is looking for the recipe that writes one
@@ -112,6 +134,152 @@ function parse(text) {
 	} catch (e) {
 		return null;
 	}
+}
+
+// The index of Forge (llms.txt): every page with its title, its address in Markdown and its description, kept for a day. Without an answer it is
+// tried again after ten minutes.
+var INDEXTTL = 24 * 60 * 60 * 1000;
+var INDEXRETRY = 10 * 60 * 1000;
+
+function forgeurl() {
+	return (CONF.forgeurl || 'https://forge.totaljs.es').replace(/\/+$/, '');
+}
+
+function parseindex(text) {
+
+	var items = [];
+	var section = '';
+
+	(text || '').split('\n').forEach(function(line) {
+
+		var head = line.match(/^## (.+)$/);
+
+		if (head) {
+			section = head[1].trim();
+			return;
+		}
+
+		var match = line.match(/^- \[([^\]]+)\]\((https?:\/\/[^)\s]+\.md)\)(?::\s*(.*))?$/);
+
+		if (match)
+			items.push({ section: section, title: match[1], url: match[2], description: match[3] || '' });
+	});
+
+	return items;
+}
+
+exports.parseindex = parseindex;
+
+function get(url, callback) {
+	RESTBuilder.GET(url).text().timeout(8000).maxlength(3 * 1024 * 1024).exec(function(err, response, output) {
+		callback(err || !output || output.status >= 400 || typeof(response) !== 'string' ? null : response);
+	});
+}
+
+// callback(items): an empty list when the index is not available
+function loadindex(callback) {
+
+	var cache = MAIN.forgeindex;
+
+	if (cache && cache.until > Date.now()) {
+		callback(cache.items);
+		return;
+	}
+
+	get(forgeurl() + '/llms.txt', function(text) {
+		var items = text ? parseindex(text) : [];
+		MAIN.forgeindex = { items: items, until: Date.now() + (items.length ? INDEXTTL : INDEXRETRY) };
+		callback(items);
+	});
+}
+
+exports.loadindex = loadindex;
+
+// The sections of the index that are not documentation of a product
+var NOTDOCS = /^(Start here|Recorded performance benchmarks|Products and versions|Optional|Agent navigation and usage)$/i;
+
+// The pages of the index for the words of the prompt, the best first: a word in the title counts three, in the address two, in the description one
+exports.rank = function(items, asked, max) {
+
+	var words = (asked.query || '').split(' ').filter(word => word.length > 2);
+
+	if (!words.length)
+		return [];
+
+	var want = null;
+
+	if (asked.product === 'total5')
+		want = /^Total\.js 5/i;
+	else if (asked.product === 'jcomponent')
+		want = /^(jComponent|Components)/i;
+	else if (!/\b(openplatform|cms|flow|todomator|uibuilder|ui-builder)\b/.test(asked.query || ''))
+		want = /^(Total\.js 5|jComponent|Components)/i;
+
+	return items.filter(item => !NOTDOCS.test(item.section) && (!want || want.test(item.section))).map(function(item) {
+		var title = item.title.toLowerCase();
+		var slug = item.url.toLowerCase();
+		var description = item.description.toLowerCase();
+		var score = 0;
+		var hits = 0;
+		words.forEach(function(word) {
+			var hit = 0;
+			if (title.indexOf(word) !== -1)
+				hit += 3;
+			if (slug.indexOf(word) !== -1)
+				hit += 2;
+			if (description.indexOf(word) !== -1)
+				hit++;
+			score += hit;
+			hits += hit ? 1 : 0;
+		});
+		return { item: item, score: score, hits: hits };
+	}).filter(entry => entry.score >= 3 && (entry.hits >= 2 || words.length === 1)).sort((a, b) => b.score - a.score).slice(0, max).map(entry => entry.item);
+};
+
+// The text of a page of Forge without the lines of its header (framework, hashes, snapshot...)
+exports.pagebody = function(markdown) {
+	return (markdown || '').replace(/^(Framework|Product|Language|Content-SHA256|Snapshot|Sources|Review|Source):.*\n/gm, '').replace(/\n{3,}/g, '\n\n').trim();
+};
+
+// The pages of the documents of Forge for the request. callback(found) when there are pages, otherwise empty() is called (the caller tries the MCP server)
+function fromdocs(run, asked, pages, recipetext, callback, empty) {
+
+	loadindex(function(items) {
+
+		var chosen = items.length ? exports.rank(items, asked, pages + 4) : [];
+
+		if (!chosen.length) {
+			empty();
+			return;
+		}
+
+		var read = chosen.slice(0, pages);
+		var found = [];
+		var blocks = [];
+
+		read.wait(function(item, next) {
+			get(item.url, function(markdown) {
+				var body = markdown ? exports.pagebody(markdown) : '';
+				if (body) {
+					found.push({ title: item.title, url: item.url.replace(/\.md$/, '/') });
+					blocks.push('### {0} ({1})\n{2}'.format(item.title, item.url, conventions(body.substring(0, CONF.forgechars || 3500))));
+				}
+				next();
+			});
+		}, function() {
+
+			if (!blocks.length) {
+				empty();
+				return;
+			}
+
+			var more = chosen.slice(pages).map(item => '- {0} ({1}): {2}'.format(item.title, item.url, (item.description || '').substring(0, 120)));
+
+			run.knowledge = (recipetext ? (recipetext + '\n\n') : '') + 'Pages of Forge (' + forgeurl() + ') that match the request of the user. Follow them: they are the documentation of Total.js 5 and jComponent 20.\n\n' + blocks.join('\n\n') + (more.length ? ('\n\nOther pages that may help (read one with the fetch tool):\n' + more.join('\n')) : '');
+
+			callback(found);
+		});
+	});
 }
 
 // callback([{ title, url }]) with the pages that were added to run.knowledge (an empty list when there is nothing to add)
@@ -139,6 +307,10 @@ exports.prefetch = function(run, text, callback_) {
 	mine = mine.filter(r => (run.shown || []).indexOf(r.id) === -1);
 	run.recipeids = mine.map(r => r.id);
 
+	// A small model reads one page when it has a recipe: the recipe is the exact answer and a second page that is only near the topic leads it away
+	if (mine.length && MODS.agent.smallmodel(run.model))
+		pages = Math.min(pages, 1);
+
 	var recipetext = mine.length ? ('Recipes of Totem for this request. Follow them exactly: names, style and the way each thing is answered. Do not add anything that is not needed (no user interface for a server question).\n\n' + mine.map(r => '### ' + r.title + '\n' + r.body).join('\n\n')) : '';
 	var listed = mine.map(r => ({ title: r.title, url: '' }));
 
@@ -150,75 +322,95 @@ exports.prefetch = function(run, text, callback_) {
 		};
 	})(callback_);
 
-	if (!pages || !run.mcp || !run.mcp.tools.forge__Forge_search || !run.mcp.tools.forge__Forge_page || (text || '').trim().length < MINLENGTH || /^\//.test(text.trim())) {
+	if (!pages || (text || '').trim().length < MINLENGTH || /^\//.test(text.trim())) {
 		callback([]);
 		return;
 	}
 
 	var asked = route(text.trim());
+	var canmcp = !!(run.mcp && run.mcp.tools.forge__Forge_search && run.mcp.tools.forge__Forge_page);
 
-	function search(input, next) {
-		MODS.mcpclient.call(run, 'forge__Forge_search', { input: input }, function(err, output) {
-			var json = err ? null : parse(output);
-			next((json && json.results) || []);
-		}, 8000);
+	// First the documents of Forge (llms.txt and the pages in Markdown): no server to start and nothing to ask. The MCP server comes after, when they gave nothing.
+	if (CONF.forge !== false && CONF.forgedocs !== false && MODS.instructions.istotaljs(run.root)) {
+		fromdocs(run, asked, pages, recipetext, callback, function() {
+			canmcp ? viamcp() : callback([]);
+		});
+		return;
 	}
 
-	var input = { query: asked.query, limit: 6 };
+	if (!canmcp) {
+		callback([]);
+		return;
+	}
 
-	if (asked.product)
-		input.product = asked.product;
+	viamcp();
 
-	search(input, function(results) {
+	// The MCP server of Forge: its search and its pages
+	function viamcp() {
 
-		// A search that is limited to a product and finds nothing is repeated without the limit
-		if (!results.length && asked.product) {
-			delete input.product;
-			search(input, next);
-			return;
-		}
-
-		next(results);
-	});
-
-	function next(results) {
-
-		if (!results.length) {
-			callback([]);
-			return;
-		}
-
-		var chosen = results.slice(0, pages);
-		var found = [];
-		var blocks = [];
-
-		chosen.wait(function(item, next) {
-
-			MODS.mcpclient.call(run, 'forge__Forge_page', { input: { section: item.section, slug: item.slug, max_chars: CONF.forgechars || 3500 } }, function(err, content) {
-
-				var page = err ? null : parse(content);
-
-				if (page && page.markdown) {
-					found.push({ title: item.title, url: item.url || page.url || '' });
-					blocks.push('### {0} ({1})\n{2}'.format(item.title, item.url || page.url || '', conventions(page.markdown)));
-				}
-
-				next();
+		function search(input, next) {
+			MODS.mcpclient.call(run, 'forge__Forge_search', { input: input }, function(err, output) {
+				var json = err ? null : parse(output);
+				next((json && json.results) || []);
 			}, 8000);
+		}
 
-		}, function() {
+		var input = { query: asked.query, limit: 6 };
 
-			if (!blocks.length) {
+		if (asked.product)
+			input.product = asked.product;
+
+		search(input, function(results) {
+
+			// A search that is limited to a product and finds nothing is repeated without the limit
+			if (!results.length && asked.product) {
+				delete input.product;
+				search(input, next);
+				return;
+			}
+
+			next(results);
+		});
+
+		function next(results) {
+
+			if (!results.length) {
 				callback([]);
 				return;
 			}
 
-			// The other results of the search are listed, so that the model can read them with the page tool
-			var more = results.slice(pages).map(r => '- {0} ({1} {2}): {3}'.format(r.title, r.section, r.slug, (r.description || '').substring(0, 120)));
+			var chosen = results.slice(0, pages);
+			var found = [];
+			var blocks = [];
 
-			run.knowledge = (recipetext ? (recipetext + '\n\n') : '') + 'Pages of Forge (https://forge.totaljs.es) that match the request of the user. Follow them: they are the documentation of Total.js 5 and jComponent 20.\n\n' + blocks.join('\n\n') + (more.length ? ('\n\nOther pages that may help (read one with forge__Forge_page, arguments { input: { section, slug } }):\n' + more.join('\n')) : '');
+			chosen.wait(function(item, next) {
 
-			callback(found);
-		});
+				MODS.mcpclient.call(run, 'forge__Forge_page', { input: { section: item.section, slug: item.slug, max_chars: CONF.forgechars || 3500 } }, function(err, content) {
+
+					var page = err ? null : parse(content);
+
+					if (page && page.markdown) {
+						found.push({ title: item.title, url: item.url || page.url || '' });
+						blocks.push('### {0} ({1})\n{2}'.format(item.title, item.url || page.url || '', conventions(page.markdown)));
+					}
+
+					next();
+				}, 8000);
+
+			}, function() {
+
+				if (!blocks.length) {
+					callback([]);
+					return;
+				}
+
+				// The other results of the search are listed, so that the model can read them with the page tool
+				var more = results.slice(pages).map(r => '- {0} ({1} {2}): {3}'.format(r.title, r.section, r.slug, (r.description || '').substring(0, 120)));
+
+				run.knowledge = (recipetext ? (recipetext + '\n\n') : '') + 'Pages of Forge (https://forge.totaljs.es) that match the request of the user. Follow them: they are the documentation of Total.js 5 and jComponent 20.\n\n' + blocks.join('\n\n') + (more.length ? ('\n\nOther pages that may help (read one with forge__Forge_page, arguments { input: { section, slug } }):\n' + more.join('\n')) : '');
+
+				callback(found);
+			});
+		}
 	}
 };

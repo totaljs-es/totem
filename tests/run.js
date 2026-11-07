@@ -100,6 +100,8 @@ Test.push('boot', function(next) {
 	ON('ready', function() {
 		NEWAIMODEL('fake', fake);
 		// The data is copied: a part keeps changing after the event, like on the wire
+		// The tests never go to the real Forge: the documents of Forge have their own test with a server of this computer
+		CONF.forgedocs = false;
 		FUNC.onevent = (sessionid, type, data) => events.push({ n: ++eventcount, sessionid: sessionid, type: type, data: JSON.parse(JSON.stringify(data)) });
 		check('the application starts', true);
 		check('the tools are registered as actions', !!F.actions['Tools|read'] && !!F.actions['Tools|bash']);
@@ -675,7 +677,7 @@ Test.push('sub-agents and commands', async function(next) {
 	Total.Fs.mkdirSync(Total.Path.join(PROJECT, '.totem/commands'), { recursive: true });
 	Total.Fs.writeFileSync(Total.Path.join(PROJECT, '.totem/commands/review.md'), '---\ndescription: Review a file\n---\nReview $ARGUMENTS carefully.\n');
 	r = await api('projects_commands/' + projectid);
-	check('the commands and the agents of a project are listed', r.response.commands.length === 2 && r.response.commands[0].name === 'init' && r.response.commands[1].name === 'review' && r.response.commands[1].description === 'Review a file' && r.response.agents.length === 2);
+	check('the commands and the agents of a project are listed', r.response.commands.length === 3 && r.response.commands[0].name === 'init' && r.response.commands[1].name === 'new' && r.response.commands[2].name === 'review' && r.response.commands[2].description === 'Review a file' && r.response.agents.length === 2);
 
 	id = await session();
 	events.length = 0;
@@ -1052,6 +1054,14 @@ Test.push('LiteLLM', async function(next) {
 	r.response.forEach(m => by[m.id] = m);
 	check('LiteLLM lists each model once, with its context, tools, reasoning and price', r.response.length === 3 && by['gpt-a'].context === 128000 && by['gpt-a'].tools === true && by['gpt-a'].reasoning === false && by['gpt-a'].free === false && by['gpt-a'].price.input === 0.000001 && by['gpt-a'].price.output === 0.000002);
 	check('a model with no cost is free and a model with no information has nulls', by['local-b'].free === true && by['local-b'].tools === false && by['local-b'].context === 8192 && by['unknown-c'].tools === null && by['unknown-c'].context === null && by['unknown-c'].price === null);
+	check('LiteLLM gives the model behind the name, and a gateway name does not hide a small model', by['gpt-a'].underlying === 'openai/gpt-4o' && by['unknown-c'].underlying === null && (function() {
+		MAIN.modelmeta['gw:qwen-local'] = { underlying: 'ollama/qwen2.5:1.5b' };
+		MAIN.modelmeta['gw:big'] = { underlying: 'openai/gpt-4o' };
+		var ok = MODS.agent.smallmodel('gw:qwen-local') && !MODS.agent.smallmodel('gw:big') && !MODS.agent.smallmodel('gw:nothing');
+		delete MAIN.modelmeta['gw:qwen-local'];
+		delete MAIN.modelmeta['gw:big'];
+		return ok;
+	})());
 	next();
 });
 
@@ -1305,6 +1315,22 @@ Test.push('small models: temperature, reminder, and Forge for every project', as
 	await idle(id);
 	check('a model of this computer is asked for the temperature of the config', mock.requests[0].temperature === 0.2);
 
+	// A gateway (LiteLLM) in front of Ollama: the window and the limit of a small model go in the request, which the gateway passes on
+	await api('providers_save', { name: 'Gateway', url: 'http://127.0.0.1:8111/v1', kind: 'litellm', models: ['small', 'big'], meta: { small: { id: 'small', underlying: 'ollama_chat/qwen2.5:1.5b' }, big: { id: 'big', underlying: 'openai/gpt-4o' } } });
+	await new Promise(resolve => setTimeout(resolve, 200));
+	var gw = await session({ model: 'gateway:small' });
+	events.length = 0;
+	mock.requests.length = 0;
+	await api('sessions_prompt/' + gw, { text: 'hello there' });
+	await idle(gw);
+	check('Ollama behind a gateway gets its window and the limit of a small model', mock.requests[0].num_ctx === 16384 && mock.requests[0].repeat_penalty === 1.1 && mock.requests[0].max_tokens === CONF.ollamapredictsmall);
+	var gb = await session({ model: 'gateway:big' });
+	events.length = 0;
+	mock.requests.length = 0;
+	await api('sessions_prompt/' + gb, { text: 'hello there' });
+	await idle(gb);
+	check('and another model behind the gateway gets neither', mock.requests[0].num_ctx === undefined && mock.requests[0].max_tokens === undefined);
+
 	// The reminder goes in the request of a Total.js project, and only there
 	var fresh = Total.Path.join(TMP, 'fresh2');
 	Total.Fs.mkdirSync(fresh, { recursive: true });
@@ -1402,6 +1428,8 @@ Test.push('small models: temperature, reminder, and Forge for every project', as
 	check('code with spaces is sent back to the model once, with what is wrong', requests.length === 2 && /spaces-indent/.test(requests[1].messages[requests[1].messages.length - 1].content) && /TABS/.test(requests[1].messages[requests[1].messages.length - 1].content));
 	r = await api('sessions_messages/' + tid);
 	var parts = r.response.filter(m => m.role === 'assistant').pop().parts;
+	check('the request to correct the code does not carry the reminder of the style', !/in its style/.test(requests[1].messages[requests[1].messages.length - 1].content));
+	check('a model of up to 4 billion parameters is known by its name', MODS.agent.smallmodel('ollama:qwen2.5:1.5b') && MODS.agent.smallmodel('local:llama3.2:3b') && MODS.agent.smallmodel('x:phi3:3.8b') && !MODS.agent.smallmodel('ollama:qwen2.5:7b') && !MODS.agent.smallmodel('openai:gpt-4o') && !MODS.agent.smallmodel('fake'));
 	check('the conversation says that the code was checked, and has the corrected answer', parts.some(p => p.type === 'selfcheck' && p.data.rules.indexOf('spaces-indent') !== -1) && parts.filter(p => p.type === 'text').pop().data.text.indexOf('\t$.plain') !== -1);
 
 	await ask('show me a route that answers GET /hello', [spaces, spaces, 'never']);
@@ -2333,10 +2361,11 @@ Test.push('recipes of Totem', function(next) {
 	check('a greeting and a word of the topic alone get nothing', ids('hello how are you').length === 0 && ids('please write the text').length === 0);
 	check('a question about ids and dates gets UID and NOW, one about modules gets MODS', ids('How do I create an id and a creation date for a new record in Total.js 5?')[0] === 'uid-now' && ids('Show how to call a function of one of my modules from a Total.js 5 action.').indexOf('mods') !== -1);
 	check('the pages of Forge are written with the pipe of the conventions', MODS.knowledge.conventions("NEWACTION('Products/query', {\n}); ROUTE('+API ? -products --> Products/query'); NEWACTION('Reports/Categories/list', {}); var url = 'a/b';") === "NEWACTION('Products|query', {\n}); ROUTE('+API ? -products --> Products|query'); NEWACTION('Reports|Categories|list', {}); var url = 'a/b';");
+	check('a stem catches the Spanish in any form', ids('ahora como la protejo para que solo entren usuarios autenticados?')[0] === 'auth' && MODS.knowledge.route('como valido los usuarios autenticados').query.indexOf('authentication') !== -1);
 	check('at most two recipes by default and the best first', ids('route action nosql config cron websocket auth').length === 2 && MODS.knowledge.recipes('route action nosql', 1).length === 1);
-	check('every recipe has a title, keywords and a body with code', MODS.knowledge.recipes('route routes ruta controller action newaction nosql config cron websocket auth view plugin jcomponent restbuilder translate es5 func mods callback fs uid', 99).length === 18 && MODS.knowledge.recipes('nosql', 1)[0].body.indexOf('```js') !== -1);
+	check('every recipe has a title, keywords and a body with code', MODS.knowledge.recipes('route routes ruta controller action newaction nosql config cron websocket auth view plugin jcomponent restbuilder translate es5 func mods callback fs uid memory empiezo', 99).length === 20 && MODS.knowledge.recipes('nosql', 1)[0].body.indexOf('```js') !== -1);
 
-	var all = MODS.knowledge.recipes('route routes ruta controller action newaction nosql config cron websocket auth view plugin jcomponent restbuilder translate es5 func mods callback fs uid', 99);
+	var all = MODS.knowledge.recipes('route routes ruta controller action newaction nosql config cron websocket auth view plugin jcomponent restbuilder translate es5 func mods callback fs uid memory empiezo', 99);
 	var codes = all.map(r => (r.body.match(/```js\n[\s\S]*?```/g) || []).map(b => b.replace(/```js\n|```/g, ''))).reduce((list, items) => list.concat(items), []);
 	check('the code of the recipes follows the conventions it teaches: tabs, no let or const, no arrow functions', codes.length > 10 && codes.every(code => !/^ {2,}\S/m.test(code) && !/^\s*(let|const)\s/m.test(code) && !/=>/.test(code) && !/`/.test(code)));
 
@@ -2358,6 +2387,173 @@ Test.push('recipes of Totem', function(next) {
 			MODS.knowledge.prefetch(run3, 'Study this project and write AGENTS.md in its root. Read package.json and config.', function(pages3) {
 				check('the recipes of the last turn are not shown again, and a command looks nothing up', run1.recipeids.length > 0 && run2.recipeids.length === 0 && !run2.knowledge && pages3.length === 0 && !run3.knowledge);
 				next();
+			});
+		});
+	});
+});
+
+Test.push('files from the answer of a small model', function(next) {
+
+	var root = Total.Path.join(TMP, 'newfiles');
+	Total.Fs.mkdirSync(root, { recursive: true });
+	Total.Fs.writeFileSync(Total.Path.join(root, 'old.js'), 'x');
+	var run = { root: root, asked: 'crea el package.json y el archivo schemas/a.js' };
+	var files = MODS.agent.newfiles(run, [
+		'Step 1: `package.json`', '```json', '{ "name": "x" }', '```',
+		'```js', '// schemas/a.js', 'var a = 1;', '```',
+		'```js', '// old.js', 'var b = 1;', '```',
+		'```bash', 'echo hi > run.sh', '```',
+		'```js', '// ../outside.js', 'x', '```',
+		'**readme.txt**', '```', 'not asked by the user', '```'
+	].join('\n'));
+
+	check('the blocks with a path, or named by the line before and by the user, become files', files.length === 2 && files[0].path === 'package.json' && files[1].path === 'schemas/a.js' && files[1].content === '// schemas/a.js\nvar a = 1;\n');
+	check('a file that exists, a shell block, a path outside and a name that the user did not say are left alone', !files.some(f => /old\.js|run\.sh|outside|readme/.test(f.path)));
+	next();
+});
+
+Test.push('the write tool leaves out a first line that only names the file', async function(next) {
+
+	var id = await session({ autoaccept: true });
+	events.length = 0;
+	script = [
+		{ tools: [
+			{ id: 'n1', name: 'write', arguments: { path: 'named/index.js', content: '# index.js\nvar a = 1;\n' } },
+			{ id: 'n2', name: 'write', arguments: { path: 'named/ok.js', content: '// ok.js\nvar b = 1;\n' } },
+			{ id: 'n3', name: 'write', arguments: { path: 'named/package.json', content: '// package.json\n{ "name": "x" }\n' } },
+			{ id: 'n4', name: 'write', arguments: { path: 'named/run.sh', content: '# run.sh\necho hi\n' } }
+		] },
+		{ content: 'Done.' }
+	];
+	await api('sessions_prompt/' + id, { text: 'write them' });
+	await idle(id);
+	var read = name => Total.Fs.readFileSync(Total.Path.join(PROJECT, 'named', name), 'utf8');
+	check('a # name in a .js file and a // name in a .json file are left out', read('index.js') === 'var a = 1;\n' && read('package.json') === '{ "name": "x" }\n');
+	check('a comment that the language allows stays, and so does one in a shell script', read('ok.js') === '// ok.js\nvar b = 1;\n' && read('run.sh') === '# run.sh\necho hi\n');
+	next();
+});
+
+Test.push('/new makes the files of an application and /init makes AGENTS.md for a small model', async function(next) {
+
+	var dir = Total.Path.join(TMP, 'scaffold');
+	Total.Fs.mkdirSync(dir, { recursive: true });
+	Total.Fs.writeFileSync(Total.Path.join(dir, 'index.js'), 'mine');
+	var plan = MODS.commands.scaffold(dir, 'My Tasks');
+	check('the scaffold has the files of an application and leaves the ones that exist', plan.files.some(f => f.path === 'package.json') && !plan.files.some(f => f.path === 'index.js') && plan.skipped.join() === 'index.js');
+	var pkg = JSON.parse(plan.files.find(f => f.path === 'package.json').content);
+	check('its package.json depends on total5 and the name is a slug', !!pkg.dependencies.total5 && pkg.name === 'my-tasks' && pkg.scripts.start === 'node index.js');
+	check('its first route answers', /ROUTE\('GET \/'/.test(plan.files.find(f => f.path === 'controllers/index.js').content));
+
+	Total.Fs.mkdirSync(Total.Path.join(dir, 'controllers'), { recursive: true });
+	Total.Fs.writeFileSync(Total.Path.join(dir, 'package.json'), JSON.stringify({ name: 'demo', description: 'A demo', scripts: { test: 'node t.js' }, dependencies: { total5: '1' } }));
+	var agents = MODS.commands.agents(dir);
+	check('AGENTS.md is made from the files: folders, scripts and the conventions of Total.js', /^# demo/.test(agents) && /A demo/.test(agents) && /`controllers\/`: routes/.test(agents) && /npm run test/.test(agents) && /Total\.js 5: ES5/.test(agents) && !/## Run\n\n\n/.test(agents));
+	Total.Fs.writeFileSync(Total.Path.join(dir, 'AGENTS.md'), 'x');
+	check('and an AGENTS.md that exists is not replaced', MODS.commands.agents(dir) === '');
+
+	// In a session: /new writes the files with the write tool
+	var id = await session({ autoaccept: true });
+	events.length = 0;
+	await api('sessions_prompt/' + id, { text: '/new fresh app' });
+	await idle(id);
+	check('/new writes the files in the project of the session', Total.Fs.existsSync(Total.Path.join(PROJECT, 'controllers/index.js')) && /fresh-app/.test(Total.Fs.readFileSync(Total.Path.join(PROJECT, 'config'), 'utf8')) && events.some(e => e.type === 'part.created' && e.data.part.type === 'tool' || e.type === 'part.updated'));
+	next();
+});
+
+Test.push('save a code block of an answer', async function(next) {
+
+	var id = await session();
+	events.length = 0;
+	script = [{ content: '```js\n// schemas/saved.js\nvar x = 1;\n```' }];
+	await api('sessions_prompt/' + id, { text: 'make it' });
+	await idle(id);
+	var r = await api('sessions_messages/' + id);
+	var assistant = r.response.find(m => m.role === 'assistant');
+	var file = Total.Path.join(PROJECT, 'schemas/saved.js');
+
+	r = await api('sessions_saveblock/' + id, { messageid: assistant.id, path: 'schemas/saved.js', content: 'var x = 1;\n' });
+	check('a block is saved as the file of its path', r.response && r.response.path === 'schemas/saved.js' && Total.Fs.readFileSync(file, 'utf8') === 'var x = 1;\n');
+
+	r = await api('sessions_saveblock/' + id, { messageid: assistant.id, path: 'schemas/saved.js', content: 'var x = 2;\n' });
+	check('a file that exists is not replaced unless the user says so', r.response && r.response.exists === true && Total.Fs.readFileSync(file, 'utf8') === 'var x = 1;\n');
+
+	r = await api('sessions_saveblock/' + id, { messageid: assistant.id, path: 'schemas/saved.js', content: 'var x = 2;\n', replace: true });
+	check('and is replaced when the user does', Total.Fs.readFileSync(file, 'utf8') === 'var x = 2;\n');
+
+	var refused = 0;
+	for (var path of ['../outside.js', '/etc/passwd', '.git/config', '.env', 'a/.env.local']) {
+		r = await api('sessions_saveblock/' + id, { messageid: assistant.id, path: path, content: 'x' });
+		if (!r.response || !r.response.path)
+			refused++;
+	}
+	check('a path outside the project, in .git or a secrets file is refused', refused === 5 && !Total.Fs.existsSync(Total.Path.join(PROJECT, 'a/.env.local')));
+
+	r = await api('sessions_undo/' + id, { messageid: assistant.id });
+	check('the save is in the undo of the message', !Total.Fs.existsSync(file));
+	next();
+});
+
+Test.push('Forge without MCP: llms.txt and the pages in Markdown', function(next) {
+
+	var Http = require('http');
+	var hits = [];
+	var index = [
+		'# Forge', '', '## Start here', '', '- [Why choose Total.js](http://127.0.0.1:{port}/en/docs/why.md): Reasons', '',
+		'## Total.js 5 (backend)', '',
+		'- [Validate a JSON body with an action](http://127.0.0.1:{port}/en/total5/validate-json-body.md): Define an input schema on an action.',
+		'- [Read URL parameters in a route](http://127.0.0.1:{port}/en/total5/routes-with-params.md): Declare segments such as {id}.',
+		'', '## jComponent 20 (frontend)', '',
+		'- [A counter component](http://127.0.0.1:{port}/en/jcomponent/counter.md): COMPONENT with a button.'
+	].join('\n');
+
+	var server = Http.createServer(function(req, res) {
+		hits.push(req.url);
+		res.setHeader('content-type', 'text/plain; charset=utf-8');
+		if (req.url === '/llms.txt')
+			res.end(index.split('{port}').join(server.address().port));
+		else if (req.url === '/en/total5/validate-json-body.md')
+			res.end('# Validate a JSON body with an action\n\nSource: x\nFramework: total5@0.0.19\nContent-SHA256: abc\nSnapshot: def\nSources: s\nReview: not-recorded\n\nUse `input` with NEWACTION(\'Users/create\', {}).\n');
+		else {
+			res.statusCode = 404;
+			res.end('no');
+		}
+	});
+
+	server.listen(0, '127.0.0.1', function() {
+
+		var base = 'http://127.0.0.1:' + server.address().port;
+		var items = MODS.knowledge.parseindex(index.split('{port}').join(server.address().port));
+		check('the index is read: title, address in Markdown, description and the section', items.length === 4 && items[1].section === 'Total.js 5 (backend)' && /validate-json-body\.md$/.test(items[1].url) && /input schema/.test(items[1].description));
+
+		var ranked = MODS.knowledge.rank(items, MODS.knowledge.route('How do I validate a JSON body of an action in Total.js 5?'), 2);
+		check('the words of the prompt rank the pages of the product, never the sections that are not documentation', ranked.length >= 1 && /validate-json-body/.test(ranked[0].url) && !ranked.some(r => r.section === 'Start here'));
+		check('a prompt about the interface looks in jComponent', MODS.knowledge.rank(items, MODS.knowledge.route('write a jcomponent counter component'), 2)[0].title === 'A counter component');
+
+		CONF.forgedocs = true;
+		CONF.forgeurl = base;
+		MAIN.forgeindex = null;
+
+		var run = { root: ROOT, mcp: null, shown: [], command: false };
+
+		MODS.knowledge.prefetch(run, 'How do I validate a JSON body of an action in Total.js 5?', function(pages) {
+
+			check('the page of Forge goes into the prompt without the header and with the pipe in action names', pages.some(p => /Validate a JSON body/.test(p.title)) && /Use `input` with NEWACTION\('Users\|create'/.test(run.knowledge) && !/Content-SHA256|Snapshot:/.test(run.knowledge));
+
+			var before = hits.filter(h => h === '/llms.txt').length;
+			MODS.knowledge.prefetch({ root: ROOT, mcp: null, shown: [], command: false }, 'How do I read the parameters of a route in Total.js 5?', function() {
+				check('the index is kept: the second prompt does not download it again', hits.filter(h => h === '/llms.txt').length === before);
+
+				// Forge down: no pages, no error, and the index is tried again later
+				server.close();
+				MAIN.forgeindex = null;
+				var down = { root: ROOT, mcp: null, shown: [], command: false };
+				MODS.knowledge.prefetch(down, 'How do I validate a JSON body of an action in Total.js 5?', function(none) {
+					check('when Forge does not answer there are no pages and nothing fails', none.every(p => !/Validate/.test(p.title)) && !/Pages of Forge/.test(down.knowledge) && MAIN.forgeindex && MAIN.forgeindex.items.length === 0);
+					CONF.forgedocs = false;
+					CONF.forgeurl = '';
+					MAIN.forgeindex = null;
+					next();
+				});
 			});
 		});
 	});

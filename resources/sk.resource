@@ -42,6 +42,7 @@ T18qzrb : Ďalšie:
 T18znc : Chat
 T19ewry0 : Jazyk
 T19hue : Tmavý
+T19mq5xw : Nahradiť
 T1a41cf3 : Priečinok projektu neexistuje
 T1a6ui : Upraviť
 T1b276 : Rozvetviť
@@ -94,6 +95,7 @@ T1l3laja : Nie je čo opakovať
 T1li67wl : Cesta je mimo projektu
 T1lnf930 : bez nástrojov
 T1loq3f : každých
+T1mi2x05 : Uložiť ako
 T1n3o : Nízka
 T1n568g3 : zmenené v gite
 T1na3b0f : Zastaviť, Esc
@@ -126,6 +128,7 @@ T1wcdox2 : Poskytovateľ je každý server s API kompatibilným s OpenAI: OpenRo
 T1xnp73t : API kľúč
 T1xvlny2 : Otvoriť tento priečinok
 T1y4 : OK
+T1yo6pk4 : Starý obsah zostane v Späť.
 T1yua79q : Napíš nový názov.
 T1z139hr : Pridať poskytovateľa
 T2ctr : vypnuté
@@ -165,6 +168,7 @@ Tcixuke : Zlúčené do projektu
 Tclyls1 : Dostupné modely
 Td7kjxa : Najprv vyber model. Pridaj poskytovateľa v Nastaveniach.
 Tekde62 : Otvoriť shell
+Teydlyk : Cesta je mimo projektu alebo chránená
 Tfcovm0 : Najprv vyber priečinok.
 Tfpufbw : commitov
 Tg8aw6k : Priečinok:

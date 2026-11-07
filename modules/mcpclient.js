@@ -16,7 +16,8 @@ exports.servers = function(root) {
 
 	var servers = {};
 
-	if (CONF.forge !== false && MODS.instructions.istotaljs(root)) {
+	// The documents of Forge already give the knowledge (llms.txt and its pages), so its MCP server, which asks for permission to start, is an extra: forgemcp
+	if (CONF.forge !== false && (CONF.forgemcp === true || CONF.forgedocs === false) && MODS.instructions.istotaljs(root)) {
 		try {
 			Object.assign(servers, JSON.parse(Total.Fs.readFileSync(PATH.private('mcp.json'), 'utf8')).servers);
 		} catch (e) {}

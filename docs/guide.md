@@ -48,6 +48,7 @@ The cost of each step is shown when the model has a price; a free or local model
 ## Commands, instructions and skills
 
 - **`/init`** studies the project and writes an `AGENTS.md` with what a person needs to know to work on it.
+- **`/new <name>`** creates the files of a new Total.js 5 application in the folder.
 - **Your own commands.** A Markdown file in `.totem/commands/` becomes `/name`.
 - **Instructions.** `AGENTS.md` (and the files in `.totem/instructions.json`) are given to the model in every session of the project.
 - **Skills and agents.** `.totem/skills/` and `.totem/agents/` add what the model can load or delegate to.

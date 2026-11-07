@@ -42,6 +42,7 @@ T18qzrb : Próxima:
 T18znc : Chat
 T19ewry0 : Idioma
 T19hue : Oscuro
+T19mq5xw : Reemplazar
 T1a41cf3 : La carpeta del proyecto no existe
 T1a6ui : Editar
 T1b276 : Bifurcar
@@ -94,6 +95,7 @@ T1l3laja : No hay nada que rehacer
 T1li67wl : La ruta está fuera del proyecto
 T1lnf930 : sin herramientas
 T1loq3f : cada
+T1mi2x05 : Guardar como
 T1n3o : Bajo
 T1n568g3 : cambiados en git
 T1na3b0f : Parar, Esc
@@ -126,6 +128,7 @@ T1wcdox2 : Un proveedor es cualquier servidor con una API compatible con OpenAI:
 T1xnp73t : Clave de API
 T1xvlny2 : Abrir esta carpeta
 T1y4 : Aceptar
+T1yo6pk4 : El contenido anterior queda en Deshacer.
 T1yua79q : Escribe el nuevo nombre.
 T1z139hr : Añadir un proveedor
 T2ctr : apagado
@@ -165,6 +168,7 @@ Tcixuke : Fusionado en el proyecto
 Tclyls1 : Modelos disponibles
 Td7kjxa : Elige primero un modelo. Añade un proveedor en Ajustes.
 Tekde62 : Abrir shell
+Teydlyk : La ruta está fuera del proyecto o protegida
 Tfcovm0 : Elige primero una carpeta.
 Tfpufbw : commits
 Tg8aw6k : Carpeta:
