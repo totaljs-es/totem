@@ -60,7 +60,11 @@ Shell technology is an open decision ([decisions](decisions.md)). Whatever it is
 ### Releasing
 
 1. Change the version in `package.json` and `config`, add its heading to `CHANGELOG.md`, update the README (how to install it, the Status) and wait for the continuous integration to pass.
-2. **The first time only: publish the first version by hand.** A trusted publisher is configured on a package that exists, so `totaljs-totem` 0.1.0 is published once from your computer: `npm run release-check`, then `npm publish --access public` (it asks for your one time password; `prepack` makes the bundle). Then, in the settings of the package on npmjs.com, add a trusted publisher: GitHub Actions, organization `totaljs-es`, repository `totem`, workflow `release.yml`, no environment.
+2. **The first time only, npm needs a way in.** A trusted publisher is configured on a package that exists, and `totaljs-totem` does not exist until its first version is published. Either:
+   - add the secret `NPM_TOKEN` to the repository (or to the organization) with a token that can publish packages: the first release publishes from GitHub, with the provenance of the package; or
+   - publish 0.1.0 by hand from your computer: `npm run release-check`, `npm publish --access public`.
+
+   Then, in the settings of the package on npmjs.com, add the trusted publisher: GitHub Actions, organization `totaljs-es`, repository `totem`, workflow `release.yml`, no environment. From then on the workflow publishes without a token, and the secret can be deleted.
 3. Create a release on GitHub with the tag `v<version>`. The workflow skips the version that npm already has (the first one), and publishes the image.
 4. **The first image only:** the package `totem` appears in the packages of the organization as private. Make it public in its settings (*Change visibility*), or `docker pull` asks for a login.
 5. From then on, every release publishes both without anything by hand.

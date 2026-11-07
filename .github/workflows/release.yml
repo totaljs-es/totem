@@ -3,9 +3,12 @@ name: release
 # Publishes a release: the package totaljs-totem on npm and the image ghcr.io/totaljs-es/totem in the GitHub Container Registry. It runs when a release is
 # published on GitHub; the tag of the release has to be v<version> of package.json (see "Releasing" in docs/delivery.md). Nothing publishes from a branch.
 #
-# npm: the package totaljs-totem has a trusted publisher on npmjs.com (GitHub Actions, totaljs-es/totem, this file release.yml): no secret at all, and
-# npm adds the provenance by itself. A trusted publisher is set up on a package that exists, so the first version is published by hand (see "Releasing" in
-# docs/delivery.md); this workflow skips a version that npm already has, so the release of that first version only publishes the image.
+# npm needs ONE of these:
+#   - a trusted publisher for the package totaljs-totem on npmjs.com (GitHub Actions, totaljs-es/totem, this file release.yml): no secret at all, and npm adds
+#     the provenance by itself, or
+#   - the secret NPM_TOKEN: it is needed for the very first release, because a trusted publisher is set up on a package that exists. After that first release,
+#     set up the trusted publisher and delete the secret (see "Releasing" in docs/delivery.md).
+# A version that npm already has (one published by hand) is skipped, so that release only publishes the image.
 # The image needs no secrets: the workflow uses the GITHUB_TOKEN of the repository.
 
 on:

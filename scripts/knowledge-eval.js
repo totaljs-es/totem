@@ -291,6 +291,9 @@ async function answerof(url, token, sessionid) {
 		if (m.role !== 'assistant')
 			return;
 		m.parts.forEach(function(p) {
+			// After the check of the code the model answers again: the answer is the corrected one, not the first
+			if (p.type === 'selfcheck')
+				text.length = 0;
 			if (p.type === 'text')
 				text.push(p.data.text || '');
 		});
