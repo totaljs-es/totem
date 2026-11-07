@@ -120,12 +120,24 @@ exports.prefetch = function(run, text, callback_) {
 	var pages = CONF.forgepages == null ? 2 : CONF.forgepages;
 
 	run.knowledge = '';
+	run.recipeids = [];
+
+	// A command is a fixed instruction: it has nothing to look up
+	if (run.command) {
+		callback_([]);
+		return;
+	}
 
 	// The recipes of Totem, for a request about Total.js 5 (not for a slash command)
 	var mine = [];
 
 	if (CONF.recipes !== false && (text || '').trim().length >= MINLENGTH && !/^\//.test(text.trim()) && MODS.instructions.istotaljs(run.root))
 		mine = exports.recipes(text, CONF.reciperesults == null ? 2 : CONF.reciperesults);
+
+	// The recipes that the last turn showed are already in the conversation: showing them again makes a small model answer with the same example
+	// whatever the user says next
+	mine = mine.filter(r => (run.shown || []).indexOf(r.id) === -1);
+	run.recipeids = mine.map(r => r.id);
 
 	var recipetext = mine.length ? ('Recipes of Totem for this request. Follow them exactly: names, style and the way each thing is answered. Do not add anything that is not needed (no user interface for a server question).\n\n' + mine.map(r => '### ' + r.title + '\n' + r.body).join('\n\n')) : '';
 	var listed = mine.map(r => ({ title: r.title, url: '' }));

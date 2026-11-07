@@ -144,6 +144,25 @@ function withreminder(messages) {
 	return copy;
 }
 
+// Older answers of the assistant without their code blocks: a small model that sees its own code in the history writes it again for any prompt.
+// The last user prompt and what follows it stay as they are.
+function lighthistory(messages) {
+
+	var last = -1;
+	for (var i = messages.length - 1; i >= 0; i--) {
+		if (messages[i].role === 'user') {
+			last = i;
+			break;
+		}
+	}
+
+	return messages.map(function(m, index) {
+		if (index >= last || m.role !== 'assistant' || typeof(m.content) !== 'string' || m.content.indexOf('```') === -1)
+			return m;
+		return Object.assign({}, m, { content: m.content.replace(/```[\s\S]*?(```|$)/g, '(code omitted)').trim() });
+	});
+}
+
 // A model that cannot see gets the text of the prompt and a note in place of each image
 function withoutimages(messages) {
 	return messages.map(function(m) {
@@ -318,6 +337,7 @@ function history(messages, parts) {
 }
 
 exports.history = history;
+exports.lighthistory = lighthistory;
 
 // Starts a run. The user message is already stored. callback(err) is called when the run ends.
 exports.run = function(session, project, message, callback) {
@@ -380,6 +400,16 @@ exports.run = function(session, project, message, callback) {
 
 			run.messages = history(messages, parts);
 
+			// What the last turn already put in front of the model, and whether the prompt is a command (its text is a fixed instruction, not a question)
+			var lastuser = messages.filter(m => m.role === 'user').pop();
+			run.command = !!(lastuser && parts.some(p => p.messageid === lastuser.id && p.type === 'text' && p.data && p.data.expanded));
+			var lastknowledge = parts.filter(p => p.type === 'knowledge' && p.data && p.data.recipes).pop();
+			run.shown = lastknowledge ? lastknowledge.data.recipes : [];
+
+			// A small local model copies the code of its own earlier answers, whatever is asked next
+			if (CONF.lighthistory !== false && /^ollama:/.test(run.model || ''))
+				run.messages = lighthistory(run.messages);
+
 			// The MCP servers of the project that the user allows; their tools join the ones of Totem
 			MODS.mcpclient.connect(run, function() {
 
@@ -387,7 +417,7 @@ exports.run = function(session, project, message, callback) {
 				var last = run.messages[run.messages.length - 1];
 				MODS.knowledge.prefetch(run, last && last.role === 'user' ? last.content : '', function(pages) {
 					if (pages.length)
-						addpart(run, 'knowledge', { pages: pages }, true);
+						addpart(run, 'knowledge', { pages: pages, recipes: run.recipeids || [] }, true);
 					step(run, finish, fail);
 				});
 			});
@@ -543,7 +573,9 @@ function request(run, finish, fail) {
 		if (!tools.length) {
 
 			// The code of the answer is checked like the files that the tools write; the model corrects it once
-			var problems = (CONF.selfcheck !== false && !run.selfchecked && MODS.instructions.istotaljs(run.root)) ? MODS.conventions.answer(output.content || '') : [];
+			// Not for a command, and not for an answer that the limit cut: its last block is unfinished, and asking again only makes it longer
+			var cut = !!(output.usage && CONF.ollamapredict && output.usage.output >= CONF.ollamapredict * 0.98);
+			var problems = (CONF.selfcheck !== false && !run.selfchecked && !run.command && !cut && MODS.instructions.istotaljs(run.root)) ? MODS.conventions.answer(output.content || '') : [];
 
 			if (problems.length) {
 				run.selfchecked = true;

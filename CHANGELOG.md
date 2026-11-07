@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.3
+
+A small local model no longer answers every prompt with the same example, and `/init` no longer loops.
+
+- **History:** with an Ollama model the code of older answers is left out of the history (`lighthistory`, on by default), because a small model copies it for any prompt. The last turn keeps its code.
+- **Recipes:** a recipe that the last turn showed is not put in front of the model again.
+- **Commands:** `/init` and other commands look nothing up in Forge and are not checked against the conventions. An answer that the token limit cut is not checked either, so the model is not asked to write it again.
+
 ## 0.1.2
 
 The page of the package says what the repository says.

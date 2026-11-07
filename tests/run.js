@@ -2311,7 +2311,28 @@ Test.push('recipes of Totem', function(next) {
 	var all = MODS.knowledge.recipes('route routes ruta controller action newaction nosql config cron websocket auth view plugin jcomponent restbuilder translate es5 func mods callback fs uid', 99);
 	var codes = all.map(r => (r.body.match(/```js\n[\s\S]*?```/g) || []).map(b => b.replace(/```js\n|```/g, ''))).reduce((list, items) => list.concat(items), []);
 	check('the code of the recipes follows the conventions it teaches: tabs, no let or const, no arrow functions', codes.length > 10 && codes.every(code => !/^ {2,}\S/m.test(code) && !/^\s*(let|const)\s/m.test(code) && !/=>/.test(code) && !/`/.test(code)));
-	next();
+
+	// A small model copies what it sees: the history without old code, no recipe twice in a row, nothing to look up for a command
+	var old = MODS.agent.lighthistory([
+		{ role: 'user', content: 'make an action' },
+		{ role: 'assistant', content: 'Here:\n```js\nNEWACTION(1)\n```\nDone' },
+		{ role: 'user', content: 'hola' },
+		{ role: 'assistant', content: 'Now:\n```js\nNEWACTION(2)\n```' }
+	]);
+	check('old answers lose their code and the last turn keeps it', old[1].content === 'Here:\n(code omitted)\nDone' && old[3].content.indexOf('NEWACTION(2)') !== -1 && old[0].content === 'make an action' && old[2].content === 'hola');
+
+	var fake = (extra) => Object.assign({ root: ROOT, mcp: null, shown: [], command: false }, extra || {});
+	var run1 = fake();
+	MODS.knowledge.prefetch(run1, 'Create an API route and its action that lists tickets in Total.js 5.', function(pages1) {
+		var run2 = fake({ shown: run1.recipeids });
+		MODS.knowledge.prefetch(run2, 'Create an API route and its action that lists tickets in Total.js 5.', function(pages2) {
+			var run3 = fake({ command: true });
+			MODS.knowledge.prefetch(run3, 'Study this project and write AGENTS.md in its root. Read package.json and config.', function(pages3) {
+				check('the recipes of the last turn are not shown again, and a command looks nothing up', run1.recipeids.length > 0 && run2.recipeids.length === 0 && !run2.knowledge && pages3.length === 0 && !run3.knowledge);
+				next();
+			});
+		});
+	});
 });
 
 Test.push('the package: data folder and release check', function(next) {
