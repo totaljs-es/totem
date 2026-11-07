@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 128 128">
+  <title>Total.js Totem</title>
+  <defs>
+    <linearGradient id="mark" x2="0" y2="1">
+      <stop stop-color="#b4ee7b"/>
+      <stop offset="1" stop-color="#66b639"/>
+    </linearGradient>
+  </defs>
+  <path d="M97 55V49Q97 43 92 40L69 27Q64 24 59 27L36 40Q31 43 31 49V77Q31 83 36 86L59 99Q64 102 69 99L92 86Q97 83 97 77V71"
+        fill="none" stroke="url(#mark)" stroke-width="8" stroke-linecap="round"/>
+  <path d="m49 51 13 12-13 12m24 0h10" fill="none" stroke="#d9ffc0" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
