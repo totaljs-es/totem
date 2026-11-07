@@ -64,13 +64,23 @@ The script starts a temporary server (without the watcher) that uses the provide
 
 ## Results
 
-`qwen2.5:1.5b` (986 MB) on a Mac, Forge on, one run per case, the 29 cases of the set:
+`qwen2.5:1.5b` (986 MB) on a Mac, Forge on, the 29 cases of the set, with the style of the code counting (tabs, ES5...).
 
-| Step | Strict (with style) | Without style |
-|---|---|---|
-| Primer and skill only | 3/29 | not measured |
-| Recipes, without the fixes of the prompt | 3/29 | not measured |
-| Reminder without jComponent, new primer, retry without tools | 12/29 | not measured |
-| More recipes, Forge with the pipe, fairer cases | 16/29 | 22/29 |
+How the score went up while the knowledge was built (one run per case, so read it as a direction):
 
-Routes, actions, storage and jComponent pass completely without style. What still fails is the model: it writes a template literal where ES5 is asked, uses `require` for a setting, or breaks the syntax of a longer example. Cases and rules changed between the last two rows, so read them as a direction, not as a benchmark.
+| Step | Score |
+|---|---|
+| The primer and the skill only | 3/29 |
+| Reminder without jComponent, new primer, retry of empty answers | 12/29 |
+| More recipes, Forge with the pipe in action names, fairer cases | 16/29 |
+
+Routes, actions, storage and jComponent pass without counting style. What still fails is the model: a template literal where ES5 is asked, `require` for a setting, a syntax error in a longer example, a function that does not exist.
+
+**Does the correction of the code in the answer help?** Three runs of every case, with it off and on (`selfcheck`):
+
+| | Score | Time per answer | Runs that hit the limit of 240 s |
+|---|---|---|---|
+| `selfcheck : false` | 39/87 (45%) | 18 s | 0 |
+| `selfcheck : true` | 42/87 (48%) | 30 s | 3 |
+
+Eight cases got better, four worse and seventeen did not change: with a model this small the difference is within the noise (a small model does not answer the same way twice), and the correction costs about twelve seconds per answer that has code. The model often repeats the complaint instead of fixing the code, or fixes one thing and breaks another. It is left on because it catches what a person would not accept (a function that does not exist, a syntax error) and a bigger model should use it better, but that has not been measured: the only model on the computer where this was made is this one. If your model is small and slow, `selfcheck : false` is a fair choice.
