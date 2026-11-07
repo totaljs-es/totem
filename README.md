@@ -9,12 +9,12 @@
 <p align="center">
   <a href="https://github.com/totaljs-es/totem/actions/workflows/test.yml"><img src="https://github.com/totaljs-es/totem/actions/workflows/test.yml/badge.svg" alt="Tests"></a>
   <a href="https://www.npmjs.com/package/totaljs-totem"><img src="https://img.shields.io/npm/v/totaljs-totem" alt="npm version"></a>
-  <img src="https://img.shields.io/badge/license-MIT-blue" alt="MIT license">
-  <img src="https://img.shields.io/badge/node-%E2%89%A5%2022-3C873A" alt="Node.js 22 or newer">
-  <img src="https://img.shields.io/badge/Total.js-5-3F8F2A" alt="Total.js 5">
-  <img src="https://img.shields.io/badge/jComponent-20-3F8F2A" alt="jComponent 20">
-  <img src="https://img.shields.io/badge/Docker-ready-2496ED" alt="Docker ready">
-  <img src="https://img.shields.io/badge/languages-en%20%C2%B7%20es%20%C2%B7%20sk-informational" alt="Languages: English, Spanish, Slovak">
+  <a href="https://github.com/totaljs-es/totem/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue" alt="MIT license"></a>
+  <a href="https://nodejs.org"><img src="https://img.shields.io/badge/node-%E2%89%A5%2022-3C873A" alt="Node.js 22 or newer"></a>
+  <a href="https://github.com/totaljs/framework5"><img src="https://img.shields.io/badge/Total.js-5-3F8F2A" alt="Total.js 5"></a>
+  <a href="https://forge.totaljs.es"><img src="https://img.shields.io/badge/jComponent-20-3F8F2A" alt="jComponent 20"></a>
+  <a href="https://github.com/totaljs-es/totem/pkgs/container/totem"><img src="https://img.shields.io/badge/docker-ghcr.io-2496ED" alt="Docker image on ghcr.io"></a>
+  <a href="https://github.com/totaljs-es/totem/tree/main/resources"><img src="https://img.shields.io/badge/languages-en%20%C2%B7%20es%20%C2%B7%20sk-informational" alt="Languages: English, Spanish, Slovak"></a>
 </p>
 
 Totem is one application with three ways to run: a command, a Docker container and (next) a native window. The server is plain Total.js: actions, a few controllers, NoSQL for its own data, and jComponent 20 for the interface. There is no build step.
@@ -37,10 +37,11 @@ You need [Node.js](https://nodejs.org) 22 or newer.
 
 ```bash
 npm install -g totaljs-totem
-totem
+totem            # starts Totem in the background and opens the browser
+totem stop       # stops it
 ```
 
-The browser opens on <http://127.0.0.1:8000>. Installed from npm, your data (providers, projects, sessions) lives in a folder of your user (`totem config` prints it) and not in the package, so an update never touches it. To run it from the source instead:
+The browser opens on <http://127.0.0.1:8000>, and the terminal is yours again. Installed from npm, your data (providers, projects, sessions) lives in a folder of your user (`totem config` prints it) and not in the package, so an update never touches it. To run it from the source instead:
 
 ```bash
 git clone https://github.com/totaljs-es/totem.git
@@ -67,8 +68,12 @@ totem run "explain this project" --project ~/code/app --model ollama:qwen2.5-cod
 
 | Command | What it does |
 |---|---|
-| `totem` | Starts the server on port 8000 and opens the browser |
-| `totem serve [port]` | Starts only the server |
+| `totem` | Starts the server on port 8000 **in the background**, shows where it listens and opens the browser. The terminal is free |
+| `totem start [port]` | The same, without opening the browser |
+| `totem stop` | Stops the server that `totem` started |
+| `totem status` | Says if it runs and where (pid, address, log) |
+| `totem restart` | Stops it and starts it again |
+| `totem serve [port]` | Runs the server in this terminal until Ctrl+C (for a server, a script or when you develop Totem). `--verbose` shows its whole output |
 | `totem run "prompt" [options]` | One prompt without the interface: the answer goes to stdout, the tool calls to stderr, the exit code says if it finished |
 | `totem config` | Prints the folders that Totem uses |
 
@@ -157,6 +162,7 @@ The details, including the honest limits (one token, one user), are in [security
 |---|---|
 | No model to choose | Settings → add a provider, or *Look for servers on this computer* with Ollama or LM Studio running |
 | A small model seems to ignore the instructions | Check `ollamactx` in `config`: Ollama must get a real context. Totem asks for 16384 by default |
+| `totem` says it could not start | It says why: the port in use (use `totem start 8001`), no permission to write the data, or a broken installation. The whole output is in `totem.log` in the data folder |
 | The container does not start | It needs a token: mount a file at `/run/secrets/totem_token` (or set `token` in `config`) |
 | "The terminal could not start" | The Shell needs Python 3 (macOS and Linux). It is in the Docker image |
 | Docker cannot see your folder (Colima, Docker Desktop) | Share the folder with the virtual machine: your home folder, not `/tmp` |
