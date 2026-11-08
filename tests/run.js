@@ -2621,6 +2621,24 @@ Test.push('Forge without MCP: llms.txt and the pages in Markdown', function(next
 		var items = MODS.knowledge.parseindex(index.split('{port}').join(server.address().port));
 		check('the index is read: title, address in Markdown, description and the section', items.length === 4 && items[1].section === 'Total.js 5 (backend)' && /validate-json-body\.md$/.test(items[1].url) && /input schema/.test(items[1].description));
 
+		// knowledge.json: the API names of a document find it even when the prompt shares nothing else with its title
+		var withmeta = [
+			{ section: 'Total.js 5 (backend)', title: 'Run code on a schedule', url: 'https://example.test/en/total5/cron-jobs.md', description: 'Register a function and a line.' },
+			{ section: 'Total.js 5 (backend)', title: 'Other page', url: 'https://example.test/en/total5/other.md', description: 'Nothing here.' }
+		];
+		MODS.knowledge.addmeta(withmeta, JSON.stringify({ documents: [{ section: 'total5', slug: 'cron-jobs', symbols: ['CRON', 'GET'], tags: ['scheduler'] }, { section: 'total5', slug: 'other', symbols: ['GET'], tags: [] }] }));
+		check('the metadata of Forge is joined to the pages by section and slug', withmeta[0].symbols[0] === 'cron' && withmeta[0].tags[0] === 'scheduler');
+		check('the API name and the tag in the prompt find a page whose title says neither', MODS.knowledge.rank(withmeta, { query: 'cron scheduler hourly', product: 'total5' }, 2).map(i => i.url).join() === 'https://example.test/en/total5/cron-jobs.md');
+		MODS.knowledge.addmeta(withmeta, 'not json');
+		check('a metadata file that is not valid changes nothing', withmeta[0].symbols[0] === 'cron');
+
+		var rows = []; for (var n = 0; n < 60; n++) rows.push('| key' + n + ' | default | what key' + n + ' does in the application |');
+		var page = '# Keys\n\n> Settings.\n\nIntro paragraph of the page.\n\n## Table\n\n' + rows.join('\n') + '\n\n## Mail\n\n```js\nCONF.mail_smtp = "localhost";\n```\n\nSet the smtp server.';
+		var fitted = MODS.knowledge.fit(page, 'key42 smtp', 1500);
+		check('a long page keeps its start, the rows and the code the request asks for, never more than the limit', fitted.length <= 1500 && /^# Keys/.test(fitted) && /key42/.test(fitted) && /CONF\.mail_smtp/.test(fitted) && /\[\.\.\.\]/.test(fitted));
+		check('a block of code is never cut in half', (fitted.match(/```/g) || []).length % 2 === 0 && MODS.knowledge.fit('# T\n\nText.\n\n```js\n' + 'var a = 1;\n'.repeat(200) + '```\n', 'a', 800).indexOf('```') === -1);
+		check('a short page is not changed', MODS.knowledge.fit('# T\n\nShort.', 'x', 3500) === '# T\n\nShort.');
+
 		var ranked = MODS.knowledge.rank(items, MODS.knowledge.route('How do I validate a JSON body of an action in Total.js 5?'), 2);
 		check('the words of the prompt rank the pages of the product, never the sections that are not documentation', ranked.length >= 1 && /validate-json-body/.test(ranked[0].url) && !ranked.some(r => r.section === 'Start here'));
 		check('a prompt about the interface looks in jComponent', MODS.knowledge.rank(items, MODS.knowledge.route('write a jcomponent counter component'), 2)[0].title === 'A counter component');

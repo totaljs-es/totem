@@ -190,6 +190,41 @@ function get(url, callback) {
 	});
 }
 
+// The metadata of knowledge.json (the API names and tags of each document) joined to the items of the index by section/slug. A name that appears in
+// many documents (GET, JSON, Total.js) says nothing about one of them, so only the names of a few documents are kept.
+var COMMONSYMBOL = 40;
+
+function addmeta(items, text) {
+
+	var json = parse(text);
+	var documents = json && Array.isArray(json.documents) ? json.documents : [];
+
+	if (!documents.length)
+		return;
+
+	var frequency = {};
+	var map = {};
+
+	documents.forEach(function(doc) {
+		(doc.symbols || []).forEach(function(name) {
+			name = String(name).toLowerCase();
+			frequency[name] = (frequency[name] || 0) + 1;
+		});
+		map[doc.section + '/' + doc.slug] = doc;
+	});
+
+	items.forEach(function(item) {
+		var match = item.url.match(/\/([a-z0-9-]+)\/([^\/]+)\.md$/i);
+		var doc = match && map[match[1] + '/' + match[2]];
+		if (!doc)
+			return;
+		item.symbols = (doc.symbols || []).map(name => String(name).toLowerCase()).filter(name => frequency[name] <= COMMONSYMBOL);
+		item.tags = (doc.tags || []).map(tag => String(tag).toLowerCase());
+	});
+}
+
+exports.addmeta = addmeta;
+
 // callback(items): an empty list when the index is not available
 function loadindex(callback) {
 
@@ -202,8 +237,17 @@ function loadindex(callback) {
 
 	get(forgeurl() + '/llms.txt', function(text) {
 		var items = text ? parseindex(text) : [];
-		MAIN.forgeindex = { items: items, until: Date.now() + (items.length ? INDEXTTL : INDEXRETRY) };
-		callback(items);
+		var done = function() {
+			MAIN.forgeindex = { items: items, until: Date.now() + (items.length ? INDEXTTL : INDEXRETRY) };
+			callback(items);
+		};
+		// The metadata is an extra: without it the pages are ranked by title, address and description as before
+		if (!items.length)
+			return done();
+		get(forgeurl() + '/knowledge.json', function(meta) {
+			meta && addmeta(items, meta);
+			done();
+		});
 	});
 }
 
@@ -250,6 +294,8 @@ exports.rank = function(items, asked, max) {
 		var title = item.title.toLowerCase();
 		var slug = item.url.toLowerCase();
 		var description = item.description.toLowerCase();
+		var symbols = item.symbols || [];
+		var tags = item.tags || [];
 		var score = 0;
 		var hits = 0;
 		words.forEach(function(word) {
@@ -260,16 +306,158 @@ exports.rank = function(items, asked, max) {
 				hit += 2;
 			if (description.indexOf(word) !== -1)
 				hit++;
+			// The API name of the prompt (route, newaction, conf) is the page that documents it; a tag is a weaker sign
+			if (symbols.indexOf(word) !== -1)
+				hit += 3;
+			if (tags.indexOf(word) !== -1)
+				hit += 2;
 			score += hit;
 			hits += hit ? 1 : 0;
 		});
 		return { item: item, score: score, hits: hits };
-	}).filter(entry => entry.score >= 3 && (entry.hits >= 2 || words.length === 1)).sort((a, b) => b.score - a.score).slice(0, max).map(entry => entry.item);
+	}).filter(entry => entry.score >= 3 && (entry.hits >= 2 || words.length === 1 || entry.score >= 8)).sort((a, b) => b.score - a.score).slice(0, max).map(entry => entry.item);
 };
 
 // The text of a page of Forge without the lines of its header (framework, hashes, snapshot...)
 exports.pagebody = function(markdown) {
 	return (markdown || '').replace(/^(Framework|Product|Language|Content-SHA256|Snapshot|Sources|Review|Source):.*\n/gm, '').replace(/\n{3,}/g, '\n\n').trim();
+};
+
+// The text of a page that fits in max characters and keeps what the request is about. The page is cut in blocks (a paragraph, a list, a whole
+// code block, a heading with its first block): the start of the page always stays, then the blocks with the most words of the request, in the
+// order of the page. Nothing is cut in the middle of a block of code.
+function blocks(markdown) {
+
+	var out = [];
+	var current = [];
+	var fenced = false;
+
+	function flush() {
+		if (current.length) {
+			out.push(current.join('\n'));
+			current = [];
+		}
+	}
+
+	markdown.split('\n').forEach(function(line) {
+		if (/^\s*```/.test(line)) {
+			// An opening fence starts its own block when text is waiting
+			if (!fenced && current.length && !/^#{1,6} /.test(current[current.length - 1]))
+				flush();
+			fenced = !fenced;
+			current.push(line);
+			if (!fenced)
+				flush();
+			return;
+		}
+		if (fenced) {
+			current.push(line);
+			return;
+		}
+		if (!line.trim()) {
+			flush();
+			return;
+		}
+		// A heading closes the block before it and stays with the block that follows
+		if (/^#{1,6} /.test(line) && current.length && !/^#{1,6} /.test(current[current.length - 1]))
+			flush();
+		current.push(line);
+	});
+
+	flush();
+
+	// A heading alone goes with the next block
+	var merged = [];
+	for (var i = 0; i < out.length; i++) {
+		if (/^#{1,6} [^\n]*$/.test(out[i]) && i + 1 < out.length)
+			out[i + 1] = out[i] + '\n\n' + out[i + 1];
+		else
+			merged.push(out[i]);
+	}
+
+	// A table or a list longer than a third of the page (the keys of the configuration) is cut by lines, so that its useful rows can be chosen
+	var split = [];
+	merged.forEach(function(block) {
+		// A block with code is never cut
+		if (block.length < 1200 || /^\s*```/m.test(block)) {
+			split.push(block);
+			return;
+		}
+		var group = [];
+		var size = 0;
+		block.split('\n').forEach(function(line) {
+			group.push(line);
+			size += line.length + 1;
+			if (size > 700) {
+				split.push(group.join('\n'));
+				group = [];
+				size = 0;
+			}
+		});
+		group.length && split.push(group.join('\n'));
+	});
+
+	return split;
+}
+
+exports.fit = function(markdown, query, max) {
+
+	markdown = (markdown || '').trim();
+	max = max || 3500;
+
+	if (markdown.length <= max)
+		return markdown;
+
+	var list = blocks(markdown);
+	var words = (query || '').toLowerCase().split(' ').filter(word => word.length > 2);
+	var chosen = {};
+	var used = 0;
+
+	function take(index) {
+		chosen[index] = 1;
+		used += list[index].length + 2;
+	}
+
+	// The start of the page: the title, the description and the first block of text, at most a third of the space
+	var lead = 0;
+	while (lead < list.length && (lead === 0 || used + list[lead].length < max / 3) && (lead < 2 || !/^#{2,6} /.test(list[lead])) && lead < 3) {
+		take(lead);
+		lead++;
+	}
+
+	var scored = [];
+
+	for (var i = lead; i < list.length; i++) {
+		var lower = list[i].toLowerCase();
+		var score = 0;
+		words.forEach(word => lower.indexOf(word) !== -1 && score++);
+		scored.push({ index: i, score: score });
+	}
+
+	// The best blocks first; when none says anything about the request the page continues in its own order
+	scored.sort((a, b) => b.score - a.score || a.index - b.index);
+
+	for (var entry of scored) {
+		if (used + list[entry.index].length + 2 <= max)
+			take(entry.index);
+	}
+
+	var parts = [];
+	var last = -1;
+
+	list.forEach(function(block, index) {
+		if (!chosen[index])
+			return;
+		if (last !== -1 && index !== last + 1)
+			parts.push('[...]');
+		parts.push(block);
+		last = index;
+	});
+
+	if (last !== list.length - 1)
+		parts.push('[...]');
+
+	return parts.join('\n\n');
 };
 
 // The pages of the documents of Forge for the request. callback(found) when there are pages, otherwise empty() is called (the caller tries the MCP server)
@@ -293,7 +481,7 @@ function fromdocs(run, asked, pages, recipetext, callback, empty) {
 				var body = markdown ? exports.pagebody(markdown) : '';
 				if (body) {
 					found.push({ title: item.title, url: item.url.replace(/\.md$/, '/') });
-					blocks.push('### {0} ({1})\n{2}'.format(item.title, item.url, conventions(body.substring(0, CONF.forgechars || 3500))));
+					blocks.push('### {0} ({1})\n{2}'.format(item.title, item.url, conventions(exports.fit(body, asked.query, CONF.forgechars || 3500))));
 				}
 				next();
 			});

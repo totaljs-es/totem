@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- Documentation from Forge: pages are ranked also by the API names and tags of `knowledge.json` (a prompt with `CRON` or `NEWACTION` finds its page), and a long page keeps its start and the blocks the request asks for instead of its first 3500 characters. A block of code is never cut in half.
+
 ## 0.1.6
 
 - Answer review publishes one final revision rather than a draft followed by a correction. Raw complete HTML gets a code fence, safe indentation fixes do not need a model call, and scripts inside HTML are syntax checked even when strings contain translation markers.
