@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- The choice of the page of Forge for a request is measured without a model: `node scripts/docs-eval.js` ranks 25 requests (English and Spanish) and counts the expected page first or among the first three. With the metadata of `knowledge.json` and more Spanish verbs (send, serve, static, request, decrypt) the hits went from 20 to 24 of 25 first and from 21 to 25 of 25 in the first three. A request about Tangular is no longer sent only to the frontend pages.
+
 ## 0.1.7
 
 - A new look for the workspace: warm light and dark themes, a sidebar with the actions at the top and the sessions grouped by project with a status dot, a short top bar with a *more* menu for what is not used all the time, a rounded prompt card, and a sidebar that slides in on narrow screens.

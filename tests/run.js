@@ -2640,6 +2640,9 @@ Test.push('Forge without MCP: llms.txt and the pages in Markdown', function(next
 		MODS.knowledge.addmeta(withmeta, 'not json');
 		check('a metadata file that is not valid changes nothing', withmeta[0].symbols[0] === 'cron');
 
+		check('Spanish verbs of the request are translated for the search of the pages', MODS.knowledge.route('Cómo envío un correo en Total.js').query.indexOf('send email') !== -1 && MODS.knowledge.route('como sirvo archivos estáticos').query.indexOf('serve file static') !== -1);
+		check('a request about Tangular is not sent only to the frontend', MODS.knowledge.route('How do I use Tangular templates in a view?').product !== 'jcomponent');
+
 		var rows = []; for (var n = 0; n < 60; n++) rows.push('| key' + n + ' | default | what key' + n + ' does in the application |');
 		var page = '# Keys\n\n> Settings.\n\nIntro paragraph of the page.\n\n## Table\n\n' + rows.join('\n') + '\n\n## Mail\n\n```js\nCONF.mail_smtp = "localhost";\n```\n\nSet the smtp server.';
 		var fitted = MODS.knowledge.fit(page, 'key42 smtp', 1500);

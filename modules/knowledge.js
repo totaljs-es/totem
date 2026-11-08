@@ -99,7 +99,7 @@ var STOP = ('quiero quisiera necesito puedo puedes hacer haz crear crea escribe 
 	'i want would like need make write create build the an and or to of in on for with how do does can could you please my me is are it this that there some a').split(' ').reduce((map, word) => (map[word] = 1, map), {});
 
 // The same by the start of the word: the Spanish of the topic in any form (autenticados, protejo, usuarios...)
-var ESSTEM = [['autentic', 'authentication'], ['proteg', 'protect'], ['protej', 'protect'], ['usuari', 'user'], ['sesi', 'session'], ['permis', 'permission'], ['contrase', 'password'], ['archiv', 'file'], ['descarg', 'download'], ['correo', 'email'], ['notific', 'notification'], ['formular', 'form'], ['cifr', 'encrypt'], ['encript', 'encrypt'], ['tarea', 'job'], ['programad', 'schedule'], ['validac', 'validation'], ['valida', 'validate'], ['lectur', 'read'], ['imagen', 'image'], ['busca', 'search'], ['paginac', 'pagination'], ['cach', 'cache'], ['traduc', 'translate'], ['idioma', 'language']];
+var ESSTEM = [['autentic', 'authentication'], ['proteg', 'protect'], ['protej', 'protect'], ['usuari', 'user'], ['sesi', 'session'], ['permis', 'permission'], ['contrase', 'password'], ['archiv', 'file'], ['descarg', 'download'], ['correo', 'email'], ['notific', 'notification'], ['formular', 'form'], ['cifr', 'encrypt'], ['encript', 'encrypt'], ['tarea', 'job'], ['programad', 'schedule'], ['validac', 'validation'], ['valida', 'validate'], ['lectur', 'read'], ['imagen', 'image'], ['busca', 'search'], ['paginac', 'pagination'], ['cach', 'cache'], ['traduc', 'translate'], ['idioma', 'language'], ['envi', 'send'], ['enví', 'send'], ['estátic', 'static'], ['estatic', 'static'], ['sirv', 'serve'], ['petici', 'request'], ['descifr', 'decrypt']];
 
 function stemof(word) {
 	for (var i = 0; i < ESSTEM.length; i++) {
@@ -132,7 +132,7 @@ function route(text) {
 	if (words.indexOf('component') !== -1 && /\b(hacer|haz|crear|crea|escribe|escribir|make|create|write|build|new|nuevo|nueva)\b/i.test(text) && words.indexOf('custom') === -1)
 		words.unshift('custom');
 
-	if (/jcomponent|ui-component|ui-bind|\bcomponent\(|\bcomponentator|\bplugin\(|tangular|\bhtml\b|\bfrontend\b|\binterfaz\b|\bcomponent(?:e|es|s)?\b/i.test(text) && !/server component|componente (?:del? )?servidor/i.test(text))
+	if (/jcomponent|ui-component|ui-bind|\bcomponent\(|\bcomponentator|\bplugin\(|\bhtml\b|\bfrontend\b|\binterfaz\b|\bcomponent(?:e|es|s)?\b/i.test(text) && !/server component|componente (?:del? )?servidor/i.test(text))
 		product = 'jcomponent';
 	else if (/total\.?js|total5|newaction|newschema|\broute\(|\bdata\.|nosql|filestorage|restbuilder|schema/i.test(text))
 		product = 'total5';

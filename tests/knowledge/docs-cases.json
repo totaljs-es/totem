@@ -1,0 +1,162 @@
+[
+	{
+		"prompt": "How do I protect a route so only logged in users can use it?",
+		"expect": [
+			"protect-routes-with-auth",
+			"sessions-with-built-in-auth"
+		]
+	},
+	{
+		"prompt": "Cómo subo un archivo desde un formulario en Total.js",
+		"expect": [
+			"file-upload"
+		]
+	},
+	{
+		"prompt": "How do I read URL parameters in a route in Total.js 5?",
+		"expect": [
+			"routes-with-params"
+		]
+	},
+	{
+		"prompt": "Quiero un cron que se ejecute cada hora",
+		"expect": [
+			"cron-jobs"
+		]
+	},
+	{
+		"prompt": "How do I send an email from a view with MAIL()?",
+		"expect": [
+			"send-email"
+		]
+	},
+	{
+		"prompt": "Cómo envío un correo en Total.js",
+		"expect": [
+			"send-email"
+		]
+	},
+	{
+		"prompt": "How do I validate the JSON body of an action?",
+		"expect": [
+			"validate-json-body"
+		]
+	},
+	{
+		"prompt": "How do I store files with FILESTORAGE?",
+		"expect": [
+			"filestorage"
+		]
+	},
+	{
+		"prompt": "como cacheo una respuesta con CACHE",
+		"expect": [
+			"cache",
+			"controller-completion-and-cache",
+			"action-cache-option"
+		]
+	},
+	{
+		"prompt": "How do I make a WebSocket chat route?",
+		"expect": [
+			"websocket-chat",
+			"websocket-flags"
+		]
+	},
+	{
+		"prompt": "Cómo hago una petición HTTP saliente con RESTBuilder",
+		"expect": [
+			"restbuilder",
+			"request-and-download"
+		]
+	},
+	{
+		"prompt": "How do I read the config file with CONF?",
+		"expect": [
+			"configuration-file"
+		]
+	},
+	{
+		"prompt": "How to translate texts with @(...) localization in Total.js",
+		"expect": [
+			"localization"
+		]
+	},
+	{
+		"prompt": "How do I set CORS headers on a route?",
+		"expect": [
+			"cors"
+		]
+	},
+	{
+		"prompt": "como protejo contra CSRF",
+		"expect": [
+			"csrf-protection"
+		]
+	},
+	{
+		"prompt": "How do I rate limit requests in Total.js 5?",
+		"expect": [
+			"rate-limiting"
+		]
+	},
+	{
+		"prompt": "Cómo cifro y descifro datos con ENCRYPT y DECRYPT",
+		"expect": [
+			"encrypt-and-decrypt"
+		]
+	},
+	{
+		"prompt": "How do I run a worker thread in Total.js?",
+		"expect": [
+			"workers-and-threads",
+			"thread-pool"
+		]
+	},
+	{
+		"prompt": "How to use NOSQL queries with where and sort",
+		"expect": [
+			"nosql-queries",
+			"nosql-crud"
+		]
+	},
+	{
+		"prompt": "How do I redirect with a custom error page?",
+		"expect": [
+			"error-pages"
+		]
+	},
+	{
+		"prompt": "How do I define the permissions of an action?",
+		"expect": [
+			"action-user-and-permissions"
+		]
+	},
+	{
+		"prompt": "How do I generate a unique id with UID()?",
+		"expect": [
+			"unique-ids-and-hashes"
+		]
+	},
+	{
+		"prompt": "como sirvo archivos estáticos",
+		"expect": [
+			"static-files"
+		]
+	},
+	{
+		"prompt": "How do I use Tangular templates in a view?",
+		"expect": [
+			"tangular-templates",
+			"view-loops",
+			"view-conditions-and-escaping"
+		]
+	},
+	{
+		"prompt": "How do I download a remote file in Total.js 5?",
+		"expect": [
+			"request-and-download",
+			"file-download"
+		]
+	}
+]
