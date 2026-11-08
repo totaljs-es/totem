@@ -13,6 +13,7 @@ T12tjh4 : Cerrar
 T133ekil : Cargar la lista del proveedor
 T13obibo : Prompt
 T13r1fab : Cambios
+T13v8jwt : detenido
 T13xr1ig : Las tareas deben ser un array JSON
 T141q6yd : La URL es obligatoria
 T144kpn3 : ¿Restaurar los archivos como estaban antes de estos cambios?
@@ -74,6 +75,7 @@ T1eu5pwf : Comandos que ha ejecutado Totem
 T1f73iv5 : Borrar sesión
 T1f7o0wl : Una programación necesita un nombre y un prompt
 T1firn : Modo
+T1fj3p : Más
 T1fjn2k7 : Este proyecto
 T1fvl7 : Nombre
 T1ghzmz : Esto no es un archivo de texto:
@@ -105,6 +107,7 @@ T1klxg : Deshacer
 T1kx8mlc : Descartar el worktree
 T1l3laja : No hay nada que rehacer
 T1li67wl : La ruta está fuera del proyecto
+T1lmfpk : error
 T1lnf930 : sin herramientas
 T1loq3f : cada
 T1mi2x05 : Guardar como
@@ -232,9 +235,11 @@ Tnwzya8 : Cada, minutos
 To17eqc : Adjuntar imágenes o archivos de texto
 To33mo2 : Proveedores
 To3gx5q : Totem quiere usar
+Tob1a65 : Sesiones
 Tob7cil : Totem se detuvo con un error
 Tosmo8z : Ajustes
 Tp6sjhp : El intervalo es de al menos {0} minutos
+Tp81kq9 : trabajando
 Tpnaojj : en marcha
 Tpnjlc2 : Agentes para todos los proyectos
 Tqtg2co : Bifurcar desde aquí

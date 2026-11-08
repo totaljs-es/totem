@@ -1,7 +1,12 @@
 <style>
 	.CLASS { height: 100vh; display: flex; flex-direction: column; }
-	.CLASS .bar { padding: 10px 16px; border-bottom: 1px solid var(--t-border); display: flex; gap: 10px; align-items: center; min-height: 52px; }
-	.CLASS .bar { flex-wrap: wrap; }
+	.CLASS .bar { padding: 8px 16px; border-bottom: 1px solid var(--t-border); display: flex; gap: 6px; align-items: center; min-height: 52px; }
+	.CLASS .bar b { font-size: 16px; font-weight: 600; }
+	.CLASS .state { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--t-muted); margin-right: 6px; }
+	.CLASS .state.err { color: #D63A32; }
+	.CLASS .state .pulse { width: 7px; height: 7px; border-radius: 50%; background: var(--t-live); animation: totemlive 1.4s infinite ease-in-out; }
+	@keyframes totemlive { 0%, 100% { opacity: 0.35; } 50% { opacity: 1; } }
+	@media (prefers-reduced-motion: reduce) { .CLASS .state .pulse { animation: none; } }
 	.CLASS .bar > * { flex: 0 0 auto; }
 	.CLASS .bar b { flex: 1 1 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 	.CLASS .meter { font-size: 12px; color: var(--t-muted); white-space: nowrap; }
@@ -18,7 +23,7 @@
 	.CLASS .waiting span:nth-child(3) { animation-delay: 0.4s; }
 	@keyframes totemwait { 0%, 80%, 100% { opacity: 0.25; transform: scale(0.8); } 40% { opacity: 1; transform: scale(1.1); } }
 	@media (prefers-reduced-motion: reduce) { .CLASS .waiting span { animation: none; opacity: 0.6; } }
-	.CLASS .mode { width: 110px; }
+	.CLASS .mode { width: 128px; }
 	.CLASS .gitbox { border: 1px solid var(--t-border); border-radius: var(--radius, 6px); padding: 8px 10px; margin-bottom: 12px; font-size: 12px; background: var(--t-soft); }
 	.CLASS .gittop { margin-bottom: 6px; }
 	.CLASS .gitwt { margin-top: 8px; padding-top: 8px; border-top: 1px dashed var(--t-border); }
@@ -61,7 +66,7 @@
 	.CLASS .ask .row2 { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
 	.CLASS .ask.question { border-color: #3498DB; color: inherit; }
 	.CLASS .ask input[type=text] { flex: 1; min-width: 160px; height: 30px; padding: 0 10px; border: 1px solid var(--t-border); border-radius: var(--radius, 6px); background: var(--t-card); color: inherit; }
-	.CLASS .empty { text-align: center; color: var(--t-muted); margin-top: 16vh; }
+	.CLASS .empty { text-align: center; color: var(--t-muted); margin-top: 16vh; font-family: ui-serif, "Iowan Old Style", Palatino, Georgia, serif; font-size: 17px; }
 	.CLASS .empty img { opacity: 0.9; margin-bottom: 14px; }
 	.CLASS .chips { max-width: 860px; margin: 0 auto 6px; padding: 0 16px; display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
 	.CLASS .chip { cursor: pointer; border: 1px solid var(--t-border); border-radius: 12px; padding: 1px 10px; font-size: 12px; }
@@ -70,9 +75,18 @@
 	.CLASS .todos div { padding: 1px 0; }
 	.CLASS .todos .completed { color: var(--t-muted); text-decoration: line-through; }
 	.CLASS .todos .in_progress { font-weight: bold; }
-	.CLASS .compose { border-top: 1px solid var(--t-border); padding: 10px 16px 14px; }
-	.CLASS .compose .row { max-width: 860px; margin: 0 auto; display: flex; flex-wrap: nowrap; gap: 8px; align-items: center; }
-	.CLASS .compose .row.opts { flex-wrap: wrap; margin-top: 8px; padding-top: 8px; border-top: 1px dashed var(--t-border); }
+	.CLASS .compose { padding: 6px 16px 16px; }
+	.CLASS .compose .card { max-width: 860px; margin: 0 auto; border: 1px solid var(--t-border); border-radius: 18px; background: var(--t-card); padding: 10px 12px; box-shadow: 0 1px 2px rgba(60,50,20,0.05), 0 8px 24px rgba(60,50,20,0.06); }
+	.CLASS .compose .row { display: flex; flex-wrap: nowrap; gap: 8px; align-items: center; }
+	.CLASS .compose .row.opts { flex-wrap: wrap; margin-top: 6px; }
+	.CLASS .compose .send { border-radius: 50%; }
+	.CLASS .compose .card .ui-input-control { border: 0 !important; background: transparent !important; box-shadow: none !important; }
+	.CLASS .compose .row:not(.opts) .ui-input-control { font-size: 15px; }
+	.CLASS .compose .row.opts .ui-input-control { border: 1px solid transparent !important; border-radius: 999px; padding-left: 4px; height: 30px; }
+	.CLASS .compose .row.opts .ui-input-control:hover { background: var(--t-soft2) !important; }
+	.CLASS .compose .row.opts .ui-input-icon-right { border-left: 0 !important; background: transparent !important; width: 22px; }
+	.CLASS .compose .row.opts .ui-input-ricon { padding-right: 22px !important; }
+	.CLASS .compose .row.opts .ui-input-input, .CLASS .compose .row.opts .ui-input-value { font-size: 13px; color: var(--t-muted); }
 	.CLASS .compose .row.opts .send { margin-left: auto; }
 	.CLASS .compose .row .tbtn { flex: 0 0 auto; }
 	.CLASS .attached { max-width: 860px; margin: 0 auto 8px; display: flex; gap: 8px; flex-wrap: wrap; }
@@ -83,7 +97,7 @@
 	.CLASS .files img { max-width: 220px; max-height: 160px; border-radius: 8px; border: 1px solid var(--t-border); display: block; }
 	.CLASS .files a.chip { text-decoration: none; color: inherit; }
 	.CLASS .compose .grow { flex: 1 1 220px; min-width: 160px; }
-	.CLASS .compose .model { width: 210px; }
+	.CLASS .compose .model { width: 200px; }
 	.CLASS .note { text-align: center; font-size: 12px; color: var(--t-muted); margin: 10px 0; }
 	.CLASS .undo { font-size: 12px; margin-top: 4px; }
 	.CLASS .side { width: 380px; flex: 0 0 380px; border-left: 1px solid var(--t-border); overflow: auto; padding: 12px; background: var(--t-side); }
@@ -111,16 +125,15 @@
 <ui-plugin class="CLASS">
 
 	<div class="bar">
-		<b><ui-bind path="?.session" config="template" class="block"><script type="text/html">{{ if value }}{{ value.name }}{{ else }}@(No session){{ fi }}</script></ui-bind></b>
-		<ui-bind path="?.current" config="template" class="inline"><script type="text/html">{{ if value }}<span class="meter" style="display:inline-flex;gap:6px;align-items:center" title="{{ value.provider }}">{{ value.icon | provicon(value.provider) }}{{ value.id }}</span>{{ fi }}</script></ui-bind>
-		<ui-bind path="?.status" config="template" class="inline"><script type="text/html"><span class="badge badge-small{{ if value === 'running' }} badge-orange{{ fi }}{{ if value === 'error' }} badge-red{{ fi }}{{ if value === 'idle' }} badge-silver{{ fi }}{{ if value === 'aborted' }} badge-gray{{ fi }}">{{ value }}</span></script></ui-bind>
-		<ui-bind path="?.canredo" config="show:value" class="hidden"><button class="tbtn exec" data-exec="?/redo" title="@(Put back the changes that were undone)"><i class="ti ti-redo"></i>@(Redo)</button></ui-bind>
-		<ui-bind path="?.status" config="show:value === 'running'" class="hidden"><button class="tbtn exec" data-exec="?/abort" title="@(Stop, Esc)"><i class="ti ti-stop-alt"></i>@(Stop)</button></ui-bind>
+		<button class="tbtn tbtn-ghost tbtn-icon only-mobile exec" data-exec="?/sidebar" title="@(Sessions)" aria-label="@(Sessions)"><i class="ti ti-bars"></i></button>
+		<b class="serif"><ui-bind path="?.session" config="template" class="block"><script type="text/html">{{ if value }}{{ value.name }}{{ else }}@(No session){{ fi }}</script></ui-bind></b>
+		<ui-bind path="?.status" config="template" class="inline"><script type="text/html">{{ if value === 'running' }}<span class="state live"><span class="pulse"></span>@(working)</span>{{ fi }}{{ if value === 'error' }}<span class="state err">@(error)</span>{{ fi }}{{ if value === 'aborted' }}<span class="state">@(stopped)</span>{{ fi }}</script></ui-bind>
 		<ui-bind path="?.items" config="template" class="inline"><script type="text/html"><span class="meter" title="@(Tokens used in this session)">{{ value | tokens }}</span></script></ui-bind>
-		<button class="tbtn exec" data-exec="?/workspace" title="@(Settings of this session, this project and all projects)"><i class="ti ti-sliders-h"></i>@(Session settings)</button>
-		<button class="tbtn exec" data-exec="?/agents" title="@(Helpers that the agent can hand a task to)"><i class="ti ti-users"></i>@(Agents)</button>
-		<button class="tbtn exec" data-exec="?/terminal" title="@(Commands that Totem ran)"><i class="ti ti-terminal"></i>@(Terminal)</button>
-		<button class="tbtn exec" data-exec="?/changes" title="@(Files changed by Totem, Alt+D)"><i class="ti ti-exchange"></i>@(Changes)<ui-bind path="?.files" config="template" class="inline"><script type="text/html">{{ if value && value.length }} ({{ value.length }}){{ fi }}</script></ui-bind></button>
+		<ui-bind path="?.status" config="show:value === 'running'" class="hidden"><button class="tbtn exec" data-exec="?/abort" title="@(Stop, Esc)"><i class="ti ti-stop-alt"></i>@(Stop)</button></ui-bind>
+		<ui-bind path="?.canredo" config="show:value" class="hidden"><button class="tbtn tbtn-ghost tbtn-icon exec" data-exec="?/redo" title="@(Put back the changes that were undone)" aria-label="@(Redo)"><i class="ti ti-redo"></i></button></ui-bind>
+		<button class="tbtn tbtn-ghost exec" data-exec="?/changes" title="@(Files changed by Totem, Alt+D)" aria-label="@(Changes)"><i class="ti ti-exchange"></i><ui-bind path="?.files" config="template" class="inline"><script type="text/html">{{ if value && value.length }}{{ value.length }}{{ fi }}</script></ui-bind></button>
+		<button class="tbtn tbtn-ghost tbtn-icon exec" data-exec="?/terminal" title="@(Commands that Totem ran)" aria-label="@(Terminal)"><i class="ti ti-terminal"></i></button>
+		<button class="tbtn tbtn-ghost tbtn-icon exec" data-exec="?/more" title="@(More)" aria-label="@(More)"><i class="ti ti-ellipsis-h"></i></button>
 	</div>
 
 	<div class="layout">
@@ -267,17 +280,19 @@
 			</script>
 		</ui-bind>
 		<ui-component name="enter" config="exec:?/send;validate:false;delay:0;timeout:400">
-			<div class="row">
-				<button class="tbtn tbtn-icon exec" data-exec="?/attach" title="@(Attach images or text files)" aria-label="@(Attach images or text files)"><i class="ti ti-paperclip"></i></button>
-				<div class="grow"><ui-component name="input" path="?.text" config="placeholder:@(Ask Totem...);autofocus:true"></ui-component></div>
-			</div>
-			<div class="row opts">
-				<ui-bind path="?.current" config="template" class="inline"><script type="text/html">{{ if value }}{{ value.icon | provicon(value.provider) }}{{ fi }}</script></ui-bind>
-				<div class="model"><ui-component name="input" path="?.model" config="placeholder:@(Model);dirsource:?.models"></ui-component></div>
-				<ui-bind path="?.thinks" config="show:value" class="hidden"><ui-component name="input" path="?.reasoning" config="placeholder:@(Reasoning);dirsource:?.efforts"></ui-component></ui-bind>
-				<div class="mode"><ui-component name="input" path="?.mode" config="dirsource:?.modes;required:false"></ui-component></div>
-				<ui-component name="input" path="?.autoaccept" config="type:checkbox">@(Auto-accept edits)</ui-component>
-				<button name="send" class="tbtn tbtn-primary exec send" data-exec="?/send"><i class="ti ti-send"></i>@(Send)</button>
+			<div class="card">
+				<div class="row">
+					<div class="grow"><ui-component name="input" path="?.text" config="placeholder:@(Ask Totem...);autofocus:true"></ui-component></div>
+				</div>
+				<div class="row opts">
+					<button class="tbtn tbtn-ghost tbtn-icon exec" data-exec="?/attach" title="@(Attach images or text files)" aria-label="@(Attach images or text files)"><i class="ti ti-paperclip"></i></button>
+					<ui-bind path="?.current" config="template" class="inline"><script type="text/html">{{ if value }}{{ value.icon | provicon(value.provider) }}{{ fi }}</script></ui-bind>
+					<div class="model"><ui-component name="input" path="?.model" config="placeholder:@(Model);dirsource:?.models"></ui-component></div>
+					<ui-bind path="?.thinks" config="show:value" class="hidden"><ui-component name="input" path="?.reasoning" config="placeholder:@(Reasoning);dirsource:?.efforts"></ui-component></ui-bind>
+					<div class="mode"><ui-component name="input" path="?.mode" config="dirsource:?.modes;required:false"></ui-component></div>
+					<ui-component name="input" path="?.autoaccept" config="type:checkbox">@(Auto-accept edits)</ui-component>
+					<button name="send" class="tbtn tbtn-primary tbtn-icon exec send" data-exec="?/send" title="@(Send)" aria-label="@(Send)"><i class="ti ti-arrow-up"></i></button>
+				</div>
 			</div>
 		</ui-component>
 	</div>
@@ -993,6 +1008,27 @@
 				termjob = setTimeout(refreshjobs, 2000);
 			});
 		}
+
+		exports.sidebar = function() {
+			$('.app').toggleClass('side-open');
+		};
+
+		// What is not used all the time: one menu, so that a new utility is one more entry and not one more button
+		exports.more = function(el) {
+			var opt = {};
+			opt.element = el;
+			opt.align = 'right';
+			opt.items = [];
+			opt.items.push({ id: 'settings', name: '@(Session settings)', icon: 'ti ti-sliders-h' });
+			opt.items.push({ id: 'agents', name: '@(Agents)', icon: 'ti ti-users' });
+			opt.callback = function(item) {
+				if (item.id === 'settings')
+					exports.workspace();
+				else if (item.id === 'agents')
+					exports.agents();
+			};
+			SETTER('menu/show', opt);
+		};
 
 		// The settings of the session, of its project and of all projects (the defaults come from the file config)
 		exports.workspace = function() {

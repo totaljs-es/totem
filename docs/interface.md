@@ -78,6 +78,8 @@ From the Forge catalogue (https://forge.totaljs.es/en/components/): `exec`, `inp
 
 ## Accessibility and language
 
+**Look.** Warm neutrals in light and dark (`--t-*` variables in `public/css/default.css`), soft corners, the system font with a system serif for titles, a dark primary button, and color only for what is alive (the dot of a running session). The top bar of a conversation has few icons (changes, terminal, more); everything that is not used all the time is an entry of the *more* menu, so a new utility is one more entry and not one more button. The prompt is a rounded card with the model and the mode as chips. Under 760 px wide the sidebar is a slide-over (`.app.side-open`).
+
 Keyboard-first (shortcuts for send, abort, switch session, accept/undo), focus managed after each event, labels for every control, all text as `@(English key)` with translations in `resources/`.
 
 ## Streaming without flicker

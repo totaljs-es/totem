@@ -1,23 +1,32 @@
 <style>
 	.CLASS { height: 100vh; display: flex; flex-direction: column; }
-	.CLASS .top { padding: 12px 14px; border-bottom: 1px solid var(--t-border); display: flex; align-items: center; gap: 10px; }
-	.CLASS .top b { flex: 1; font-size: 15px; letter-spacing: 0.2px; }
-	.CLASS .list { flex: 1; overflow: auto; padding: 8px 0; }
-	.CLASS .project { padding: 7px 14px; cursor: pointer; display: flex; align-items: center; gap: 10px; }
+	.CLASS .top { padding: 14px 14px 6px; display: flex; align-items: center; gap: 10px; }
+	.CLASS .top b { flex: 1; font-size: 18px; font-weight: 600; letter-spacing: 0.1px; }
+	.CLASS .sidenav { padding: 6px 8px 2px; display: flex; flex-direction: column; gap: 1px; }
+	.CLASS .sidenav .item { display: flex; align-items: center; gap: 10px; padding: 7px 10px; border-radius: var(--radius, 10px); cursor: pointer; font-size: 14px; }
+	.CLASS .sidenav .item:hover { background: var(--t-soft); }
+	.CLASS .sidenav .item i { font-size: 17px; color: var(--t-muted); }
+	.CLASS .list { flex: 1; overflow: auto; padding: 10px 8px; }
+	.CLASS .project { padding: 6px 10px; margin-top: 8px; cursor: pointer; display: flex; align-items: center; gap: 8px; border-radius: var(--radius, 10px); color: var(--t-muted); font-size: 13px; }
 	.CLASS .project:hover { background: var(--t-soft); }
-	.CLASS .project .name { font-weight: bold; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-	.CLASS .project .path { font-size: 11px; color: var(--t-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-	.CLASS .project .more { opacity: 0.55; color: var(--t-muted); padding: 2px 5px; border-radius: 4px; }
-	.CLASS .project .more:hover, .CLASS .session .more:hover { opacity: 1; background: var(--t-soft2); }
+	.CLASS .project .name { font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	.CLASS .project .path { display: none; }
+	.CLASS .project .more { opacity: 0; color: var(--t-muted); padding: 2px 5px; border-radius: 6px; }
+	.CLASS .project .more:hover, .CLASS .session .more:hover { background: var(--t-soft2); color: var(--t-text); }
 	.CLASS .project:hover .more { opacity: 1; }
-	.CLASS .session { margin: 1px 8px 1px 28px; padding: 5px 10px; border-radius: var(--radius, 6px); cursor: pointer; display: flex; gap: 8px; align-items: center; font-size: 13px; }
+	.CLASS .session { margin: 1px 0; padding: 7px 10px; border-radius: var(--radius, 10px); cursor: pointer; display: flex; gap: 10px; align-items: center; font-size: 14px; }
 	.CLASS .session:hover { background: var(--t-soft); }
-	.CLASS .session.selected { background: var(--t-soft2); font-weight: bold; }
-	.CLASS .session .running { color: #E67E22; }
-	.CLASS .session .more { opacity: 0.45; color: var(--t-muted); padding: 2px 5px; border-radius: 4px; }
+	.CLASS .session.selected { background: var(--t-soft2); }
+	.CLASS .session .dot { width: 8px; height: 8px; border-radius: 50%; flex: 0 0 8px; background: transparent; }
+	.CLASS .session .dot.running { background: var(--t-live); animation: totemlive 1.4s infinite ease-in-out; }
+	.CLASS .session .dot.error { background: #D63A32; }
+	@keyframes totemlive { 0%, 100% { opacity: 0.35; } 50% { opacity: 1; } }
+	@media (prefers-reduced-motion: reduce) { .CLASS .session .dot.running { animation: none; } }
+	.CLASS .session .more { opacity: 0; color: var(--t-muted); padding: 2px 5px; border-radius: 6px; }
 	.CLASS .session:hover .more { opacity: 1; }
 	.CLASS .session span.title { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-	.CLASS .foot { padding: 10px 14px; border-top: 1px solid var(--t-border); display: flex; gap: 8px; }
+	.CLASS .foot { padding: 8px; border-top: 1px solid var(--t-border); display: flex; gap: 8px; }
+	.CLASS .foot .tbtn { height: 36px; }
 	.CLASS .empty-note { padding: 20px 16px; color: var(--t-muted); text-align: center; }
 </style>
 
@@ -25,8 +34,13 @@
 
 	<div class="top">
 		<img class="logo-light" src="/img/totem-light.svg" alt="" width="28" height="28" /><img class="logo-dark" src="/img/totem-dark.svg" alt="" width="28" height="28" />
-		<b>Totem</b>
-		<button class="tbtn tbtn-icon exec" data-exec="?/open" title="@(Open a folder)" aria-label="@(Open a folder)"><i class="ti ti-folder-plus"></i></button>
+		<b class="serif">Totem</b>
+	</div>
+
+	<div class="sidenav">
+		<div class="item exec" data-exec="?/newcurrent"><i class="ti ti-plus"></i>@(New session)</div>
+		<div class="item exec" data-exec="?/open"><i class="ti ti-folder-plus"></i>@(Open a folder)</div>
+		<div class="item exec" data-exec="?/schedules"><i class="ti ti-clock"></i>@(Scheduled prompts)</div>
 	</div>
 
 	<div class="list">
@@ -49,7 +63,7 @@
 					{{ if m.sessions }}
 					{{ foreach s in m.sessions }}
 					<div class="exec session{{ if s.id === common.sessionid }} selected{{ fi }}" data-exec="?/session" data-id="{{ s.id }}" data-project="{{ m.id }}">
-						<span class="{{ if s.status === 'running' }}running{{ fi }}">{{ s.icon | provicon(s.provider) }}</span>
+						<span class="dot{{ if s.status === 'running' }} running{{ fi }}{{ if s.status === 'error' }} error{{ fi }}" title="{{ s.status }}"></span>
 						<span class="title">{{ s.name }}</span>
 						<span class="exec more" data-exec="?/sessionmenu" data-prevent="true" data-id="{{ s.id }}" data-project="{{ m.id }}" title="@(Options)"><i class="ti ti-ellipsis-h"></i></span>
 					</div>
@@ -62,8 +76,7 @@
 	</div>
 
 	<div class="foot">
-		<button class="tbtn exec" data-exec="?/schedules" title="@(Scheduled prompts)" aria-label="@(Scheduled prompts)"><i class="ti ti-clock"></i></button>
-		<button class="tbtn exec" data-exec="?/settings" style="flex:1"><i class="ti ti-settings"></i>@(Settings)</button>
+		<button class="tbtn tbtn-ghost exec" data-exec="?/settings" style="flex:1;justify-content:flex-start"><i class="ti ti-settings"></i>@(Settings)</button>
 	</div>
 
 </ui-plugin>
@@ -171,6 +184,7 @@
 			projectid = (typeof(projectid) === 'string' && projectid) || el.attrd('project');
 			SET('common.projectid', projectid);
 			SET('common.sessionid', id);
+			$('.app').removeClass('side-open');
 			PLUGINS.chat && PLUGINS.chat.open(id);
 			exports.refresh();
 		};
@@ -261,6 +275,16 @@
 			};
 
 			SETTER('menu/show', opt);
+		};
+
+		// A new session in the project that is open, or in the first one
+		exports.newcurrent = function() {
+			var items = (exports.model || {}).items || [];
+			var id = (window.common && common.projectid) || (items[0] && items[0].id);
+			if (id)
+				exports.create(id);
+			else
+				exports.open();
 		};
 
 		exports.settings = function() {

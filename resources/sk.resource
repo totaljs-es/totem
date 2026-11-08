@@ -13,6 +13,7 @@ T12tjh4 : Zavrieť
 T133ekil : Načítať zoznam od poskytovateľa
 T13obibo : Prompt
 T13r1fab : Zmeny
+T13v8jwt : zastavené
 T13xr1ig : Úlohy musia byť pole JSON
 T141q6yd : URL je povinná
 T144kpn3 : Obnoviť súbory do stavu pred týmito zmenami?
@@ -74,6 +75,7 @@ T1eu5pwf : Príkazy, ktoré Totem spustil
 T1f73iv5 : Odstrániť reláciu
 T1f7o0wl : Plán potrebuje názov a prompt
 T1firn : Režim
+T1fj3p : Viac
 T1fjn2k7 : Tento projekt
 T1fvl7 : Názov
 T1ghzmz : Toto nie je textový súbor:
@@ -105,6 +107,7 @@ T1klxg : Vrátiť späť
 T1kx8mlc : Zahodiť worktree
 T1l3laja : Nie je čo opakovať
 T1li67wl : Cesta je mimo projektu
+T1lmfpk : chyba
 T1lnf930 : bez nástrojov
 T1loq3f : každých
 T1mi2x05 : Uložiť ako
@@ -232,9 +235,11 @@ Tnwzya8 : Každých, minút
 To17eqc : Priložiť obrázky alebo textové súbory
 To33mo2 : Poskytovatelia
 To3gx5q : Totem chce použiť
+Tob1a65 : Relácie
 Tob7cil : Totem sa zastavil s chybou
 Tosmo8z : Nastavenia
 Tp6sjhp : Interval je aspoň {0} minút
+Tp81kq9 : pracuje
 Tpnaojj : beží
 Tpnjlc2 : Agenti pre všetky projekty
 Tqtg2co : Rozvetviť odtiaľto
