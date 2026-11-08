@@ -57,8 +57,10 @@ T1c7gi : Vysoká
 T1c7v89 : Token
 T1c7yd7 : Nástroje
 T1ckg6lg : Cesta nie je priečinok
+T1dnznbx : Kód skontrolovaný pred zobrazením konečnej odpovede:
 T1ebyews : Plánované prompty
 T1egq28u : Názov prvej relácie (nepovinné)
+T1ehk8yd : Cesta k súboru v tomto projekte, napríklad public/demo.html
 T1ek2755 : Napíš id modelu a stlač enter
 T1eo1 : Pridať
 T1eu5pwf : Príkazy, ktoré Totem spustil
@@ -99,6 +101,7 @@ T1mi2x05 : Uložiť ako
 T1n3o : Nízka
 T1n568g3 : zmenené v gite
 T1na3b0f : Zastaviť, Esc
+T1o0bnnq : Tento kód ešte vyžaduje kontrolu. Nebol automaticky uložený.
 T1oi7s04 : zodpovedá viac: spresni hľadanie.
 T1p3j : Vypnuté
 T1pekmdr : Súbory sú spolu príliš veľké
@@ -167,6 +170,7 @@ Tcgo5yg : Každých N minút
 Tcixuke : Zlúčené do projektu
 Tclyls1 : Dostupné modely
 Td7kjxa : Najprv vyber model. Pridaj poskytovateľa v Nastaveniach.
+Tdaeaix : Uložiť tento kód do projektu…
 Tekde62 : Otvoriť shell
 Teydlyk : Cesta je mimo projektu alebo chránená
 Tfcovm0 : Najprv vyber priečinok.

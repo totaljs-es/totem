@@ -37,7 +37,7 @@
 	.CLASS .part { margin-bottom: 8px; }
 	.CLASS .part.live { white-space: pre-wrap; overflow-wrap: anywhere; }
 	.CLASS .markdown-code { position: relative; }
-	.CLASS .saveblock { position: absolute; top: 6px; right: 42px; height: 28px; padding: 0 10px; border: 1px solid var(--t-border); border-radius: var(--radius, 6px); background: var(--t-card); color: var(--t-muted); cursor: pointer; font-size: 12px; display: flex; align-items: center; gap: 6px; }
+	.CLASS .saveblock { position: static; margin: 6px 0 12px; height: 28px; padding: 0 10px; border: 1px solid var(--t-border); border-radius: var(--radius, 6px); background: var(--t-card); color: var(--t-muted); cursor: pointer; font-size: 12px; display: flex; align-items: center; gap: 6px; }
 	.CLASS .saveblock:hover { color: inherit; }
 	.CLASS .copycode { position: absolute; top: 6px; right: 6px; width: 28px; height: 28px; padding: 0; border: 1px solid var(--t-border); border-radius: var(--radius, 6px); background: var(--t-card); color: var(--t-muted); cursor: pointer; opacity: 0; transition: opacity 0.15s; display: flex; align-items: center; justify-content: center; }
 	.CLASS .markdown-code:hover .copycode, .CLASS .copycode:focus-visible { opacity: 0.9; }
@@ -162,7 +162,10 @@
 							<div class="note"><i class="ti ti-book"></i> @(Knowledge used:) {{ p.data.pages | forgepages }}</div>
 							{{ fi }}
 							{{ if p.type === 'selfcheck' }}
-							<div class="note"><i class="ti ti-check-circle"></i> @(Totem checked the code of the answer and asked for a correction:) {{ p.data.rules.join(', ') }}</div>
+							<div class="note"><i class="ti ti-check-circle"></i> @(Code reviewed before showing the final answer:) {{ p.data.rules.join(', ') }}</div>
+							{{ fi }}
+							{{ if p.type === 'validation' }}
+							<div class="note{{ if p.data.blocking !== false }} validation{{ fi }}">@(This code still needs review. It has not been saved automatically.)</div>
 							{{ fi }}
 							{{ if p.type === 'compaction' }}
 							<div class="note"><i class="ti ti-compress"></i> @(Earlier turns were summarized to keep the conversation short.)</div>
@@ -423,6 +426,20 @@
 
 				exports.watch('model', exports.watchmodel);
 
+				// Read the original code, not the highlighted DOM (the renderer expands tabs into spaces).
+				function codeof(box) {
+					var holder = box.closest('[data-part]');
+					var part = parts[holder.attr('data-part')];
+					var source = part && part.data.text;
+					var blocks = [];
+					var regex = /```[^\n]*\n([\s\S]*?)```/g;
+					var match;
+					while (source && (match = regex.exec(source)))
+						blocks.push(match[1]);
+					var index = holder.find('.markdown-code').index(box[0]);
+					return index >= 0 && blocks[index] != null ? blocks[index] : box.find('pre code').text();
+				}
+
 				// Every code box of an answer has a button that copies its code
 				var codes = null;
 				function decorate() {
@@ -431,14 +448,14 @@
 						if (this.querySelector('.copycode'))
 							return;
 						// A block that starts with its path as a comment (// schemas/system.js) can be saved as that file
-						var first = ((this.querySelector('pre code') || {}).textContent || '').split('\n')[0];
+						var first = codeof($(this)).split('\n')[0];
 						var match = first.match(/^\s*(?:\/\/|<!--|#)\s*([A-Za-z0-9_@\-.\/]+\.[A-Za-z0-9]+)\s*(?::.*|-->)?\s*$/);
-						if (match && match[1].indexOf('..') === -1) {
+						if (!this.closest('.msg').querySelector('.validation')) {
 							var save = document.createElement('button');
 							save.type = 'button';
 							save.className = 'saveblock';
-							save.setAttribute('data-path', match[1]);
-							save.innerHTML = '<i class="ti ti-save"></i> @(Save as) ' + match[1];
+							save.setAttribute('data-path', match && match[1].indexOf('..') === -1 ? match[1] : '');
+							save.innerHTML = '<i class="ti ti-save"></i> @(Save this code to your project…)';
 							this.appendChild(save);
 						}
 						var button = document.createElement('button');
@@ -461,7 +478,7 @@
 					var path = button.attr('data-path');
 					var box = button.closest('.markdown-code');
 					var message = box.closest('.msg').find('.undo [data-id]').first().attr('data-id');
-					var content = box.find('pre code').text().replace(/\s+$/, '') + '\n';
+					var content = codeof(box).replace(/\s+$/, '') + '\n';
 					function save(replace) {
 						exports.tapi('sessions_saveblock/' + sessionid + ' ERROR', { messageid: message, path: path, content: content, replace: replace }, function(response) {
 							if (response.exists) {
@@ -472,12 +489,23 @@
 							button.html('<i class="ti ti-check"></i> @(Saved) ' + response.path);
 						});
 					}
-					save(false);
+					var opt = {};
+					opt.name = '@(Save as)';
+					opt.summary = '@(File path inside this project, for example public/demo.html)';
+					opt.value = path || '';
+					opt.newbie = true;
+					opt.callback = function(value) {
+						if (value && value.trim()) {
+							path = value.trim();
+							save(false);
+						}
+					};
+					SETTER('prompt/show', opt);
 				});
 
 				$(document).on('click', '.CLASS .copycode', function() {
 					var button = $(this);
-					SETTER('clipboard/copy', button.closest('.markdown-code').find('pre code').text());
+					SETTER('clipboard/copy', codeof(button.closest('.markdown-code')));
 					button.find('i').attr('class', 'ti ti-check');
 					setTimeout(() => button.find('i').attr('class', 'ti ti-clone'), 1500);
 				});

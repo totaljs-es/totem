@@ -158,7 +158,7 @@ exports.agents = function(root) {
 
 // /new: the files of a minimal Total.js 5 application, the same for every model (they are fixed text, a model would only get them wrong).
 // [{ path, content }] without the ones that exist, and the names of the ones that exist: { files, skipped }
-exports.scaffold = function(root, name) {
+exports.scaffold = function(root, name, request) {
 
 	var title = (name || '').trim().toLowerCase().replace(/[^a-z0-9-]+/g, '-').replace(/^-+|-+$/g, '') || (Total.Path.basename(root).toLowerCase().replace(/[^a-z0-9-]+/g, '-').replace(/^-+|-+$/g, '') || 'app');
 	var version = '0.0.20-1';
@@ -173,6 +173,15 @@ exports.scaffold = function(root, name) {
 		{ path: 'config', content: 'name                        : ' + title + '\nversion                     : 1.0.0\n' },
 		{ path: 'controllers/index.js', content: "exports.install = function() {\n\tROUTE('GET /', index);\n};\n\nfunction index($) {\n\t$.plain('Hello from " + title + "');\n}\n" }
 	];
+
+	// An explicitly requested first GET route and literal text can use the same verified controller template.
+	var route = (request || '').match(/\bGET\s+(\/[a-z0-9_\/-]*)(?![a-z0-9_\/{}?*-])/i);
+	var response = (request || '').match(/(?:texto|text)\s+(?:["']([^"'\n]{1,200})["']|([a-z0-9_-]+))/i);
+	var controller = (request || '').match(/\bcontrollers\/[a-z0-9-]+\.js\b/i);
+	if (route && response) {
+		all[3].path = controller ? controller[0].toLowerCase() : 'controllers/index.js';
+		all[3].content = "exports.install = function() {\n\tROUTE(" + JSON.stringify('GET ' + route[1]) + ", index);\n};\n\nfunction index($) {\n\t$.plain(" + JSON.stringify(response[1] || response[2]) + ");\n}\n";
+	}
 
 	var files = [];
 	var skipped = [];

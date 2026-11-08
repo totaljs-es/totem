@@ -63,6 +63,8 @@ function system(run) {
 	// The pages of Forge that the search found for this request
 	if (run.knowledge)
 		text += '\n' + run.knowledge + '\n';
+	if (run.bootstrapped)
+		text += '\nThe starter tool results are in the conversation. Keep created files; implement only requirements that remain, using tools. Report briefly in the language of the original request. Do not repeat the starter source or claim that a test ran without its tool result.\n';
 
 	var agents = MODS.agents.list(run.root);
 	if (agents.length) {
@@ -117,32 +119,34 @@ function textof(content) {
 // beginning. It is about the style and about not inventing; the user interface is only mentioned when the request is about one (a reminder
 // that always says "jComponent" makes a model put jComponent in a route).
 var STYLE = 'indent with TABS, ES5 (var and function, no =>, const, let or template literals), texts for people marked for translation as the recipes show, the modules of Node.js through Total (Total.Fs, Total.Os, Total.Path...) and never require(). Follow the recipes and the pages above; when they do not have what you need, look for it in the documentation of Total.js before you answer, and ask the user for more information only if you find nothing. Do not invent a function. Reply in the language of the user.';
-var ANSWER = ' Answer with the code in plain text: use tools only to read or change files of the project.';
+var ANSWER = ' Put code in Markdown fences with the language (js, html or json) and its file path on the preceding line. Use tools only to read or change files of the project.';
 var CREATE = ' The user wants it made: create the files with the write tool (the path the user gave; for Total.js code, schemas/ for actions and controllers/ for routes), then say in one sentence what you created. Never make files with shell commands (echo, cat): show each file as a code block with its path on the line before it.';
 var REMINDER = '\n\n(Total.js 5, in its style: ' + STYLE;
-var REMINDERUI = '\n\n(Total.js 5 and jComponent 20, the interface library of Total.js: not Java, not React or another framework. Style: ' + STYLE;
-var MAKE = /\b(crea|crear|cr[eé]ame|haz|hazme|genera|generar|a[ñn]ade|agrega|escribe|implementa|create|make|add|write|generate|build|implement)\b/i;
+var REMINDERUI = '\n\n(Total.js 5 and jComponent 20, the interface library of Total.js. Style: ' + STYLE;
+var MAKE = /\b(crea|crear|cr[eé]ame|haz|hazme|genera|generar|guarda|guardar|gu[aá]rdalo|save|a[ñn]ade|agrega|escribe|implementa|create|make|add|write|generate|build|implement)\b/i;
 // The first line of a code block that says where it goes: // schemas/system.js, <!-- plugins/x/index.html --> or # path
 var PATHCOMMENT = /^\s*(?:\/\/|<!--|#)\s*([A-Za-z0-9_@\-.\/]+\.[A-Za-z0-9]+)\s*(?::.*|-->)?\s*$/;
 
-// The code blocks of an answer with a path that is inside the project and does not exist yet: [{ path, content }], at most four
+// The code blocks of an answer with a path that is inside the project and does not exist yet: [{ path, content }], at most twenty-four
 function newfiles(run, text) {
 
 	var files = [];
 	var seen = {};
-	var regex = /```([A-Za-z0-9_+-]*)[^\n]*\n([\s\S]*?)```/g;
+	var regex = /```([A-Za-z0-9_+-]*)([^\n]*)\n([\s\S]*?)```/g;
 	var match;
 
-	while ((match = regex.exec(text || '')) && files.length < 4) {
+	while ((match = regex.exec(text || '')) && files.length < 24) {
 
-		var code = match[2];
+		var code = match[3];
 		var path = PATHCOMMENT.exec(code.split('\n')[0]);
+		if (!path)
+			path = match[2].trim().match(/^(?:filename=)?([A-Za-z0-9_@.\/-]+\.[A-Za-z0-9]+)$/);
 
-		// Without the comment: the file that the line before the block names (`package.json`, **index.js**), when the user named it too
+		// Without a comment: a preceding filename on a creation request, or a file the user explicitly named.
 		if (!path && !/^(bash|sh|shell|zsh|console|cmd|powershell)$/i.test(match[1])) {
 			var before = text.substring(Math.max(0, match.index - 160), match.index);
-			var named = before.match(/(?:`|\*\*)([A-Za-z0-9_\-.\/]+\.[A-Za-z0-9]+)(?:`|\*\*)(?![\s\S]*(?:`|\*\*)[A-Za-z0-9_\-.\/]+\.[A-Za-z0-9]+(?:`|\*\*))/);
-			if (named && (run.asked || '').indexOf(named[1]) !== -1)
+			var named = before.match(/(?:`|\*\*)([A-Za-z0-9_\-.\/]+\.[A-Za-z0-9]+|config)(?:`|\*\*)(?![\s\S]*(?:`|\*\*)[A-Za-z0-9_\-.\/]+\.[A-Za-z0-9]+(?:`|\*\*))/);
+			if (named && (run.make || (run.asked || '').indexOf(named[1]) !== -1))
 				path = [named[0], named[1]];
 		}
 
@@ -199,6 +203,8 @@ function textof(content) {
 // mode: in Build mode a request to make something is answered by making the files
 function reminderof(content, mode) {
 	var text = textof(content);
+	if (/^\s*(?:what is|qu[eé] es)\b/i.test(text) && !/example|ejemplo|code|c[oó]digo/i.test(text))
+		return '\n\n(Explain the concept briefly in the language of the user. No code or comparisons unless requested.)';
 	return (UIWORDS.test(text) ? REMINDERUI : REMINDER) + (mode === 'build' && MAKE.test(text) ? CREATE : ANSWER) + ')';
 }
 
@@ -503,7 +509,15 @@ exports.run = function(session, project, message, callback) {
 				var last = run.messages[run.messages.length - 1];
 				var asked = last && last.role === 'user' ? textof(last.content) : '';
 
-				MODS.knowledge.prefetch(run, last && last.role === 'user' ? last.content : '', function(pages) {
+				// A follow-up page request keeps the topic of the preceding user request (not arbitrary older turns).
+				var lookup = asked;
+				if (/\bhtml\b/i.test(asked) && /complet|full|standalone|que lo muestre/i.test(asked)) {
+					var previous = run.messages.slice(0, -1).filter(m => m.role === 'user').pop();
+					if (previous)
+						lookup += '\nPrevious request: ' + textof(previous.content).substring(0, 1000);
+				}
+
+				MODS.knowledge.prefetch(run, lookup, function(pages) {
 					if (pages.length)
 						addpart(run, 'knowledge', { pages: pages, recipes: run.recipeids || [] }, true);
 
@@ -566,6 +580,20 @@ function step(run, finish, fail) {
 		return;
 	}
 
+	// A small model should build features on a valid starter instead of inventing the framework's boot sequence.
+	if (!run.bootstrapped && !run.command && run.mode === 'build' && smallmodel(run.model) &&
+		MODS.knowledge.apprequest(run.asked) &&
+		MODS.instructions.istotaljs(run.root) && !Total.Fs.existsSync(Total.Path.join(run.root, 'package.json'))) {
+		run.bootstrapped = true;
+		var starter = MODS.commands.scaffold(run.root, '', run.asked);
+		var calls = starter.files.map(function(file) { return { id: 'w' + UID(), name: 'write', arguments: { path: file.path, content: file.content } }; });
+		run.messages.push({ role: 'assistant', content: null, tool_calls: calls.map(function(t) { return { id: t.id, type: 'function', function: { name: t.name, arguments: JSON.stringify(t.arguments) } }; }) });
+		runtools(run, calls, function() {
+			step(run, finish, fail);
+		});
+		return;
+	}
+
 	// /init with a model of up to 4 billion parameters: it cannot write AGENTS.md from the facts (it says that the folder is empty or loops). The file is
 	// made from the files of the project and written with the write tool, with its permission and its diff.
 	if (run.init && smallmodel(run.model) && !run.initdone && CONF.initsmall !== false) {
@@ -620,9 +648,12 @@ function request(run, finish, fail) {
 	if (meta.vision === false)
 		ai.payload.messages = withoutimages(ai.payload.messages);
 
-	ai.payload.tools = (meta.tools === false || run.notools || run.question) ? [] : exports.definitions(null, run.mode).concat((run.mcp && run.mcp.defs) || []);
+	ai.payload.tools = (meta.tools === false || run.notools || run.question || run.complaining) ? [] : exports.definitions(null, run.mode).concat(run.mode === 'plan' ? [] : ((run.mcp && run.mcp.defs) || []));
 	ai.payload.reasoning = run.reasoning;
 	run.ai = ai;
+	// Hold Total.js answer text until its checks finish. Tool progress and reasoning still stream.
+	run.holdanswer = CONF.selfcheck !== false && !run.command && MODS.instructions.istotaljs(run.root);
+	run.draft = '';
 
 	ai.stream(function(e) {
 		if (run.aborted)
@@ -638,6 +669,7 @@ function request(run, finish, fail) {
 	ai.callback(function(err, output) {
 
 		run.ai = null;
+		var reviewing = run.complaining;
 		run.complaining = false;
 		endcontent(run);
 
@@ -677,6 +709,8 @@ function request(run, finish, fail) {
 		}
 
 		run.attempts = 0;
+		if (run.holdanswer)
+			output.content = MODS.conventions.prepare(run.draft || output.content || '', reviewing);
 		closeparts(run);
 
 		var tools = output.tools || [];
@@ -715,7 +749,7 @@ function request(run, finish, fail) {
 		run.notools = false;
 
 		// The limit cut the answer: the user is told, because the last block may be unfinished
-		if (!tools.length && output.usage && predictlimit(run.model) && output.usage.output >= predictlimit(run.model) * 0.98)
+		if (!run.holdanswer && !tools.length && output.usage && predictlimit(run.model) && output.usage.output >= predictlimit(run.model) * 0.98)
 			addpart(run, 'text', { text: '\n\n(The answer reached the limit of this model and was cut. Ask for one part at a time.)' }, true);
 
 		run.messages.push(msg);
@@ -737,20 +771,33 @@ function request(run, finish, fail) {
 				return;
 			}
 
+			if (run.holdanswer && output.content)
+				addpart(run, 'text', { text: FUNC.scrub(output.content) }, true);
+
+			// Check the final revision too; code that still fails must not become a file automatically.
+			var remaining = run.holdanswer ? MODS.conventions.answer(output.content || '') : [];
+			if (cut)
+				remaining.push({ rule: 'truncated', severity: 'error', message: 'The answer reached the output limit and may be incomplete.' });
+			if (remaining.length)
+				addpart(run, 'validation', { problems: remaining, blocking: remaining.some(function(problem) { return problem.severity === 'error'; }) }, true);
+
 			// A small model that was asked to make files and answered with the code, each block with its path, did not call the tool. The files
 			// that do not exist yet are written through the same tool (with its permission, its diff and its undo): the answer says it did.
-			var made = (!cut && run.make && run.mode === 'build' && smallmodel(run.model)) ? newfiles(run, output.content || '') : [];
+			var made = (!cut && !remaining.length && run.make && run.mode === 'build' && smallmodel(run.model)) ? newfiles(run, output.content || '') : [];
 
 			if (made.length) {
 				var calls = made.map(file => ({ id: 'w' + UID(), name: 'write', arguments: { path: file.path, content: file.content } }));
 				msg.tool_calls = calls.map(t => ({ id: t.id, type: 'function', function: { name: t.name, arguments: JSON.stringify(t.arguments) } }));
-				runtools(run, calls, () => finish('idle'));
+				runtools(run, calls, () => step(run, finish, fail));
 				return;
 			}
 
 			finish('idle');
 			return;
 		}
+
+		if (run.holdanswer && output.content)
+			addpart(run, 'text', { text: FUNC.scrub(output.content) }, true);
 
 		runtools(run, tools, function() {
 			step(run, finish, fail);
@@ -807,6 +854,11 @@ function endcontent(run) {
 }
 
 function delta(run, type, text) {
+
+	if (type === 'text' && run.holdanswer) {
+		run.draft += text;
+		return;
+	}
 
 	var part = run.open[type];
 

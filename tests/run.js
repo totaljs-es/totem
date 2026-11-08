@@ -981,7 +981,7 @@ Test.push('Total.js by default, with Forge in front of the prompt', async functi
 	await idle(id);
 	clearInterval(rejecter);
 	var system = requests[0].messages[0].content;
-	check('a new folder gets the Total.js primer with the jComponent warning', system.indexOf('not Java Swing') !== -1 && system.indexOf('NEWACTION(') === -1 && /Without a request for code/.test(system) && system.indexOf('never needs a user interface') !== -1);
+	check('a new folder gets the Total.js primer with the browser library and server boundary', system.indexOf('user interface library of Total.js') !== -1 && system.indexOf('NEWACTION(') === -1 && /Without a request for code/.test(system) && system.indexOf('Keep the answer focused on server code') !== -1);
 
 	events.length = 0;
 	requests.length = 0;
@@ -989,7 +989,7 @@ Test.push('Total.js by default, with Forge in front of the prompt', async functi
 	var plain = (await api('sessions_create', { projectid: projectid, model: 'fake' })).response.id;
 	await api('sessions_prompt/' + plain, { text: 'quiero hacer un componente jcomponent' });
 	await idle(plain);
-	check('a plain Node.js project does not', requests[0].messages[0].content.indexOf('not Java Swing') === -1);
+	check('a plain Node.js project does not', requests[0].messages[0].content.indexOf('user interface library of Total.js') === -1);
 
 	// Forge in front of the prompt: its search and its best pages go into the system prompt
 	Total.Fs.mkdirSync(Total.Path.join(tjs, '.totem'), { recursive: true });
@@ -1344,7 +1344,7 @@ Test.push('small models: temperature, reminder, and Forge for every project', as
 	await idle(tid);
 	clearInterval(rejecter);
 	var last = requests[0].messages[requests[0].messages.length - 1];
-	check('the prompt of a Total.js project ends with the reminder', last.role === 'user' && last.content.indexOf('a form with jcomponent') === 0 && /Total\.js 5 and jComponent 20.*not Java, not React/s.test(last.content) && /TABS/.test(last.content));
+	check('the prompt of a Total.js project ends with the reminder', last.role === 'user' && last.content.indexOf('a form with jcomponent') === 0 && /Total\.js 5 and jComponent 20.*interface library of Total.js/s.test(last.content) && /TABS/.test(last.content));
 	var stored = (await api('sessions_messages/' + tid)).response.find(m => m.role === 'user').parts[0].data;
 	check('the reminder is not stored: the user sees only what they wrote', stored.text === 'a form with jcomponent' && JSON.stringify(stored).indexOf('Not plain JavaScript') === -1);
 
@@ -1365,7 +1365,7 @@ Test.push('small models: temperature, reminder, and Forge for every project', as
 	await idle(tid);
 	clearInterval(rejecter);
 	last = requests[0].messages[requests[0].messages.length - 1];
-	check('a question about a route gets the reminder of the style and no word of jComponent', /TABS/.test(last.content) && /ES5/.test(last.content) && !/jComponent/.test(last.content) && /use tools only to read or change files/.test(last.content));
+	check('a question about a route gets the reminder of the style and no word of jComponent', /TABS/.test(last.content) && /ES5/.test(last.content) && !/jComponent/.test(last.content) && /use tools only to read or change files/i.test(last.content));
 
 	// A greeting and a command do not get "answer with the code" (the permission to start Forge is rejected, as above)
 	rejecter = setInterval(() => events.filter(e => e.type === 'permission.ask').forEach(e => api('permissions_reply/' + e.data.id, { reply: 'reject' })), 30);
@@ -1425,15 +1425,25 @@ Test.push('small models: temperature, reminder, and Forge for every project', as
 	}
 
 	await ask('show me a route that answers GET /hello', [spaces, tabs]);
-	check('code with spaces is sent back to the model once, with what is wrong', requests.length === 2 && /spaces-indent/.test(requests[1].messages[requests[1].messages.length - 1].content) && /TABS/.test(requests[1].messages[requests[1].messages.length - 1].content));
+	check('spaces in code indentation are repaired without another model request', requests.length === 1);
 	r = await api('sessions_messages/' + tid);
 	var parts = r.response.filter(m => m.role === 'assistant').pop().parts;
-	check('the request to correct the code does not carry the reminder of the style', !/in its style/.test(requests[1].messages[requests[1].messages.length - 1].content));
+	check('the normalized answer is the only text part', parts.filter(p => p.type === 'text').length === 1);
 	check('a model of up to 4 billion parameters is known by its name', MODS.agent.smallmodel('ollama:qwen2.5:1.5b') && MODS.agent.smallmodel('local:llama3.2:3b') && MODS.agent.smallmodel('x:phi3:3.8b') && !MODS.agent.smallmodel('ollama:qwen2.5:7b') && !MODS.agent.smallmodel('openai:gpt-4o') && !MODS.agent.smallmodel('fake'));
-	check('the conversation says that the code was checked, and has the corrected answer', parts.some(p => p.type === 'selfcheck' && p.data.rules.indexOf('spaces-indent') !== -1) && parts.filter(p => p.type === 'text').pop().data.text.indexOf('\t$.plain') !== -1);
+	check('the conversation says that the code was checked, and has the corrected answer', parts.filter(p => p.type === 'text').pop().data.text.indexOf('\t\t$.plain') !== -1);
 
-	await ask('show me a route that answers GET /hello', [spaces, spaces, 'never']);
-	check('it asks only once: a second answer with the same problem is accepted', requests.length === 2);
+	await ask('show me a route that answers GET /hello', [bad('var a = (;'), bad('var a = (;'), 'never']);
+	check('it asks only once: a second answer is checked and marked for review', requests.length === 2);
+	r = await api('sessions_messages/' + tid);
+	parts = r.response.filter(m => m.role === 'assistant').pop().parts;
+	check('only one final version is stored, without the correction request', parts.filter(p => p.type === 'text').length === 1 && !parts.some(p => p.type === 'text' && /Totem checked/.test(p.data.text)) && parts.some(p => p.type === 'validation' && p.data.blocking === true));
+	check('the draft is never published to the client', !events.some(e => e.type === 'part.delta' && /Here it is|ROUTE/.test(e.data.text)) && events.filter(e => e.type === 'part.created' && e.data.part.type === 'text' && e.data.part.messageid === parts.find(p => p.type === 'text').messageid).length === 1);
+
+	var warning = bad("NEWACTION('Hello|read', { action: function($) { $.invalid('Plain error'); } });");
+	await ask('show me a route that answers GET /hello', [warning, warning]);
+	r = await api('sessions_messages/' + tid);
+	parts = r.response.filter(m => m.role === 'assistant').pop().parts;
+	check('a remaining translation warning allows the user to save explicitly', parts.some(p => p.type === 'validation' && p.data.blocking === false));
 
 	await ask('show me a route that answers GET /hello', [tabs]);
 	check('clean code is not asked again', requests.length === 1);
@@ -1640,6 +1650,8 @@ Test.push('secrets', async function(next) {
 	events.length = 0;
 	script = [{ tools: [{ id: 'z1', name: 'bash', arguments: { command: 'echo secret-key and sk-abcdefghijklmnopqrstuvwxyz123456' } }] }, { content: 'ok' }];
 	await api('sessions_prompt/' + id, { text: 'leak it' });
+	var permission = await until(() => events.find(e => e.type === 'permission.ask' && e.sessionid === id));
+	await api('permissions_reply/' + permission.data.id, { reply: 'once' });
 	await idle(id);
 	var r = await api('sessions_messages/' + id);
 	var part = r.response.find(m => m.role === 'assistant').parts.find(p => p.type === 'tool');
@@ -2363,9 +2375,9 @@ Test.push('recipes of Totem', function(next) {
 	check('the pages of Forge are written with the pipe of the conventions', MODS.knowledge.conventions("NEWACTION('Products/query', {\n}); ROUTE('+API ? -products --> Products/query'); NEWACTION('Reports/Categories/list', {}); var url = 'a/b';") === "NEWACTION('Products|query', {\n}); ROUTE('+API ? -products --> Products|query'); NEWACTION('Reports|Categories|list', {}); var url = 'a/b';");
 	check('a stem catches the Spanish in any form', ids('ahora como la protejo para que solo entren usuarios autenticados?')[0] === 'auth' && MODS.knowledge.route('como valido los usuarios autenticados').query.indexOf('authentication') !== -1);
 	check('at most two recipes by default and the best first', ids('route action nosql config cron websocket auth').length === 2 && MODS.knowledge.recipes('route action nosql', 1).length === 1);
-	check('every recipe has a title, keywords and a body with code', MODS.knowledge.recipes('route routes ruta controller action newaction nosql config cron websocket auth view plugin jcomponent restbuilder translate es5 func mods callback fs uid memory empiezo', 99).length === 20 && MODS.knowledge.recipes('nosql', 1)[0].body.indexOf('```js') !== -1);
+	check('every recipe has a title, keywords and a body with code', MODS.knowledge.recipes('route routes ruta controller action newaction nosql config cron websocket auth view plugin jcomponent restbuilder translate es5 func mods callback fs uid memory empiezo html complete tarjeta toggle', 99).length === 22 && MODS.knowledge.recipes('nosql', 1)[0].body.indexOf('```js') !== -1);
 
-	var all = MODS.knowledge.recipes('route routes ruta controller action newaction nosql config cron websocket auth view plugin jcomponent restbuilder translate es5 func mods callback fs uid memory empiezo', 99);
+	var all = MODS.knowledge.recipes('route routes ruta controller action newaction nosql config cron websocket auth view plugin jcomponent restbuilder translate es5 func mods callback fs uid memory empiezo html complete tarjeta toggle', 99);
 	var codes = all.map(r => (r.body.match(/```js\n[\s\S]*?```/g) || []).map(b => b.replace(/```js\n|```/g, ''))).reduce((list, items) => list.concat(items), []);
 	check('the code of the recipes follows the conventions it teaches: tabs, no let or const, no arrow functions', codes.length > 10 && codes.every(code => !/^ {2,}\S/m.test(code) && !/^\s*(let|const)\s/m.test(code) && !/=>/.test(code) && !/`/.test(code)));
 
@@ -2385,11 +2397,47 @@ Test.push('recipes of Totem', function(next) {
 		MODS.knowledge.prefetch(run2, 'Create an API route and its action that lists tickets in Total.js 5.', function(pages2) {
 			var run3 = fake({ command: true });
 			MODS.knowledge.prefetch(run3, 'Study this project and write AGENTS.md in its root. Read package.json and config.', function(pages3) {
-				check('the recipes of the last turn are not shown again, and a command looks nothing up', run1.recipeids.length > 0 && run2.recipeids.length === 0 && !run2.knowledge && pages3.length === 0 && !run3.knowledge);
+				check('the recipes remain available for follow-ups, and a command looks nothing up', run1.recipeids.length > 0 && run2.recipeids.length > 0 && !!run2.knowledge && pages3.length === 0 && !run3.knowledge);
 				next();
 			});
 		});
 	});
+});
+
+Test.push('developer answer presentation and permission regressions', async function(next) {
+	var raw = '<!DOCTYPE html>\n<html><head><title>Demo</title></head><body><p>Hello</p></body></html>';
+	check('a raw complete HTML document is fenced without losing its tags', MODS.conventions.prepare(raw) === '```html\n' + raw + '\n```');
+	check('a correction that echoes its private review keeps only the code', MODS.conventions.prepare('Totem checked the code of your answer against conventions.\nReturn only the final solution.\n```js\nvar x = 1;\n```', true) === '```js\nvar x = 1;\n```');
+	check('already fenced code is unchanged', MODS.conventions.prepare('```html\n' + raw + '\n```') === '```html\n' + raw + '\n```');
+	check('invented frontend APIs are rejected', MODS.conventions.answer('```html\n<script>new TOTAL.Component("card");</script>\n```').some(p => p.rule === 'jcomponent-api'));
+	check('syntax inside HTML scripts is checked', MODS.conventions.answer('```html\n<script>var value = (;</script>\n```').some(p => p.rule === 'syntax'));
+	check('translated HTML strings do not hide syntax errors', MODS.conventions.answer('```html\n<script>var COMPONENT("x", function(self) { self.html("<b>@(Hello)</b>"); });</script>\n```').some(p => p.rule === 'syntax'));
+	var ranked = MODS.knowledge.rank([
+		{ section: 'Total.js 5', title: 'Test a Flow component with config', url: 'https://example.test/flowstream-config.md', description: 'config settings application' },
+		{ section: 'Total.js 5', title: 'Application settings and CONF', url: 'https://example.test/config.md', description: 'config settings application' }
+	], { query: 'config settings', product: 'total5', recipe: 'config' }, 2);
+	check('application settings cannot be displaced by a Flow configuration example', ranked.length === 1 && /config.md$/.test(ranked[0].url));
+	check('a template marker in a string cannot disable syntax checking', MODS.conventions.answer('```js\nvar template = "@{model.name}"; var broken = (;\n```').some(p => p.rule === 'syntax'));
+	check('complete HTML requests select the page recipe first', MODS.knowledge.recipes('dame un html completo con el componente que lo muestre')[0].id === 'html-page');
+	check('asking for an id in an application is not a request to scaffold one', !MODS.knowledge.apprequest('Create an id for my application') && !MODS.knowledge.apprequest('How do I create an application?'));
+	check('a clear application request prioritizes the complete starter over individual files', MODS.knowledge.recipes('Crea una aplicación mínima Total.js con config y controllers/default.js')[0].id === 'new-app');
+	check('a message visibility request has a recipe that preserves the bound message', MODS.knowledge.recipes('un componente tarjeta con mensaje y boton para mostrar u ocultar')[0].id === 'toggle-card');
+	check('HTML with a component selects browser documentation', MODS.knowledge.route('dame un html completo con el componente que lo muestre').product === 'jcomponent');
+
+	var run = { root: PROJECT, projectid: projectid, sessionid: sessionid, mode: 'plan', unattended: true };
+	function allowed(tool, input) {
+		return new Promise(resolve => MODS.permissions.check(run, tool, input, reply => resolve(reply)));
+	}
+	check('Plan refuses destructive find options', await allowed('bash', { command: 'find . -name a.txt -delete' }) === 'deny');
+	check('Plan refuses an MCP call even with a global allow', await allowed('mcp:write', { content: 'x' }) === 'deny');
+	run.mode = 'build';
+	check('an unattended Build cannot run destructive find without approval', await allowed('bash', { command: 'find . -name a.txt -delete' }) === 'deny');
+	Total.Fs.writeFileSync(Total.Path.join(PROJECT, '.env'), 'TOTEM_PRIVATE_VALUE=unknown-secret-value\n');
+	var result = await ACTION('Tools|grep', { path: '.', pattern: 'TOTEM_PRIVATE_VALUE' }).user({ root: PROJECT }).promise();
+	check('searching a folder never discloses env files', result === '(no matches)');
+	result = await ACTION('Tools|grep', { path: '.env', pattern: 'TOTEM_PRIVATE_VALUE' }).user({ root: PROJECT }).promise();
+	check('searching an env file directly does not bypass read approval', result === '(no matches)');
+	next();
 });
 
 Test.push('files from the answer of a small model', function(next) {
@@ -2409,6 +2457,51 @@ Test.push('files from the answer of a small model', function(next) {
 
 	check('the blocks with a path, or named by the line before and by the user, become files', files.length === 2 && files[0].path === 'package.json' && files[1].path === 'schemas/a.js' && files[1].content === '// schemas/a.js\nvar a = 1;\n');
 	check('a file that exists, a shell block, a path outside and a name that the user did not say are left alone', !files.some(f => /old\.js|run\.sh|outside|readme/.test(f.path)));
+	next();
+});
+
+Test.push('a small model creates all named files and gets their diagnostics', async function(next) {
+	NEWAIMODEL('scripted:1.5b', fake);
+	var id = await session({ model: 'scripted:1.5b', autoaccept: true });
+	var text = [];
+	for (var i = 1; i <= 6; i++)
+		text.push('`generated/file' + i + '.js`\n```js\nvar value = ' + i + ';\n```');
+	events.length = 0;
+	requests.length = 0;
+	script = [{ content: text.join('\n\n') }, { content: 'The files were created.' }];
+	await api('sessions_prompt/' + id, { text: 'create the files for the application' });
+	await idle(id);
+	check('a generated application is not silently limited to four files', [1, 2, 3, 4, 5, 6].every(n => Total.Fs.existsSync(Total.Path.join(PROJECT, 'generated/file' + n + '.js'))));
+	check('write results return to the model before it finishes', requests.length === 2 && requests[1].messages.filter(m => m.role === 'tool' && /^Written/.test(m.content)).length === 6);
+	next();
+});
+
+Test.push('a small model starts a new application through approved native files', async function(next) {
+	NEWAIMODEL('scripted:1.5b', fake);
+	var folder = Total.Path.join(TMP, 'starter-app');
+	Total.Fs.mkdirSync(folder);
+	var project = (await api('projects_open', { path: folder })).response;
+	var id = (await api('sessions_create', { projectid: project.id, model: 'scripted:1.5b' })).response.id;
+	events.length = 0;
+	requests.length = 0;
+	script = [{ content: 'Created the starter.' }];
+	var handled = {};
+	var approver = setInterval(function() {
+		events.filter(e => e.type === 'permission.ask' && e.sessionid === id).forEach(function(e) {
+			if (!handled[e.data.id]) {
+				handled[e.data.id] = e.data.tool;
+				api('permissions_reply/' + e.data.id, { reply: e.data.tool === 'write' ? 'once' : 'reject' });
+			}
+		});
+	}, 20);
+	await api('sessions_prompt/' + id, { text: 'Crea una aplicación mínima Total.js 5 con GET /hello y el texto Hello en controllers/default.js' });
+	await idle(id);
+	clearInterval(approver);
+	check('the four starter writes ask before running', Object.keys(handled).filter(id => handled[id] === 'write').length === 4);
+	check('the created starter uses the real framework boot sequence', /F\.run/.test(Total.Fs.readFileSync(Total.Path.join(folder, 'index.js'), 'utf8')) && !!JSON.parse(Total.Fs.readFileSync(Total.Path.join(folder, 'package.json'), 'utf8')).dependencies.total5);
+	check('the requested route is already in its controller', /GET \/hello/.test(Total.Fs.readFileSync(Total.Path.join(folder, 'controllers/default.js'), 'utf8')));
+	check('the model continues from successful writes instead of inventing the bootstrap', requests.length === 1 && requests[0].messages.filter(m => m.role === 'tool' && /^Written/.test(m.content)).length === 4);
+	await api('projects_remove/' + project.id);
 	next();
 });
 
@@ -2442,6 +2535,9 @@ Test.push('/new makes the files of an application and /init makes AGENTS.md for 
 	check('the scaffold has the files of an application and leaves the ones that exist', plan.files.some(f => f.path === 'package.json') && !plan.files.some(f => f.path === 'index.js') && plan.skipped.join() === 'index.js');
 	var pkg = JSON.parse(plan.files.find(f => f.path === 'package.json').content);
 	check('its package.json depends on total5 and the name is a slug', !!pkg.dependencies.total5 && pkg.name === 'my-tasks' && pkg.scripts.start === 'node index.js');
+	var requested = MODS.commands.scaffold(dir, 'hello', 'Crea una aplicación mínima con GET /hello y el texto Hello en controllers/default.js');
+	var first = requested.files.find(f => f.path === 'controllers/default.js');
+	check('the scaffold can use an explicitly requested first route and literal reply', first && /GET \/hello/.test(first.content) && /Hello/.test(first.content));
 	check('its first route answers', /ROUTE\('GET \/'/.test(plan.files.find(f => f.path === 'controllers/index.js').content));
 
 	Total.Fs.mkdirSync(Total.Path.join(dir, 'controllers'), { recursive: true });

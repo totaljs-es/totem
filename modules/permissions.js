@@ -6,7 +6,7 @@ var READONLY = { read: 1, glob: 1, grep: 1, todo: 1, ask: 1, skill: 1, task: 1, 
 var SECRETS = /(^|\/)\.env(\.[^\/]*)?$/;
 var SECRETSOK = /\.(example|sample|template)$/;
 var CHAINED = /[;&|<>$`()\n\\]/;
-var READONLY_COMMANDS = /^(ls|pwd|cat|head|tail|wc|echo|git (status|diff|log|show|branch)|node --check|rg|grep|find)( |$)/;
+var READONLY_COMMANDS = /^(pwd|ls(?: -[aAlh1]+)?|git status(?: --short| --porcelain)?)$/;
 
 // Subject of a tool call that a rule pattern is compared with
 function subject(tool, input) {
@@ -16,6 +16,10 @@ function subject(tool, input) {
 }
 
 exports.subject = subject;
+
+exports.issecret = function(path) {
+	return SECRETS.test(path) && !SECRETSOK.test(path);
+};
 
 // callback(reply) where reply is 'allow' or 'deny'
 exports.check = function(run, tool, input, callback) {
@@ -29,7 +33,7 @@ exports.check = function(run, tool, input, callback) {
 	}
 
 	// Plan mode only reads: nothing that changes files or runs a command, whatever the rules say
-	if (run.mode === 'plan' && (tool === 'write' || tool === 'edit' || tool === 'patch' || (tool === 'bash' && (!READONLY_COMMANDS.test(text) || CHAINED.test(text))))) {
+	if (run.mode === 'plan' && (tool === 'write' || tool === 'edit' || tool === 'patch' || tool === 'bash' || tool === 'mcp-start' || tool.indexOf('mcp:') === 0 || (tool === 'job' && input.stop))) {
 		callback('deny', 'This session is in Plan mode: it cannot change files or run commands. Describe the change in your plan instead.');
 		return;
 	}

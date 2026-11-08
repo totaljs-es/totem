@@ -112,6 +112,9 @@ NEWACTION('Tools|grep', {
 
 		var output = [];
 		for (var file of files) {
+			// Search must not bypass the read permission of secret files. Read one explicitly to request access.
+			if (MODS.permissions.issecret(file))
+				continue;
 			var text;
 			try {
 				text = Total.Fs.readFileSync(Total.Path.join(root, file), 'utf8');

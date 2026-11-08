@@ -36,11 +36,11 @@ Totem is one application with three ways to run: a command, a Docker container a
 - **An agent with tools.** It reads, searches, edits, patches and runs commands in your project folder, and it cannot leave it (every path is resolved inside the project, symbolic links included).
 - **You stay in control.** Every file change and command asks first, unless you allow it. **Plan mode** only reads and describes; **Build mode** changes things. See the diff of each step, undo it, redo it.
 - **Any model.** Ollama, LM Studio and llama.cpp on your computer are detected for you; OpenRouter, OpenAI, Anthropic, Gemini, Groq, Mistral, DeepSeek and a dozen more (any OpenAI-compatible server) are in the list. Prompts go only to the providers you add.
-- **It knows Total.js.** In a project that depends on `total5` the agent gets the recipes of Totem, the pages of [Forge](https://forge.totaljs.es) for your request, the conventions as a skill, and a check of everything it writes: syntax, style, invented functions. Even a 1.5B model on your laptop answers with real Total.js.
+- **It knows Total.js.** In a project that depends on `total5` the agent gets the recipes of Totem, the pages of [Forge](https://forge.totaljs.es) for your request, the conventions as a skill, and a check of everything it writes: syntax, style, invented functions. Small local models get focused examples; the quality of an application still depends on the model and needs testing.
 - **Work in parallel.** Sessions can run in their own **git worktree**, and **scheduled prompts** run by themselves, unattended and read-only unless you say otherwise.
 - **A terminal that stays.** An interactive shell in the project folder that survives a page reload, and background commands the agent can start and read.
 - **Open protocols.** A client of MCP servers (tools and prompts) for the agent, and Totem itself as an MCP server for other agents (off by default).
-- **Careful with your machine.** Secrets never reach the model, `.env` files ask first, a shared server needs a token, and the Docker image runs without root.
+- **Careful with your machine.** Configured keys are masked, `.env` reads ask first, a shared server needs a token, and the Docker image runs without root.
 - **Your language.** English, Spanish and Slovak, chosen in Settings.
 
 ## Quick start
@@ -143,7 +143,7 @@ Totem works with a 1.5B model and with the biggest ones. A few tips:
 When the project depends on `total5` (or is a new folder), Totem puts three things in front of the model:
 
 1. **Recipes** ([`private/recipes/`](private/recipes)): short, exact answers for the common tasks (routes, actions, NoSQL, config, `RESTBuilder`, auth, CRON, WebSockets, views, jComponent, plugins...), chosen by the words of your request. They work offline and follow the conventions to the letter.
-2. **Forge** ([forge.totaljs.es](https://forge.totaljs.es)): the pages of the documentation that match the request, through MCP. Totem asks before it starts the connection.
+2. **Forge** ([forge.totaljs.es](https://forge.totaljs.es)): matching documentation fetched from its public index and Markdown pages. Small models use one focused recipe when it covers the task, and Forge when it does not. MCP is optional.
 3. **A check of the code**: what the agent writes is checked against the [Total.js conventions](https://github.com/totaljs-es/conventions) (syntax, ES5, tabs, names with `|`, texts as `@(English)`, no invented functions) and the model fixes what is wrong. The code in an answer is checked too, and corrected once.
 
 To measure it with any model:

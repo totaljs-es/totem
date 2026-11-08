@@ -12,6 +12,7 @@
 //
 // Options: --url <server> (default: a temporary local server, which uses the providers of this installation), --token <token>,
 // --cases <file> (default tests/knowledge/cases.json), --timeout <seconds per case> (default 240), --lenient,
+// --reasoning <none|low|medium|high> (for models that support it),
 // --no-forge (without the pages of Forge: the model only has the primer and the skill; by default Forge is allowed to start, as a person would allow it).
 //
 // The code that the model shows is checked too, not only the words: every fenced block in js or html goes through the conventions checker of
@@ -438,7 +439,7 @@ async function main() {
 
 			for (var run = 0; run < runs; run++) {
 
-				var session = await request(url, token, 'sessions_create', { projectid: project.id, model: model, name: 'eval ' + item.id });
+				var session = await request(url, token, 'sessions_create', { projectid: project.id, model: model, name: 'eval ' + item.id, reasoning: opt.reasoning && opt.reasoning !== true ? opt.reasoning : '' });
 				created.push(session.id);
 
 				var started = Date.now();

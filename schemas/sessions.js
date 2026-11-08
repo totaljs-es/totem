@@ -297,6 +297,8 @@ NEWACTION('Sessions|saveblock', {
 		var project = await NOSQL('projects').read().where('id', session.projectid).error(404).promise($);
 		project = FUNC.sessionproject(session, project);
 
+		await NOSQL('messages').read().where('id', model.messageid).where('sessionid', session.id).where('role', 'assistant').error(404).promise($);
+
 		var relative = model.path.replace(/\\/g, '/').replace(/^\.\//, '');
 		var path = FUNC.resolve(project.path, relative);
 

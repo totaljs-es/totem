@@ -52,7 +52,7 @@ Every event: `{ type, sessionid, ts, data }`.
 | `session.status` | `{ status }` | `running`, `idle`, `aborted`, `error` |
 | `session.updated` | `{ session }` | The name of the session changed (the user renamed it, or the first prompt named it) |
 | `message.created` | `{ message }` | New user or assistant message |
-| `part.created` | `{ part }` | A part opened (text, reasoning, tool, knowledge) |
+| `part.created` | `{ part }` | A part opened (text, reasoning, tool, knowledge, selfcheck, validation) |
 | `part.delta` | `{ partid, text }` | Appended text of an open part |
 | `part.updated` | `{ part }` | A part changed state (a tool went `running` → `done`) |
 | `part.closed` | `{ partid }` | The part is complete and stored |
@@ -74,3 +74,5 @@ Ordering: events of one session are sent in order. A client that reconnects call
 
 - `POST /$mcp/` (Total.js MCP) is available when `$mcp : true` is set in `config` (off by default). It exposes eight actions marked `mcp: true`: `Projects|list` and `Sessions|list`, `create`, `read`, `messages`, `prompt` (it also takes `mode`), `abort` and `diff`, named `Sessions_prompt` and so on. The tools of the agent (files, commands), permissions and providers are not exposed. A prompt that changes files or runs a command still asks the person in the Totem screen. Auth is Totem's own (`definitions/auth.js`): a request with an `Origin` header (a web page) is refused; with `token` set the caller sends `Authorization: Bearer <token>`; without a token only localhost callers on this computer are accepted.
 - A headless call for scripts: `POST /api/sessions_prompt/{id}` with a token header, then polling `Sessions|read` or listening to the WebSocket. The `totem run` command ([delivery](delivery.md)) uses exactly this.
+
+With answer self-checking enabled in a Total.js project, text is published only after review; it arrives as a complete `part.created` followed by `part.closed`. Tool progress and reasoning keep their streaming events. A `validation` part has `{ problems: [{ rule, severity, message, block?, line? }], blocking }` and marks code that still needs review or was cut at the output limit. The client must not save that answer automatically. The explicit Save offer is blocked when `blocking` is true (or absent for older data); warnings with `blocking: false` permit an explicit Save.

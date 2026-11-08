@@ -57,8 +57,10 @@ T1c7gi : Alto
 T1c7v89 : Token
 T1c7yd7 : Herramientas
 T1ckg6lg : La ruta no es una carpeta
+T1dnznbx : Código revisado antes de mostrar la respuesta final:
 T1ebyews : Prompts programados
 T1egq28u : Nombre de la primera sesión (opcional)
+T1ehk8yd : Ruta del archivo dentro del proyecto, por ejemplo public/demo.html
 T1ek2755 : Escribe el id de un modelo y pulsa intro
 T1eo1 : Añadir
 T1eu5pwf : Comandos que ha ejecutado Totem
@@ -99,6 +101,7 @@ T1mi2x05 : Guardar como
 T1n3o : Bajo
 T1n568g3 : cambiados en git
 T1na3b0f : Parar, Esc
+T1o0bnnq : Este código todavía necesita revisión. No se ha guardado automáticamente.
 T1oi7s04 : coinciden más: afina la búsqueda.
 T1p3j : Apagado
 T1pekmdr : Los archivos juntos son demasiado grandes
@@ -167,6 +170,7 @@ Tcgo5yg : Cada N minutos
 Tcixuke : Fusionado en el proyecto
 Tclyls1 : Modelos disponibles
 Td7kjxa : Elige primero un modelo. Añade un proveedor en Ajustes.
+Tdaeaix : Guardar este código en tu proyecto…
 Tekde62 : Abrir shell
 Teydlyk : La ruta está fuera del proyecto o protegida
 Tfcovm0 : Elige primero una carpeta.

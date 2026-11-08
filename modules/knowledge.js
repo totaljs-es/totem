@@ -10,6 +10,11 @@
 exports.id = 'knowledge';
 
 var MINLENGTH = 12;
+var APPREQUEST = /^\s*(?:(?:quiero|necesito)\s+)?(?:crea|crear|cr[eé]ame|haz|hacer|create|build|make)\s+(?:(?:una?|an?|me|new|nueva?|m[ií]nima?|minimal|simple|basic|b[aá]sica?|peque[ñn]a?|small|total\.?js|total5|5|api)\s+){0,8}(?:aplicaci[oó]n|application|app)\b/i;
+
+exports.apprequest = function(text) {
+	return APPREQUEST.test(text || '');
+};
 
 // The recipes of Totem for Total.js 5 (private/recipes/*.md): a title, the words that call for it and a short text with code that follows our conventions.
 // A small model copies what it has in front of it, so the recipe of the task is put there. Only in projects that depend on total5.
@@ -67,6 +72,9 @@ exports.recipes = function(text, max) {
 	});
 
 	var lower = (text || '').toLowerCase();
+	var newapp = exports.apprequest(text);
+	var togglecard = /tarjeta|card|mensaje|message/.test(lower) && /ocult|mostrar|muestre|toggle|hide|show/.test(lower) && /component|jcomponent/.test(lower);
+	var fullhtml = /\bhtml\b/.test(lower) && /complet|standalone|entero|full|p[aá]gina/.test(lower);
 
 	return loadrecipes().map(function(recipe) {
 		var score = 0;
@@ -75,6 +83,12 @@ exports.recipes = function(text, max) {
 		// A word of the topic itself counts three, a word that goes with it one: two of those are needed, one of the first is enough
 		recipe.strong.forEach(keyword => hit(keyword) && (score += 3));
 		recipe.keywords.forEach(keyword => hit(keyword) && recipe.strong.indexOf(keyword) === -1 && score++);
+		if (newapp && recipe.id === 'new-app')
+			score += 50;
+		if (togglecard && recipe.id === 'toggle-card')
+			score += 30;
+		if (fullhtml && recipe.id === 'html-page')
+			score += 20;
 		return { recipe: recipe, score: score };
 	}).filter(item => item.score >= 2).sort((a, b) => b.score - a.score).slice(0, max == null ? 2 : max).map(item => item.recipe);
 };
@@ -118,7 +132,7 @@ function route(text) {
 	if (words.indexOf('component') !== -1 && /\b(hacer|haz|crear|crea|escribe|escribir|make|create|write|build|new|nuevo|nueva)\b/i.test(text) && words.indexOf('custom') === -1)
 		words.unshift('custom');
 
-	if (/jcomponent|ui-component|ui-bind|\bcomponent\(|\bcomponentator|\bplugin\(|tangular/i.test(text))
+	if (/jcomponent|ui-component|ui-bind|\bcomponent\(|\bcomponentator|\bplugin\(|tangular|\bhtml\b|\bfrontend\b|\binterfaz\b|\bcomponent(?:e|es|s)?\b/i.test(text) && !/server component|componente (?:del? )?servidor/i.test(text))
 		product = 'jcomponent';
 	else if (/total\.?js|total5|newaction|newschema|\broute\(|\bdata\.|nosql|filestorage|restbuilder|schema/i.test(text))
 		product = 'total5';
@@ -215,7 +229,24 @@ exports.rank = function(items, asked, max) {
 	else if (!/\b(openplatform|cms|flow|todomator|uibuilder|ui-builder)\b/.test(asked.query || ''))
 		want = /^(Total\.js 5|jComponent|Components)/i;
 
-	return items.filter(item => !NOTDOCS.test(item.section) && (!want || want.test(item.section))).map(function(item) {
+	var topics = {
+		config: /config|\bconf\b/i,
+		mods: /module|\bmods\b/i,
+		node: /file|filesystem|crypto|node\.js|total\.fs/i,
+		style: /style|es5|convention/i,
+		'uid-now': /\buid\b|identifier|unique|\bnow\b|dates?/i,
+		'api-action': /api|action/i,
+		route: /route|routing/i
+	};
+	var focus = topics[asked.recipe];
+	return items.filter(function(item) {
+		if (NOTDOCS.test(item.section) || (want && !want.test(item.section)))
+			return false;
+		// Flow examples share many generic words with ordinary application settings, files and tests.
+		if (!/\bflow(?:stream)?\b/i.test(asked.query || '') && /flowstream|\bflow\b/i.test(item.title + ' ' + item.url))
+			return false;
+		return !focus || focus.test(item.title + ' ' + item.url);
+	}).map(function(item) {
 		var title = item.title.toLowerCase();
 		var slug = item.url.toLowerCase();
 		var description = item.description.toLowerCase();
@@ -302,14 +333,25 @@ exports.prefetch = function(run, text, callback_) {
 	if (CONF.recipes !== false && (text || '').trim().length >= MINLENGTH && !/^\//.test(text.trim()) && MODS.instructions.istotaljs(run.root))
 		mine = exports.recipes(text, CONF.reciperesults == null ? 2 : CONF.reciperesults);
 
-	// The recipes that the last turn showed are already in the conversation: showing them again makes a small model answer with the same example
-	// whatever the user says next
-	mine = mine.filter(r => (run.shown || []).indexOf(r.id) === -1);
+	// Recipes are request context, so follow-ups keep their references.
+	// A small model follows one focused reference. An approximate Forge hit can override the exact recipe.
+	// Use Forge when there is no recipe; larger models keep the extra documentation.
+	if (mine.length && MODS.agent.smallmodel(run.model)) {
+		if (['component', 'toggle-card', 'html-page', 'plugin', 'new-app', 'config'].indexOf(mine[0].id) !== -1) {
+			mine = mine.slice(0, 1);
+			pages = 0;
+		} else
+			pages = Math.min(pages, 1);
+	}
 	run.recipeids = mine.map(r => r.id);
-
-	// A small model reads one page when it has a recipe: the recipe is the exact answer and a second page that is only near the topic leads it away
-	if (mine.length && MODS.agent.smallmodel(run.model))
-		pages = Math.min(pages, 1);
+	var named = (text || '').match(/(?:llamad[oa]|named)\s+([a-z][a-z0-9-]*)/i);
+	if (named) {
+		mine = mine.map(function(recipe) {
+			if (recipe.id !== 'toggle-card')
+				return recipe;
+			return Object.assign({}, recipe, { body: recipe.body.split('message-card').join(named[1].toLowerCase()) });
+		});
+	}
 
 	var recipetext = mine.length ? ('Recipes of Totem for this request. Follow them exactly: names, style and the way each thing is answered. Do not add anything that is not needed (no user interface for a server question).\n\n' + mine.map(r => '### ' + r.title + '\n' + r.body).join('\n\n')) : '';
 	var listed = mine.map(r => ({ title: r.title, url: '' }));
@@ -328,6 +370,7 @@ exports.prefetch = function(run, text, callback_) {
 	}
 
 	var asked = route(text.trim());
+	asked.recipe = mine.length ? mine[0].id : '';
 	var canmcp = !!(run.mcp && run.mcp.tools.forge__Forge_search && run.mcp.tools.forge__Forge_page);
 
 	// First the documents of Forge (llms.txt and the pages in Markdown): no server to start and nothing to ask. The MCP server comes after, when they gave nothing.

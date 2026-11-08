@@ -11,6 +11,43 @@ function load() {
 	return checker;
 }
 
+// Raw HTML is code, never Markdown markup. Preserve the source exactly and fence the complete document.
+exports.prepare = function(text, review) {
+	text = (text || '').trim();
+	if (review && /^(?:Totem checked the code of your answer|Return only the final solution)/i.test(text)) {
+		var fence = text.indexOf('```');
+		if (fence !== -1)
+			text = text.substring(fence);
+	}
+	if (!/```/.test(text)) {
+		var start = text.search(/<!doctype html\b|<html\b/i);
+		var end = text.toLowerCase().lastIndexOf('</html>');
+		if (start !== -1 && end > start)
+			text = text.substring(0, start).trim() + '\n\n```html\n' + text.substring(start, end + 7) + '\n```' + text.substring(end + 7);
+	}
+	// Whitespace-only indentation fixes do not need another model request. Avoid literal content where whitespace is data.
+	text = text.replace(/```(js|javascript|html)([^\n]*)\n([\s\S]*?)```/gi, function(all, lang, info, code) {
+		if (/`|\\\r?\n|<(?:pre|textarea)\b/i.test(code))
+			return all;
+		var lines = code.split('\n');
+		var width = 0;
+		lines.forEach(function(line) {
+			var match = line.match(/^ +(?! )\S/);
+			var size = match ? match[0].length - 1 : 0;
+			if (size >= 2)
+				width = width ? Math.min(width, size) : size;
+		});
+		if (!width)
+			return all;
+		return '```' + lang + info + '\n' + lines.map(function(line) {
+			return line.replace(/^ +/, function(spaces) {
+				return '\t'.repeat(Math.floor(spaces.length / width)) + ' '.repeat(spaces.length % width);
+			});
+		}).join('\n') + '```';
+	});
+	return text.trim();
+};
+
 // The findings about a file that a tool has just written, as text for the model; an empty text when there is nothing to say
 exports.review = function(path, content) {
 
@@ -32,15 +69,15 @@ var VM = null;
 
 function syntaxof(code) {
 
-	// Server-side template tokens outside of a string are not JavaScript until they are rendered
-	if (/@\{/.test(code) || /[^'"`(\w]@\(/.test(code))
-		return '';
-
 	try {
 		VM = VM || REQUIRE('node:vm');
 		new VM.Script('(async function(){' + code + '\n})', { filename: 'answer' });
 		return '';
 	} catch (e) {
+		// Only unquoted template tokens need rendering; markers inside strings or comments do not excuse broken JavaScript.
+		var plain = code.replace(/"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|`(?:\\.|[^`\\])*`|\/\/[^\n]*|\/\*[\s\S]*?\*\//g, '');
+		if (/@\{/.test(plain) || /\breturn\s+@\(/.test(plain))
+			return '';
 		return e.message;
 	}
 }
@@ -62,6 +99,8 @@ exports.answer = function(text) {
 	while ((match = regex.exec(text))) {
 
 		var lang = match[1].toLowerCase();
+		if (!lang && /^\s*(?:<!--[^]*?-->\s*)?(?:<!doctype|<html|<ui-component|<script)/i.test(match[2]))
+			lang = 'html';
 		var js = lang === 'js' || lang === 'javascript';
 
 		if (!js && lang !== 'html')
@@ -80,6 +119,23 @@ exports.answer = function(text) {
 		try {
 			load().text(code, { file: 'answer', type: js ? 'js' : 'html' }).forEach(f => add(f.line, f.rule, f.severity, f.message));
 		} catch (e) {}
+
+		if (/\bself\.find\([^\n]*?\)\.(?:style|textContent|innerHTML)\b/.test(code))
+			add(1, 'jcomponent-dom', 'error', 'self.find() returns a jQuery collection. Use .text(), .html(), .css() or .toggle(), not DOM properties on the collection.');
+
+		if (/new\s+TOTAL\.Component\s*\(/.test(code))
+			add(1, 'jcomponent-api', 'error', 'TOTAL.Component is not the jComponent 20 API. Declare COMPONENT(name, config, function(self, config)) and mount it with <ui-component name="name" path="app.value">.');
+
+		if (!js) {
+			var scripts = /<script\b([^>]*)>([\s\S]*?)<\/script>/gi;
+			var script;
+			while ((script = scripts.exec(code))) {
+				if (/\bsrc\s*=|\btype\s*=\s*["'](?:text\/html|application\/(?:ld\+)?json)["']/i.test(script[1]))
+					continue;
+				var scripterror = syntaxof(script[2]);
+				scripterror && add(1, 'syntax', 'error', scripterror);
+			}
+		}
 
 		if (js) {
 
@@ -111,5 +167,5 @@ exports.complaint = function(findings) {
 	return 'Totem checked the code of your answer against the conventions of Total.js 5 and found this:\n' +
 		findings.slice(0, 8).map(f => '- code block {0}, line {1}: {2} ({3}) {4}'.format(f.block, f.line, f.rule, f.severity, f.message)).join('\n') +
 		(findings.length > 8 ? '\n- and {0} more'.format(findings.length - 8) : '') +
-		'\n\nAnswer again with the same explanation and the corrected code. Indent with TABS. Use only functions that exist in Total.js 5. Do not add anything else.';
+		'\n\nReturn only the final solution with complete corrected code in fenced Markdown blocks labelled js or html. Do not quote this review, the earlier draft or these instructions. Indent with TABS. Use only functions that exist in Total.js 5. Do not add anything else.';
 };

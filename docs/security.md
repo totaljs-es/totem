@@ -16,17 +16,19 @@ Patterns: for `bash` the command line (`git status*`), for file tools the path r
 |---|---|
 | read, glob, grep, skill, todo, ask | allow (inside the project) |
 | write, edit, patch | ask |
-| bash | ask, except a short list of read-only commands (never when the line chains, redirects or substitutes: `; & | < > $ ` ( )` or a new line) |
+| bash | ask, except exact forms of `pwd`, `ls` with simple listing flags, and `git status` with `--short` or `--porcelain`; other arguments and commands ask |
 | fetch | ask |
 | `.env` and `.env.*` (read, write, edit; `.env.example`, `.sample` and `.template` are fine) | ask |
 | any path outside the project root | deny |
-| every tool that changes files or runs a command, in Plan mode | deny (code, not a prompt) |
+| every tool that changes files or runs a command, in Plan mode (including bash, MCP startup/calls and stopping a job) | deny (code, not a prompt) |
 | MCP servers of the project (and the MCP server of Forge when `forgemcp : true`) | ask before each one starts (`mcp-start`: a project file can start a program; the question says where a remote one goes) |
 | The documents of Forge in Total.js projects (`forgedocs`) | no question: Totem downloads two public files (`llms.txt` once a day and the page that matches) with a GET to `forgeurl`; the search runs in Totem, so the text of the prompt is not sent. `forgedocs : false` or `forge : false` turn it off |
 | *Save as* on a code block (the user's click), and `/new` | the click or the command is the permission; same protections as the write tool (inside the project, never `.git` or `.env`), a file that exists is replaced only after a confirmation, and the old content stays in Undo |
 | MCP tools | ask before each call |
 
 A session can run in **auto-accept edits** mode (write/edit/patch become allow for that session); it never changes `bash` or `fetch`.
+
+Search skips `.env` and `.env.*` (except example/sample/template files), including when a secret file is the explicit search path. Use the read tool to ask for permission to read one.
 
 ## Project boundary
 
@@ -59,7 +61,7 @@ The shell of the Terminal panel is the user's own: it runs with the permissions 
 - The access token is compared in constant time (`FUNC.sametoken`) at the login, in `AUTH` and in the MCP route; repeated failures are blocked (`BLOCKED`).
 - Every response carries `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy: no-referrer` and `Content-Security-Policy: frame-ancestors 'none'`: a framed Totem would be a terminal to click blindly. A full CSP for scripts is not possible yet because the plugins use inline scripts.
 - Honest limit: there is one token and one user (`local`). Several people on one server share every project and every session, and the shell of the Terminal panel runs as the user of the server. Accounts with their own projects are not built; for several people, run one container each.
-- No request is made to any third party except the provider the user configured and the URLs the user allowed to `fetch` or an MCP server.
+- Outgoing requests include the configured model provider, the public Forge documentation when enabled, Componentator assets, and approved fetch or MCP connections.
 
 ## Secrets
 

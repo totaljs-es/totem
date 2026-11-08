@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.6
+
+- Answer review publishes one final revision rather than a draft followed by a correction. Raw complete HTML gets a code fence, safe indentation fixes do not need a model call, and scripts inside HTML are syntax checked even when strings contain translation markers.
+- Every valid code block offers saving to a project path. Copy and Save preserve the original source and tabs. Outstanding findings and truncated answers show a review notice and are not saved automatically.
+- Complete-page and message-card recipes distinguish browser components from server components and retain the preceding request on HTML follow-ups. Small models use one focused reference for these UI tasks and for new application starters.
+- Explicit requests to create an application in a new folder start with native Total.js files under the normal write permissions; the model receives their results and continues with remaining features. Named-file fallback handles up to 24 files and returns diagnostics to the model.
+- Plan refuses bash and MCP execution; unsafe command options no longer pass the default read-only command rule, and search skips protected env files.
+
 ## 0.1.5
 
 Totem with a model of 1 GB, used the way a person uses it.
