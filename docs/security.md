@@ -26,6 +26,8 @@ Patterns: for `bash` the command line (`git status*`), for file tools the path r
 | *Save as* on a code block (the user's click), and `/new` | the click or the command is the permission; same protections as the write tool (inside the project, never `.git` or `.env`), a file that exists is replaced only after a confirmation, and the old content stays in Undo |
 | MCP tools | ask before each call |
 
+**Settings per workspace.** The file `config` holds the defaults; a value of the allowed keys (limits, temperature, the knowledge of Total.js, checks) can be changed for all projects, one project or one session, from Settings or from *Session settings*. The values are kept in the NoSQL `settings` collection, linked to the id, never in the repository, and a run reads them as `config < all < project < session` (`MODS.settings.view`). Only the keys listed in `modules/settings.js` can be changed, each with its type and range: the token, the secret, the listen address, `terminalshell`, `forgemcp` and `forgeurl` stay in `config`. Removing a project or a session removes its values.
+
 A session can run in **auto-accept edits** mode (write/edit/patch become allow for that session); it never changes `bash` or `fetch`.
 
 Search skips `.env` and `.env.*` (except example/sample/template files), including when a secret file is the explicit search path. Use the read tool to ask for permission to read one.

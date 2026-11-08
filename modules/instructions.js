@@ -36,9 +36,9 @@ var OTHER = ['pom.xml', 'build.gradle', 'build.gradle.kts', 'Cargo.toml', 'go.mo
 // Totem writes Total.js unless the project is clearly something else. With `totaljs : auto` in the config a project is a Total.js project
 // when its package.json depends on total5, or when the folder is new (it has no package.json and no file of another kind of project).
 // `always` and `never` decide for every project.
-exports.istotaljs = function(root) {
+exports.istotaljs = function(root, conf) {
 
-	var mode = CONF.totaljs || 'auto';
+	var mode = (conf || CONF).totaljs || 'auto';
 
 	if (mode === 'never')
 		return false;

@@ -110,6 +110,7 @@ NEWACTION('Sessions|remove', {
 
 		await new Promise(resolve => MODS.snapshots.clear(id, resolve));
 		await new Promise(resolve => MODS.attachments.clear(id, resolve));
+		MODS.settings.clear('session', id);
 		await NOSQL('todos').remove().where('sessionid', id).promise($);
 		await NOSQL('parts').remove().where('sessionid', id).promise($);
 		await NOSQL('messages').remove().where('sessionid', id).promise($);
@@ -316,7 +317,7 @@ NEWACTION('Sessions|saveblock', {
 		MODS.snapshots.before({ sessionid: session.id, messageid: model.messageid, root: project.path }, relative, path);
 		Total.Fs.mkdirSync(Total.Path.dirname(path), { recursive: true });
 		Total.Fs.writeFileSync(path, model.content, 'utf8');
-		MODS.formatter.run(project.path, path);
+		MODS.formatter.run(project.path, path, MODS.settings.view(project.id, session.id));
 		$.callback({ path: relative, lines: model.content.split('\n').length });
 	}
 });

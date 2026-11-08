@@ -48,6 +48,7 @@ NEWACTION('Projects|remove', {
 	action: async function($) {
 		var id = $.params.id;
 		await MODS.schedules.clear(id);
+		MODS.settings.clear('project', id);
 		var sessions = await NOSQL('sessions').find().where('projectid', id).promise($);
 		var ids = sessions.map(s => s.id);
 
@@ -56,6 +57,7 @@ NEWACTION('Projects|remove', {
 			ids.forEach(sessionid => { MODS.agent.abort(sessionid); MODS.jobs.clear(sessionid); MODS.terminal.clear(sessionid); });
 			await new Promise(resolve => MODS.snapshots.clear(ids, resolve));
 			await new Promise(resolve => MODS.attachments.clear(ids, resolve));
+			await new Promise(resolve => MODS.settings.clear('session', ids, resolve));
 			await NOSQL('todos').remove().in('sessionid', ids).promise($);
 			await NOSQL('parts').remove().in('sessionid', ids).promise($);
 			await NOSQL('messages').remove().in('sessionid', ids).promise($);

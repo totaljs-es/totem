@@ -62,9 +62,9 @@ exports.list = function(root) {
 };
 
 // Formats a file that was just written. Returns a note for the model ('' when nothing changed or nothing applies)
-exports.run = function(root, full) {
+exports.run = function(root, full, conf) {
 
-	if (CONF.formatter === false)
+	if ((conf || CONF).formatter === false)
 		return '';
 
 	var extension = Total.Path.extname(full).toLowerCase();

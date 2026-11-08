@@ -34,8 +34,11 @@ function api(schema, data) {
 var script = [];
 var requests = [];
 
+var lastconf = null;
+
 function fake(ai, callback) {
 
+	lastconf = ai.conf;
 	requests.push(ai.payload);
 
 	// A request to summarize is answered without using the script
@@ -2823,11 +2826,56 @@ Test.push('languages', async function(next) {
 	next();
 });
 
+Test.push('settings per workspace', async function(next) {
+
+	var r = await api('settings/global/all');
+	var keys = (r.response || []).map(i => i.key);
+	check('the settings that can be changed come from the file config, with type and comment', keys.indexOf('maxsteps') !== -1 && r.response.find(i => i.key === 'maxsteps').type === 'number' && /Agent limits|steps/i.test(JSON.stringify(r.response.find(i => i.key === 'temperature').comment + 'steps')));
+	check('secrets, the address and the settings that start a program cannot be changed', ['token', 'secret', '$ip', 'terminalshell', 'forgemcp', 'forgeurl'].every(k => keys.indexOf(k) === -1));
+
+	r = await api('settings_save', { scope: 'global', id: 'all', key: 'token', value: 'x' });
+	check('a secret cannot be saved through the API', !!r.err);
+	r = await api('settings_save', { scope: 'session', id: sessionid, key: 'maxsteps', value: '100000' });
+	check('a value out of range is refused', !!r.err);
+	r = await api('settings_save', { scope: 'session', id: sessionid, key: 'totaljs', value: 'sometimes' });
+	check('a value that is not one of the options is refused', !!r.err);
+	r = await api('settings_save', { scope: 'session', id: 'nonexistent', key: 'maxsteps', value: '5' });
+	check('a session that does not exist is refused', !!r.err);
+
+	var base = CONF.maxsteps;
+	r = await api('settings_save', { scope: 'project', id: projectid, key: 'maxsteps', value: '12' });
+	check('a value is saved for a project', r.response && r.response.success === true);
+	r = await api('settings_save', { scope: 'session', id: sessionid, key: 'forgepages', value: '1' });
+	var view = MODS.settings.view(projectid, sessionid);
+	check('the session sees the value of its project and its own, and config for the rest', view.maxsteps === 12 && view.forgepages === 1 && view.temperature === CONF.temperature);
+	check('the global configuration is not touched', CONF.maxsteps === base && MODS.settings.view('other', 'other').maxsteps === base);
+
+	r = await api('settings/session/' + sessionid);
+	var row = r.response.find(i => i.key === 'maxsteps');
+	check('the screen shows the inherited value and where it comes from', row.value === 12 && row.from === 'project' && row.changed === false);
+	check('a changed value is marked', r.response.find(i => i.key === 'forgepages').changed === true);
+
+	r = await api('settings_save', { scope: 'session', id: sessionid, key: 'temperature', value: '0.9' });
+	script = [{ content: 'ok' }];
+	await api('sessions_prompt/' + sessionid, { text: 'hello there' });
+	await idle(sessionid);
+	check('the run and the model call use the values of the session', lastconf && lastconf.temperature === 0.9 && lastconf.maxsteps === 12);
+
+	await api('settings_save', { scope: 'session', id: sessionid, key: 'temperature', reset: true });
+	check('reset goes back to the value below', MODS.settings.view(projectid, sessionid).temperature === CONF.temperature);
+
+	var saved = await NOSQL('settings').find().promise();
+	check('the values are kept in the NoSQL database, linked to the id', saved.some(i => i.id === 'project:' + projectid && i.values.maxsteps === 12));
+	next();
+});
+
 Test.push('cleanup', async function(next) {
 	var r = await api('projects_remove/' + projectid);
 	check('removing a project removes its sessions', r.response.success === true);
 	var left = await NOSQL('sessions').find().where('projectid', projectid).promise();
 	check('no session is left', left.length === 0);
+	var rest = await NOSQL('settings').find().promise();
+	check('the settings of the project and its sessions go with it', rest.every(i => i.id !== 'project:' + projectid && i.id !== 'session:' + sessionid) && !MAIN.settings['project:' + projectid]);
 	Total.Fs.rmSync(TMP, { recursive: true, force: true });
 	next();
 });

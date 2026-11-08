@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Settings per workspace: the file config stays as the defaults and the values of limits, temperature, the knowledge of Total.js and the checks can be changed for all projects, one project or one session (Settings, and *Session settings* in the conversation). They are kept in the NoSQL data of Totem linked to the id, not in the repository, and a run uses `config < all < project < session`. Secrets, the address and the settings that start a program cannot be changed from Totem.
+- Fixed: opening a session with a click stored the click event as the current project.
 - Documentation from Forge: pages are ranked also by the API names and tags of `knowledge.json` (a prompt with `CRON` or `NEWACTION` finds its page), and a long page keeps its start and the blocks the request asks for instead of its first 3500 characters. A block of code is never cut in half.
 
 ## 0.1.6

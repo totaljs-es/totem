@@ -1,0 +1,93 @@
+<ui-component name="miniform" path="common.form" config="if:~PATH~;icon:ti ti-sliders-h;title:@(Settings of the workspace);reload:?/reload;scrollbar:1;width:760" class="hidden" plugin="~PATH~">
+	<div class="padding">
+		<div class="help mb10">@(The defaults come from the file config. A value changed here is kept in the data of Totem, linked to this session, to this project or to all of them, and it is not written to the project. The session wins over the project, and the project over all.)</div>
+		<ui-bind path="?" config="template" class="block mb10">
+			<script type="text/html">
+				<div style="display:flex;gap:8px;flex-wrap:wrap">
+					{{ if value.sessionid }}<button class="tbtn exec{{ if value.scope === 'session' }} tbtn-primary{{ fi }}" data-exec="?/scope" data-id="session"><i class="ti ti-comment"></i>@(This session)</button>{{ fi }}
+					{{ if value.projectid }}<button class="tbtn exec{{ if value.scope === 'project' }} tbtn-primary{{ fi }}" data-exec="?/scope" data-id="project"><i class="ti ti-folder"></i>@(This project)</button>{{ fi }}
+					<button class="tbtn exec{{ if value.scope === 'global' }} tbtn-primary{{ fi }}" data-exec="?/scope" data-id="global"><i class="ti ti-globe"></i>@(All projects)</button>
+				</div>
+			</script>
+		</ui-bind>
+		<ui-bind path="?.rows" config="template" class="block">
+			<script type="text/html">
+				{{ foreach r in value }}
+				<div class="cfgrow mb10" data-key="{{ r.key }}" style="border:1px solid var(--t-border);border-radius:var(--radius,6px);padding:8px 10px">
+					<div style="display:flex;gap:10px;align-items:center">
+						<div style="flex:1;min-width:0"><b>{{ r.key }}</b> <span class="badge badge-small{{ if r.changed }} badge-green{{ else }} badge-silver{{ fi }}">{{ if r.changed }}@(changed here){{ else }}{{ r.from }}{{ fi }}</span></div>
+						{{ if r.type === 'boolean' }}
+						<select class="cfgvalue"><option value="true"{{ if r.value === true }} selected{{ fi }}>@(on)</option><option value="false"{{ if r.value === false }} selected{{ fi }}>@(off)</option></select>
+						{{ else if r.type === 'enum' }}
+						<select class="cfgvalue">{{ foreach o in r.options }}<option value="{{ o }}"{{ if o === r.value }} selected{{ fi }}>{{ o }}</option>{{ end }}</select>
+						{{ else }}
+						<input type="text" class="cfgvalue" value="{{ r.value }}" style="width:110px" />
+						{{ fi }}
+						<button class="tbtn tbtn-small tbtn-primary exec" data-exec="?/save" title="@(Save)"><i class="ti ti-check"></i></button>
+						{{ if r.changed }}<button class="tbtn tbtn-small exec" data-exec="?/reset" title="@(Back to the value below)"><i class="ti ti-undo"></i></button>{{ fi }}
+					</div>
+					<div class="fs12" style="color:var(--t-muted)">{{ r.comment }}{{ if r.min != null }} ({{ r.min }} - {{ r.max }}){{ fi }}</div>
+				</div>
+				{{ end }}
+			</script>
+		</ui-bind>
+	</div>
+	<nav>
+		<button name="cancel">@(Close)</button>
+	</nav>
+</ui-component>
+
+<script>
+
+	PLUGIN(function(exports) {
+
+		function target() {
+			var m = GET('formconfig') || {};
+			return { scope: m.scope, id: m.scope === 'global' ? 'all' : (m.scope === 'project' ? m.projectid : m.sessionid) };
+		}
+
+		// The first time the form is loaded on demand, and its model is set a moment after it starts
+		exports.reload = function() {
+			if ((GET('formconfig') || {}).scope)
+				exports.load();
+			else
+				setTimeout(exports.load, 250);
+		};
+
+		exports.load = function() {
+			var t = target();
+			if (!t.scope)
+				return;
+			exports.tapi('settings/' + t.scope + '/' + t.id, function(rows) {
+				SET('formconfig.rows', rows);
+			});
+		};
+
+		exports.scope = function(el) {
+			SET('formconfig.scope', ATTRD(el));
+			exports.load();
+		};
+
+		function send(el, reset) {
+			var t = target();
+			var row = $(el).closest('.cfgrow');
+			var data = { scope: t.scope, id: t.id, key: row.attr('data-key'), reset: reset };
+			if (!reset)
+				data.value = row.find('.cfgvalue').val();
+			exports.tapi('settings_save ERROR', data, function() {
+				SETTER('notify/success', '@(Saved)');
+				exports.load();
+			});
+		}
+
+		exports.save = function(el) {
+			send(el, false);
+		};
+
+		exports.reset = function(el) {
+			send(el, true);
+		};
+
+	});
+
+</script>

@@ -37,6 +37,7 @@ exports.run = function(parent, name, prompt, callid, callback) {
 		mode: parent.mode,
 		rules: rules(def),
 		model: parent.model,
+		conf: parent.conf,
 		aborted: false,
 		steps: 0,
 		denials: 0,
@@ -60,7 +61,7 @@ exports.run = function(parent, name, prompt, callid, callback) {
 	}
 
 	var system = def.prompt + '\n\nWorking directory: {0}\nPlatform: {1}\n'.format(child.root, Total.Os.platform());
-	if (MODS.instructions.istotaljs(child.root))
+	if (MODS.instructions.istotaljs(child.root, child.conf))
 		system += '\n' + MODS.instructions.primer() + '\n';
 
 	var instructions = MODS.instructions.text(child.root);
@@ -90,6 +91,7 @@ exports.run = function(parent, name, prompt, callid, callback) {
 
 		var meta = (MAIN.modelmeta && MAIN.modelmeta[child.model]) || {};
 		var ai = AIMODEL(child.model);
+		ai.conf = child.conf;
 		ai.payload.messages = [{ role: 'system', content: system }].concat(child.messages);
 		ai.payload.tools = meta.tools === false ? [] : MODS.agent.definitions(def.tools, child.mode);
 		child.ai = ai;
@@ -150,7 +152,7 @@ exports.run = function(parent, name, prompt, callid, callback) {
 						return;
 					}
 
-					var user = { id: 'agent', sa: true, unattended: child.unattended, root: child.root, sessionid: child.sessionid, projectid: child.projectid, messageid: parent.message.id, callid: tool.id };
+					var user = { id: 'agent', sa: true, unattended: child.unattended, root: child.root, sessionid: child.sessionid, projectid: child.projectid, conf: child.conf, messageid: parent.message.id, callid: tool.id };
 
 					ACTION(meta.action, tool.arguments || {}).user(user).callback(function(err, response) {
 						if (child.aborted)

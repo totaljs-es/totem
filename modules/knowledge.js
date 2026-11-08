@@ -481,7 +481,7 @@ function fromdocs(run, asked, pages, recipetext, callback, empty) {
 				var body = markdown ? exports.pagebody(markdown) : '';
 				if (body) {
 					found.push({ title: item.title, url: item.url.replace(/\.md$/, '/') });
-					blocks.push('### {0} ({1})\n{2}'.format(item.title, item.url, conventions(exports.fit(body, asked.query, CONF.forgechars || 3500))));
+					blocks.push('### {0} ({1})\n{2}'.format(item.title, item.url, conventions(exports.fit(body, asked.query, (run.conf || CONF).forgechars || 3500))));
 				}
 				next();
 			});
@@ -504,7 +504,8 @@ function fromdocs(run, asked, pages, recipetext, callback, empty) {
 // callback([{ title, url }]) with the pages that were added to run.knowledge (an empty list when there is nothing to add)
 exports.prefetch = function(run, text, callback_) {
 
-	var pages = CONF.forgepages == null ? 2 : CONF.forgepages;
+	var conf = run.conf || CONF;
+	var pages = conf.forgepages == null ? 2 : conf.forgepages;
 
 	run.knowledge = '';
 	run.recipeids = [];
@@ -518,8 +519,8 @@ exports.prefetch = function(run, text, callback_) {
 	// The recipes of Totem, for a request about Total.js 5 (not for a slash command)
 	var mine = [];
 
-	if (CONF.recipes !== false && (text || '').trim().length >= MINLENGTH && !/^\//.test(text.trim()) && MODS.instructions.istotaljs(run.root))
-		mine = exports.recipes(text, CONF.reciperesults == null ? 2 : CONF.reciperesults);
+	if (conf.recipes !== false && (text || '').trim().length >= MINLENGTH && !/^\//.test(text.trim()) && MODS.instructions.istotaljs(run.root, conf))
+		mine = exports.recipes(text, conf.reciperesults == null ? 2 : conf.reciperesults);
 
 	// Recipes are request context, so follow-ups keep their references.
 	// A small model follows one focused reference. An approximate Forge hit can override the exact recipe.
@@ -562,7 +563,7 @@ exports.prefetch = function(run, text, callback_) {
 	var canmcp = !!(run.mcp && run.mcp.tools.forge__Forge_search && run.mcp.tools.forge__Forge_page);
 
 	// First the documents of Forge (llms.txt and the pages in Markdown): no server to start and nothing to ask. The MCP server comes after, when they gave nothing.
-	if (CONF.forge !== false && CONF.forgedocs !== false && MODS.instructions.istotaljs(run.root)) {
+	if (conf.forge !== false && conf.forgedocs !== false && MODS.instructions.istotaljs(run.root, conf)) {
 		fromdocs(run, asked, pages, recipetext, callback, function() {
 			canmcp ? viamcp() : callback([]);
 		});
@@ -616,7 +617,7 @@ exports.prefetch = function(run, text, callback_) {
 
 			chosen.wait(function(item, next) {
 
-				MODS.mcpclient.call(run, 'forge__Forge_page', { input: { section: item.section, slug: item.slug, max_chars: CONF.forgechars || 3500 } }, function(err, content) {
+				MODS.mcpclient.call(run, 'forge__Forge_page', { input: { section: item.section, slug: item.slug, max_chars: conf.forgechars || 3500 } }, function(err, content) {
 
 					var page = err ? null : parse(content);
 

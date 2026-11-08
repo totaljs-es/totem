@@ -168,7 +168,7 @@
 
 		exports.session = function(el, projectid) {
 			var id = typeof(el) === 'string' ? el : ATTRD(el);
-			projectid = projectid || el.attrd('project');
+			projectid = (typeof(projectid) === 'string' && projectid) || el.attrd('project');
 			SET('common.projectid', projectid);
 			SET('common.sessionid', id);
 			PLUGINS.chat && PLUGINS.chat.open(id);

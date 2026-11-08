@@ -53,7 +53,7 @@ function system(run) {
 	text += '\nWorking directory: {0}\nPlatform: {1}\nDate: {2}\n'.format(run.root, Total.Os.platform(), new Date().format('yyyy-MM-dd'));
 
 	// Total.js is the default: the rules, a few examples and where to look things up
-	if (MODS.instructions.istotaljs(run.root))
+	if (MODS.instructions.istotaljs(run.root, run.conf))
 		text += '\n' + MODS.instructions.primer() + '\n';
 
 	var instructions = MODS.instructions.text(run.root);
@@ -182,10 +182,11 @@ function smallmodel(id) {
 exports.smallmodel = smallmodel;
 
 // The limit of tokens for one answer of a model of this computer (0 when there is none)
-function predictlimit(id) {
-	var limit = +CONF.ollamapredict || 0;
-	if (CONF.ollamapredictsmall && smallmodel(id))
-		limit = limit ? Math.min(limit, +CONF.ollamapredictsmall) : +CONF.ollamapredictsmall;
+function predictlimit(id, conf) {
+	conf = conf || CONF;
+	var limit = +conf.ollamapredict || 0;
+	if (conf.ollamapredictsmall && smallmodel(id))
+		limit = limit ? Math.min(limit, +conf.ollamapredictsmall) : +conf.ollamapredictsmall;
 	return limit;
 }
 
@@ -290,6 +291,7 @@ function summarize(run, callback) {
 	var transcript = older.map(m => (m.role + ': ' + (textof(m.content) || (m.tool_calls ? JSON.stringify(m.tool_calls) : ''))).substring(0, 1500)).join('\n');
 
 	var ai = AIMODEL(run.model);
+	ai.conf = run.conf;
 	ai.payload.messages = [
 		{ role: 'system', content: 'Summarize the conversation for an assistant that continues the work. Keep goals, decisions, files changed and open problems. Under 300 words.' },
 		{ role: 'user', content: transcript }
@@ -311,7 +313,7 @@ function compact(run, callback) {
 	// The window of the model when it is known, with room for the answer; otherwise the configured limit
 	var meta = (MAIN.modelmeta && MAIN.modelmeta[run.model]) || {};
 	var window = meta.window || meta.context;
-	var limit = window ? Math.floor(window * 0.8) : CONF.contextlimit;
+	var limit = window ? Math.floor(window * 0.8) : run.conf.contextlimit;
 
 	if (estimate(run.messages) <= limit) {
 		callback();
@@ -431,6 +433,8 @@ exports.lighthistory = lighthistory;
 // Starts a run. The user message is already stored. callback(err) is called when the run ends.
 exports.run = function(session, project, message, callback) {
 
+	var conf = MODS.settings.view(project.id, session.id);
+
 	var run = {
 		sessionid: session.id,
 		projectid: project.id,
@@ -440,7 +444,8 @@ exports.run = function(session, project, message, callback) {
 		mode: session.mode === 'plan' ? 'plan' : 'build',
 		aborted: false,
 		steps: 0,
-		max: session.maxsteps || CONF.maxsteps,
+		max: session.maxsteps || conf.maxsteps,
+		conf: conf,
 		model: session.model,
 		parts: {},
 		seq: 0,
@@ -499,7 +504,7 @@ exports.run = function(session, project, message, callback) {
 			run.shown = lastknowledge ? lastknowledge.data.recipes : [];
 
 			// A small local model copies the code of its own earlier answers, whatever is asked next
-			if (CONF.lighthistory !== false && smallmodel(run.model))
+			if (run.conf.lighthistory !== false && smallmodel(run.model))
 				run.messages = lighthistory(run.messages);
 
 			// The MCP servers of the project that the user allows; their tools join the ones of Totem
@@ -583,7 +588,7 @@ function step(run, finish, fail) {
 	// A small model should build features on a valid starter instead of inventing the framework's boot sequence.
 	if (!run.bootstrapped && !run.command && run.mode === 'build' && smallmodel(run.model) &&
 		MODS.knowledge.apprequest(run.asked) &&
-		MODS.instructions.istotaljs(run.root) && !Total.Fs.existsSync(Total.Path.join(run.root, 'package.json'))) {
+		MODS.instructions.istotaljs(run.root, run.conf) && !Total.Fs.existsSync(Total.Path.join(run.root, 'package.json'))) {
 		run.bootstrapped = true;
 		var starter = MODS.commands.scaffold(run.root, '', run.asked);
 		var calls = starter.files.map(function(file) { return { id: 'w' + UID(), name: 'write', arguments: { path: file.path, content: file.content } }; });
@@ -596,7 +601,7 @@ function step(run, finish, fail) {
 
 	// /init with a model of up to 4 billion parameters: it cannot write AGENTS.md from the facts (it says that the folder is empty or loops). The file is
 	// made from the files of the project and written with the write tool, with its permission and its diff.
-	if (run.init && smallmodel(run.model) && !run.initdone && CONF.initsmall !== false) {
+	if (run.init && smallmodel(run.model) && !run.initdone && run.conf.initsmall !== false) {
 
 		run.initdone = true;
 		var content = MODS.commands.agents(run.root);
@@ -632,6 +637,7 @@ function request(run, finish, fail) {
 	}
 
 	var ai = AIMODEL(run.model);
+	ai.conf = run.conf;
 	ai.payload.messages = [{ role: 'system', content: system(run) }].concat(run.messages);
 	ai.payload.small = smallmodel(run.model);
 	ai.payload.underlying = ((MAIN.modelmeta || {})[run.model] || {}).underlying || '';
@@ -642,7 +648,7 @@ function request(run, finish, fail) {
 	// A small model follows the end of the conversation better than the beginning: the prompt of the user, in a Total.js project, carries a
 	// short reminder in the request (it is not stored and the user does not see it)
 	// Not for a command (its text is a fixed instruction) and not for a greeting: "answer with the code" makes a small model write code for anything
-	if (MODS.instructions.istotaljs(run.root) && !run.command && !run.complaining && !shortprompt(ai.payload.messages))
+	if (MODS.instructions.istotaljs(run.root, run.conf) && !run.command && !run.complaining && !shortprompt(ai.payload.messages))
 		ai.payload.messages = withreminder(ai.payload.messages, run.mode);
 
 	if (meta.vision === false)
@@ -652,7 +658,7 @@ function request(run, finish, fail) {
 	ai.payload.reasoning = run.reasoning;
 	run.ai = ai;
 	// Hold Total.js answer text until its checks finish. Tool progress and reasoning still stream.
-	run.holdanswer = CONF.selfcheck !== false && !run.command && MODS.instructions.istotaljs(run.root);
+	run.holdanswer = run.conf.selfcheck !== false && !run.command && MODS.instructions.istotaljs(run.root, run.conf);
 	run.draft = '';
 
 	ai.stream(function(e) {
@@ -695,12 +701,12 @@ function request(run, finish, fail) {
 			}
 
 			// Transient errors are retried with backoff; the partial answer stays stored
-			if (retryable(message) && run.attempts < CONF.retries) {
+			if (retryable(message) && run.attempts < run.conf.retries) {
 				run.attempts++;
 				run.steps--;
 				closeparts(run);
 				FUNC.emit(run.sessionid, 'error', { message: message, retry: true });
-				setTimeout(() => step(run, finish, fail), CONF.retrybase * Math.pow(2, run.attempts - 1));
+				setTimeout(() => step(run, finish, fail), run.conf.retrybase * Math.pow(2, run.attempts - 1));
 				return;
 			}
 
@@ -749,7 +755,7 @@ function request(run, finish, fail) {
 		run.notools = false;
 
 		// The limit cut the answer: the user is told, because the last block may be unfinished
-		if (!run.holdanswer && !tools.length && output.usage && predictlimit(run.model) && output.usage.output >= predictlimit(run.model) * 0.98)
+		if (!run.holdanswer && !tools.length && output.usage && predictlimit(run.model, run.conf) && output.usage.output >= predictlimit(run.model, run.conf) * 0.98)
 			addpart(run, 'text', { text: '\n\n(The answer reached the limit of this model and was cut. Ask for one part at a time.)' }, true);
 
 		run.messages.push(msg);
@@ -758,9 +764,9 @@ function request(run, finish, fail) {
 
 			// The code of the answer is checked like the files that the tools write; the model corrects it once
 			// Not for a command, and not for an answer that the limit cut: its last block is unfinished, and asking again only makes it longer
-			var limit = predictlimit(run.model);
+			var limit = predictlimit(run.model, run.conf);
 			var cut = !!(output.usage && limit && output.usage.output >= limit * 0.98);
-			var problems = (CONF.selfcheck !== false && !run.selfchecked && !run.command && !cut && (CONF.selfchecksmall === true || !smallmodel(run.model)) && MODS.instructions.istotaljs(run.root)) ? MODS.conventions.answer(output.content || '') : [];
+			var problems = (run.conf.selfcheck !== false && !run.selfchecked && !run.command && !cut && (run.conf.selfchecksmall === true || !smallmodel(run.model)) && MODS.instructions.istotaljs(run.root, run.conf)) ? MODS.conventions.answer(output.content || '', run.conf) : [];
 
 			if (problems.length) {
 				run.selfchecked = true;
@@ -775,7 +781,7 @@ function request(run, finish, fail) {
 				addpart(run, 'text', { text: FUNC.scrub(output.content) }, true);
 
 			// Check the final revision too; code that still fails must not become a file automatically.
-			var remaining = run.holdanswer ? MODS.conventions.answer(output.content || '') : [];
+			var remaining = run.holdanswer ? MODS.conventions.answer(output.content || '', run.conf) : [];
 			if (cut)
 				remaining.push({ rule: 'truncated', severity: 'error', message: 'The answer reached the output limit and may be incomplete.' });
 			if (remaining.length)
@@ -1006,7 +1012,7 @@ function runtools(run, tools, callback) {
 			part.data.status = 'running';
 			FUNC.emit(run.sessionid, 'part.updated', { part: part });
 
-			var user = { id: 'agent', sa: true, unattended: run.unattended, root: run.root, sessionid: run.sessionid, projectid: run.projectid, messageid: run.message.id, callid: tool.id };
+			var user = { id: 'agent', sa: true, unattended: run.unattended, root: run.root, sessionid: run.sessionid, projectid: run.projectid, conf: run.conf, messageid: run.message.id, callid: tool.id };
 
 			ACTION(meta.action, part.data.input).user(user).callback(function(err, response) {
 				if (run.aborted)

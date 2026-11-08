@@ -1,10 +1,12 @@
 T10e87d3 : Worktree de esta sesión. Rama base:
+T10i3rwu : Entre {0} y {1}
 T11pd1u9 : Totem no ha cambiado ningún archivo en esta sesión.
 T121u7px : Medio
 T123z7m7 : Totem no ha ejecutado ningún comando en esta sesión.
 T1242qtx : Volver a poner los cambios que se deshicieron
 T125j5ht : Este tipo de archivo no se puede adjuntar:
 T12fd5a : Construir
+T12j3c8y : Los valores del archivo config para todos los proyectos: temperatura, pasos, tamaño del contexto, el conocimiento de Total.js... Un proyecto o una sesión pueden cambiarlos para sí mismos.
 T12tjh4 : Cerrar
 T133ekil : Cargar la lista del proveedor
 T13obibo : Prompt
@@ -24,6 +26,7 @@ T15dl149 : Aún no hay prompts programados.
 T15gl1dv : Interrumpir
 T15x5xhn : Escribe una respuesta
 T165yw0s : Editar la programación
+T16gd57r : Volver al valor de abajo
 T16ml8g2 : Solo se permiten URLs http y https
 T16mta1k : Permitir siempre
 T177azwc : El servidor no respondió con JSON
@@ -35,6 +38,7 @@ T17vd619 : Nueva sesión en un worktree de git
 T17zrj : Automático
 T1862u0i : Tokens usados en esta sesión
 T1872fs : Fusionar
+T189b2uh : Este ajuste no se puede cambiar desde Totem
 T18d5vt : Modelo
 T18gj57w : Worktree descartado
 T18mw37y : El archivo está vacío:
@@ -67,9 +71,11 @@ T1eu5pwf : Comandos que ha ejecutado Totem
 T1f73iv5 : Borrar sesión
 T1f7o0wl : Una programación necesita un nombre y un prompt
 T1firn : Modo
+T1fjn2k7 : Este proyecto
 T1fvl7 : Nombre
 T1ghzmz : Esto no es un archivo de texto:
 T1gkbc7w : Terminal
+T1gptb4d : Ajustes de la sesión
 T1gw6v7z : Un worktree necesita un repositorio git con al menos un commit
 T1h1paqu : Limpiar el formulario
 T1h2tt0h : Por defecto
@@ -127,6 +133,7 @@ T1uj2coi : Fusionar en el proyecto
 T1vfvtzd : Totem necesita tu respuesta
 T1vid7g8 : Escribe un comando y pulsa Enter
 T1vjos : gratis
+T1vkxphz : Ajustes de esta sesión, de este proyecto y de todos los proyectos
 T1wcdox2 : Un proveedor es cualquier servidor con una API compatible con OpenAI: OpenRouter, OpenAI, Ollama, LM Studio... Tus mensajes solo van a los proveedores que añadas aquí.
 T1xnp73t : Clave de API
 T1xvlny2 : Abrir esta carpeta
@@ -137,16 +144,20 @@ T1z139hr : Añadir un proveedor
 T2ctr : apagado
 T2ftwev : En ejecución en segundo plano
 T2osx7n : Aún no hay proveedores.
+T2qn : activado
 T33buod : Pídele a Totem que lea, cambie o ejecute algo en este proyecto.
 T3tohcf : Por defecto: el nombre de tu primer mensaje
 T4dw8xc : El proyecto ya no existe
 T4hb798 : desactivado
 T4v2l4h : Archivo no encontrado
+T58gfdo : cambiado aquí
 T5dynrq : ¿Quitar este proyecto y sus sesiones? Los archivos no se tocan.
 T5jsqzg : Desactivado
 T5l0ts9 : Elige la carpeta del proyecto. Totem solo trabaja dentro de ella.
+T60ph1d : Usa un número
 T6dzw7l : La terminal no está en marcha
 T6pomva : Se guarda cifrada en este ordenador y no se vuelve a mostrar.
+T6qs9a7 : Usa true o false
 T6v3crq : Plan, solo lee
 T6v6poe : Opciones
 T7h6hj1 : El nombre está vacío
@@ -156,10 +167,12 @@ T80yody : Nueva sesión
 T8ct47m : Comandos:
 T8t8ext : A las, HH:MM de este ordenador
 T905yvo : Renombrar sesión
+T91m1x5 : Todos los proyectos
 T9jn8zg : Esta sesión no tiene worktree
 T9lvtgh : Puede pensar antes de responder
 T9tb4m0 : Permitir una vez
 T9ukspz : Copiar el código
+Taanudk : Elige uno de: {0}
 Tajdv69 : Totem ha terminado
 Tbsl01y : URL no válida
 Tbsmk47 : Sin sesión
@@ -177,16 +190,20 @@ Tfcovm0 : Elige primero una carpeta.
 Tfpufbw : commits
 Tg8aw6k : Carpeta:
 Tgatva8 : Modelos que puedes usar
+Tgbsmcl : Modelo y agente
 Tgqxhtt : Aún no hay proyectos. Abre una carpeta para empezar.
 Th3pgr4 : El modelo de esta programación no está disponible
 Thm0jj3 : minutos
 Thwdl0y : El worktree de esta sesión se descartó: empieza una sesión nueva
 Ti90lzh : Archivos restaurados:
 Ti9njf0 : ¿Descartar el worktree y su rama? Lo que no se fusionó se pierde.
+Tighsms : Esta sesión
 Tiqcmye : La dirección que termina antes de /chat/completions.
 Tissvdb : Aceptar cambios automáticamente
+Tiyzlui : Ajustes del espacio de trabajo
 Tjycrp3 : Páginas de Forge usadas:
 Tk7dq51 : ¿Hacer commit de lo que esta sesión dejó en su worktree y fusionar la rama en el proyecto?
+Tkd48z5 : Cambiar los valores por defecto
 Tkiadb0 : Este modelo no puede leer imágenes: solo recibirá una nota.
 Tko7bau : Interrumpir el comando, Ctrl+C
 Tksyqfu : Nueva sesión con nombre
@@ -199,6 +216,7 @@ Tm2kb26 : Razonamiento
 Tmexp15 : Proyecto
 Tmoxh0o : ¿Quitar este proveedor?
 Tms9c36 : Unificado
+Tmxz7f1 : Los valores por defecto vienen del archivo config. Un valor que cambies aquí se guarda en los datos de Totem, ligado a esta sesión, a este proyecto o a todos, y no se escribe en el proyecto. La sesión gana al proyecto, y el proyecto a todos.
 Tn0utk7 : La hora es HH:MM, por ejemplo 07:30
 Tnwzya8 : Cada, minutos
 To17eqc : Adjuntar imágenes o archivos de texto

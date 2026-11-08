@@ -117,6 +117,7 @@
 		<ui-bind path="?.canredo" config="show:value" class="hidden"><button class="tbtn exec" data-exec="?/redo" title="@(Put back the changes that were undone)"><i class="ti ti-redo"></i>@(Redo)</button></ui-bind>
 		<ui-bind path="?.status" config="show:value === 'running'" class="hidden"><button class="tbtn exec" data-exec="?/abort" title="@(Stop, Esc)"><i class="ti ti-stop-alt"></i>@(Stop)</button></ui-bind>
 		<ui-bind path="?.items" config="template" class="inline"><script type="text/html"><span class="meter" title="@(Tokens used in this session)">{{ value | tokens }}</span></script></ui-bind>
+		<button class="tbtn exec" data-exec="?/workspace" title="@(Settings of this session, this project and all projects)"><i class="ti ti-sliders-h"></i>@(Session settings)</button>
 		<button class="tbtn exec" data-exec="?/terminal" title="@(Commands that Totem ran)"><i class="ti ti-terminal"></i>@(Terminal)</button>
 		<button class="tbtn exec" data-exec="?/changes" title="@(Files changed by Totem, Alt+D)"><i class="ti ti-exchange"></i>@(Changes)<ui-bind path="?.files" config="template" class="inline"><script type="text/html">{{ if value && value.length }} ({{ value.length }}){{ fi }}</script></ui-bind></button>
 	</div>
@@ -990,6 +991,16 @@
 				termjob = setTimeout(refreshjobs, 2000);
 			});
 		}
+
+		// The settings of the session, of its project and of all projects (the defaults come from the file config)
+		exports.workspace = function() {
+			var sessionid = window.common && common.sessionid;
+			if (!sessionid)
+				return;
+			var current = exports.model.session || {};
+			SET('formconfig @reset', { scope: 'session', sessionid: sessionid, projectid: current.projectid || '', rows: [] });
+			SET('common.form', 'formconfig');
+		};
 
 		exports.terminal = function() {
 			var show = !exports.model.showterm;

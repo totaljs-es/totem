@@ -52,6 +52,8 @@ exports.install = function() {
 	ROUTE('+API    ?    +schedules_run/{id}         --> Schedules|run');
 
 	// Providers
+	ROUTE('+API    ?    -settings/{scope}/{id}      --> Settings|read');
+	ROUTE('+API    ?    +settings_save              --> Settings|save');
 	ROUTE('+API    ?    -providers                  --> Providers|list');
 	ROUTE('+API    ?    +providers_save             --> Providers|save');
 	ROUTE('+API    ?    -providers_remove/{id}      --> Providers|remove');

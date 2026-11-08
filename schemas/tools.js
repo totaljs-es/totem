@@ -172,8 +172,8 @@ NEWACTION('Tools|write', {
 		MODS.snapshots.before($.user, model.path, path);
 		Total.Fs.mkdirSync(Total.Path.dirname(path), { recursive: true });
 		Total.Fs.writeFileSync(path, content, 'utf8');
-		var note = MODS.formatter.run($.user.root, path) + MODS.diagnostics.run($.user.root, path);
-		$.callback('Written {0} ({1} lines)'.format(model.path, content.split('\n').length) + dropped + note + MODS.conventions.review(path, content));
+		var note = MODS.formatter.run($.user.root, path, MODS.settings.of($.user)) + MODS.diagnostics.run($.user.root, path, MODS.settings.of($.user));
+		$.callback('Written {0} ({1} lines)'.format(model.path, content.split('\n').length) + dropped + note + MODS.conventions.review(path, content, MODS.settings.of($.user)));
 	}
 });
 
@@ -212,8 +212,8 @@ NEWACTION('Tools|edit', {
 		text = text.split(model.oldstring).join(model.newstring);
 		MODS.snapshots.before($.user, model.path, path);
 		Total.Fs.writeFileSync(path, text, 'utf8');
-		var note = MODS.formatter.run($.user.root, path) + MODS.diagnostics.run($.user.root, path);
-		$.callback('Edited {0} ({1} replacement{2})'.format(model.path, count, count > 1 ? 's' : '') + note + MODS.conventions.review(path, text));
+		var note = MODS.formatter.run($.user.root, path, MODS.settings.of($.user)) + MODS.diagnostics.run($.user.root, path, MODS.settings.of($.user));
+		$.callback('Edited {0} ({1} replacement{2})'.format(model.path, count, count > 1 ? 's' : '') + note + MODS.conventions.review(path, text, MODS.settings.of($.user)));
 	}
 });
 
@@ -229,7 +229,7 @@ NEWACTION('Tools|bash', {
 			return;
 		}
 
-		var timeout = model.timeout || CONF.bashtimeout;
+		var timeout = model.timeout || MODS.settings.of($.user).bashtimeout;
 		var env = { PATH: process.env.PATH, HOME: process.env.HOME, LANG: process.env.LANG || 'en_US.UTF-8' };
 		var child = Total.Child.spawn('/bin/sh', ['-c', model.command], { cwd: $.user.root, env: env });
 		var sessionid = $.user.sessionid;
@@ -247,7 +247,7 @@ NEWACTION('Tools|bash', {
 		}, timeout);
 
 		var append = function(chunk) {
-			if (output.length < CONF.maxoutput * 2)
+			if (output.length < MODS.settings.of($.user).maxoutput * 2)
 				output += chunk;
 		};
 
@@ -334,8 +334,8 @@ NEWACTION('Tools|patch', {
 			}
 			summary.push('{0} {1}'.format(change.kind, change.path));
 			if (change.kind !== 'delete') {
-				review += MODS.formatter.run($.user.root, change.full) + MODS.diagnostics.run($.user.root, change.full);
-				review += MODS.conventions.review(change.full, change.content);
+				review += MODS.formatter.run($.user.root, change.full, MODS.settings.of($.user)) + MODS.diagnostics.run($.user.root, change.full, MODS.settings.of($.user));
+				review += MODS.conventions.review(change.full, change.content, MODS.settings.of($.user));
 			}
 		}
 

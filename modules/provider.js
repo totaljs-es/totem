@@ -124,6 +124,7 @@ exports.islocal = function(url) {
 exports.openai = function(ai, callback) {
 
 	var config = ai.config;
+	var conf = ai.conf || CONF;
 	// The signatures of Gemini function calls are not part of this format
 	var messages = ai.payload.messages.map(function(m) {
 		if (!m.tool_calls && !m.thinking_blocks)
@@ -144,20 +145,20 @@ exports.openai = function(ai, callback) {
 	// tokens), which takes the instructions away from the model. The window and the penalty for repeating go as parameters of the request, which the
 	// gateway passes on to Ollama.
 	if (/^ollama(_chat)?\//.test(ai.payload.underlying || '')) {
-		body.num_ctx = CONF.ollamactx || 16384;
-		if (CONF.ollamarepeat)
-			body.repeat_penalty = CONF.ollamarepeat;
+		body.num_ctx = conf.ollamactx || 16384;
+		if (conf.ollamarepeat)
+			body.repeat_penalty = conf.ollamarepeat;
 	}
 
 	// A model of up to 4 billion parameters never needs a long answer, and it is the one that does not stop: the same limit as Ollama's, as max_tokens
-	if (CONF.ollamapredictsmall && (ai.payload.small || MODS.agent.smallmodel(config.model)) && !body.max_tokens)
-		body.max_tokens = CONF.ollamapredictsmall;
+	if (conf.ollamapredictsmall && (ai.payload.small || MODS.agent.smallmodel(config.model)) && !body.max_tokens)
+		body.max_tokens = conf.ollamapredictsmall;
 
 	// Code needs a steady hand: the servers of this computer (Ollama, llama.cpp, vLLM, LM Studio) are asked for a low temperature, because
 	// their default (0.7 or 0.8) makes a small model drift from the instructions. A remote provider keeps its own default: some models
 	// (the reasoning ones) refuse any other value.
-	if (CONF.temperature != null && CONF.temperature !== '' && exports.islocal(config.url))
-		body.temperature = CONF.temperature;
+	if (conf.temperature != null && conf.temperature !== '' && exports.islocal(config.url))
+		body.temperature = conf.temperature;
 
 	// How much the model thinks: none, low, medium or high. Empty leaves the default of the model.
 	if (['none', 'low', 'medium', 'high'].indexOf(ai.payload.reasoning) !== -1)
@@ -238,10 +239,11 @@ exports.toollama = function(messages) {
 
 // The size of the context to ask for: the one of the config at least (so that the model is not reloaded for every request), more when the
 // request needs it, never more than the window of the model
-exports.contextsize = function(messages, tools, config) {
+exports.contextsize = function(messages, tools, config, conf) {
 
-	var floor = CONF.ollamactx || 16384;
-	var window = Math.max(Math.min(config.context || 32768, CONF.ollamactxmax || 32768), 4096);
+	conf = conf || CONF;
+	var floor = conf.ollamactx || 16384;
+	var window = Math.max(Math.min(config.context || 32768, conf.ollamactxmax || 32768), 4096);
 	var size = JSON.stringify(messages).length + JSON.stringify(tools || []).length;
 	var needed = Math.ceil(size / 3.2) + 2048;
 
@@ -251,22 +253,23 @@ exports.contextsize = function(messages, tools, config) {
 exports.ollama = function(ai, callback) {
 
 	var config = ai.config;
+	var conf = ai.conf || CONF;
 	var tools = ai.payload.tools && ai.payload.tools.length ? ai.payload.tools : null;
-	var options = { num_ctx: exports.contextsize(ai.payload.messages, tools, config) };
+	var options = { num_ctx: exports.contextsize(ai.payload.messages, tools, config, ai.conf) };
 
-	if (CONF.temperature != null && CONF.temperature !== '')
-		options.temperature = CONF.temperature;
+	if (conf.temperature != null && conf.temperature !== '')
+		options.temperature = conf.temperature;
 
 	// A small model can fall into a loop and repeat one paragraph until the context is full: a penalty for repeating, and a limit for one answer
-	if (CONF.ollamarepeat)
-		options.repeat_penalty = CONF.ollamarepeat;
+	if (conf.ollamarepeat)
+		options.repeat_penalty = conf.ollamarepeat;
 
-	if (CONF.ollamapredict)
-		options.num_predict = CONF.ollamapredict;
+	if (conf.ollamapredict)
+		options.num_predict = conf.ollamapredict;
 
 	// A model of up to 4 billion parameters does not need long answers (a recipe is a few hundred tokens), and it is the one that never stops: a lower limit
-	if (CONF.ollamapredictsmall && (ai.payload.small || MODS.agent.smallmodel(config.model)))
-		options.num_predict = Math.min(options.num_predict || CONF.ollamapredictsmall, CONF.ollamapredictsmall);
+	if (conf.ollamapredictsmall && (ai.payload.small || MODS.agent.smallmodel(config.model)))
+		options.num_predict = Math.min(options.num_predict || conf.ollamapredictsmall, conf.ollamapredictsmall);
 
 	var body = { model: config.model, messages: exports.toollama(ai.payload.messages), stream: true, options: options };
 

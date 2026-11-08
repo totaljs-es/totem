@@ -70,9 +70,9 @@ exports.list = function(root) {
 };
 
 // Checks a file that was just written. Returns a note for the model ('' when nothing is wrong or nothing applies)
-exports.run = function(root, full) {
+exports.run = function(root, full, conf) {
 
-	if (CONF.diagnostics === false)
+	if ((conf || CONF).diagnostics === false)
 		return '';
 
 	var extension = Total.Path.extname(full).toLowerCase();

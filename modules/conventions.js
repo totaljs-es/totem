@@ -49,9 +49,9 @@ exports.prepare = function(text, review) {
 };
 
 // The findings about a file that a tool has just written, as text for the model; an empty text when there is nothing to say
-exports.review = function(path, content) {
+exports.review = function(path, content, conf) {
 
-	if (CONF.conventions === false)
+	if ((conf || CONF).conventions === false)
 		return '';
 
 	try {
@@ -85,9 +85,9 @@ function syntaxof(code) {
 var SERVERCODE = /\b(NEWACTION|NEWSCHEMA|ROUTE|NOSQL|DATA|CRON|AUTH|FUNC|MAIN|MODS|RESTBuilder|UID|CONF)\b|exports\.install/;
 var INTERFACE = /\b(COMPONENT|PLUGIN|COMPONENTATOR|SETTER)\(/;
 
-exports.answer = function(text) {
+exports.answer = function(text, conf) {
 
-	if (CONF.conventions === false || !text)
+	if ((conf || CONF).conventions === false || !text)
 		return [];
 
 	var found = [];

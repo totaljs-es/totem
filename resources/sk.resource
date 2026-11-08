@@ -1,10 +1,12 @@
 T10e87d3 : Worktree tejto relácie. Základná vetva:
+T10i3rwu : Medzi {0} a {1}
 T11pd1u9 : Totem v tejto relácii nezmenil žiadny súbor.
 T121u7px : Stredná
 T123z7m7 : Totem v tejto relácii nespustil žiadny príkaz.
 T1242qtx : Vrátiť zmeny, ktoré boli zrušené
 T125j5ht : Tento druh súboru sa nedá priložiť:
 T12fd5a : Vytvárať
+T12j3c8y : Hodnoty zo súboru config pre všetky projekty: teplota, kroky, veľkosť kontextu, znalosť Total.js... Projekt alebo relácia ich môže zmeniť pre seba.
 T12tjh4 : Zavrieť
 T133ekil : Načítať zoznam od poskytovateľa
 T13obibo : Prompt
@@ -24,6 +26,7 @@ T15dl149 : Zatiaľ nie sú žiadne plánované prompty.
 T15gl1dv : Prerušiť
 T15x5xhn : Napíš odpoveď
 T165yw0s : Upraviť plán
+T16gd57r : Späť na hodnotu nižšie
 T16ml8g2 : Povolené sú iba URL s http a https
 T16mta1k : Vždy povoliť
 T177azwc : Server neodpovedal vo formáte JSON
@@ -35,6 +38,7 @@ T17vd619 : Nová relácia v git worktree
 T17zrj : Automaticky
 T1862u0i : Tokeny použité v tejto relácii
 T1872fs : Zlúčiť
+T189b2uh : Toto nastavenie sa nedá zmeniť z Totemu
 T18d5vt : Model
 T18gj57w : Worktree zahodený
 T18mw37y : Súbor je prázdny:
@@ -67,9 +71,11 @@ T1eu5pwf : Príkazy, ktoré Totem spustil
 T1f73iv5 : Odstrániť reláciu
 T1f7o0wl : Plán potrebuje názov a prompt
 T1firn : Režim
+T1fjn2k7 : Tento projekt
 T1fvl7 : Názov
 T1ghzmz : Toto nie je textový súbor:
 T1gkbc7w : Terminál
+T1gptb4d : Nastavenia relácie
 T1gw6v7z : Worktree potrebuje git repozitár s aspoň jedným commitom
 T1h1paqu : Vyčistiť formulár
 T1h2tt0h : Predvolené
@@ -127,6 +133,7 @@ T1uj2coi : Zlúčiť do projektu
 T1vfvtzd : Totem potrebuje tvoju odpoveď
 T1vid7g8 : Napíš príkaz a stlač Enter
 T1vjos : zadarmo
+T1vkxphz : Nastavenia tejto relácie, tohto projektu a všetkých projektov
 T1wcdox2 : Poskytovateľ je každý server s API kompatibilným s OpenAI: OpenRouter, OpenAI, Ollama, LM Studio... Tvoje správy idú iba k poskytovateľom, ktorých tu pridáš.
 T1xnp73t : API kľúč
 T1xvlny2 : Otvoriť tento priečinok
@@ -137,16 +144,20 @@ T1z139hr : Pridať poskytovateľa
 T2ctr : vypnuté
 T2ftwev : Beží na pozadí
 T2osx7n : Zatiaľ žiadni poskytovatelia.
+T2qn : zapnuté
 T33buod : Požiadaj Totem, aby v tomto projekte niečo prečítal, zmenil alebo spustil.
 T3tohcf : Predvolene: názov podľa tvojej prvej správy
 T4dw8xc : Projekt už neexistuje
 T4hb798 : vypnuté
 T4v2l4h : Súbor sa nenašiel
+T58gfdo : zmenené tu
 T5dynrq : Odstrániť tento projekt a jeho relácie? Súbory sa nezmenia.
 T5jsqzg : Vypnuté
 T5l0ts9 : Vyber priečinok projektu. Totem pracuje iba v ňom.
+T60ph1d : Použi číslo
 T6dzw7l : Terminál nebeží
 T6pomva : Ukladá sa zašifrovaný v tomto počítači a už sa nezobrazí.
+T6qs9a7 : Použi true alebo false
 T6v3crq : Plan, len číta
 T6v6poe : Možnosti
 T7h6hj1 : Názov je prázdny
@@ -156,10 +167,12 @@ T80yody : Nová relácia
 T8ct47m : Príkazy:
 T8t8ext : O, HH:MM tohto počítača
 T905yvo : Premenovať reláciu
+T91m1x5 : Všetky projekty
 T9jn8zg : Táto relácia nemá worktree
 T9lvtgh : Vie premýšľať pred odpoveďou
 T9tb4m0 : Povoliť raz
 T9ukspz : Kopírovať kód
+Taanudk : Vyber jednu z: {0}
 Tajdv69 : Totem skončil
 Tbsl01y : Neplatná URL
 Tbsmk47 : Žiadna relácia
@@ -177,16 +190,20 @@ Tfcovm0 : Najprv vyber priečinok.
 Tfpufbw : commitov
 Tg8aw6k : Priečinok:
 Tgatva8 : Modely, ktoré môžeš používať
+Tgbsmcl : Model a agent
 Tgqxhtt : Zatiaľ žiadne projekty. Otvor priečinok a začni.
 Th3pgr4 : Model tohto plánu nie je dostupný
 Thm0jj3 : minút
 Thwdl0y : Worktree tejto relácie bol zahodený: začni novú reláciu
 Ti90lzh : Obnovené súbory:
 Ti9njf0 : Zahodiť worktree a jeho vetvu? To, čo nebolo zlúčené, sa stratí.
+Tighsms : Táto relácia
 Tiqcmye : Adresa, ktorá končí pred /chat/completions.
 Tissvdb : Automaticky prijímať zmeny
+Tiyzlui : Nastavenia pracovného priestoru
 Tjycrp3 : Použité stránky Forge:
 Tk7dq51 : Commitnúť, čo táto relácia nechala vo svojom worktree, a zlúčiť vetvu do projektu?
+Tkd48z5 : Zmeniť predvolené hodnoty
 Tkiadb0 : Tento model nevie čítať obrázky: dostane iba poznámku.
 Tko7bau : Prerušiť príkaz, Ctrl+C
 Tksyqfu : Nová relácia s názvom
@@ -199,6 +216,7 @@ Tm2kb26 : Uvažovanie
 Tmexp15 : Projekt
 Tmoxh0o : Odstrániť tohto poskytovateľa?
 Tms9c36 : Zjednotené
+Tmxz7f1 : Predvolené hodnoty pochádzajú zo súboru config. Hodnota zmenená tu sa uloží do dát Totemu, viazaná na túto reláciu, tento projekt alebo na všetky, a nezapisuje sa do projektu. Relácia má prednosť pred projektom a projekt pred všetkými.
 Tn0utk7 : Čas je HH:MM, napríklad 07:30
 Tnwzya8 : Každých, minút
 To17eqc : Priložiť obrázky alebo textové súbory
