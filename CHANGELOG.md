@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.1.7
 
 - A new look for the workspace: warm light and dark themes, a sidebar with the actions at the top and the sessions grouped by project with a status dot, a short top bar with a *more* menu for what is not used all the time, a rounded prompt card, and a sidebar that slides in on narrow screens.
 - Settings per workspace: the file config stays as the defaults and the values of limits, temperature, the knowledge of Total.js and the checks can be changed for all projects, one project or one session (Settings, and *Session settings* in the conversation). They are kept in the NoSQL data of Totem linked to the id, not in the repository, and a run uses `config < all < project < session`. Secrets, the address and the settings that start a program cannot be changed from Totem.
