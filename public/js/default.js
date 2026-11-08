@@ -77,7 +77,8 @@ THEME.apply = function(mode) {
 	} catch (e) {}
 
 	var dark = mode === 'dark' || (mode === 'auto' && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
-	APPEARANCE({ color: dark ? '#66B639' : '#3F8F2A', dark: dark });
+	// The accent of the components (dialogs, focus, switches) is a soft coral; the own buttons of Totem are neutral
+	APPEARANCE({ color: dark ? '#D97757' : '#C4623F', dark: dark });
 	SET('common.theme', mode);
 };
 

@@ -12,7 +12,7 @@
 	.CLASS .meter { font-size: 12px; color: var(--t-muted); white-space: nowrap; }
 	.CLASS .layout { flex: 1; display: flex; min-height: 0; }
 	.CLASS .layout .col { flex: 1; min-width: 0; display: flex; flex-direction: column; }
-	.CLASS .scroll { flex: 1; overflow: auto; padding: 18px 16px; }
+	.CLASS .scroll { flex: 1; overflow: auto; padding: 18px 16px 30px; }
 	.CLASS .inner { max-width: 860px; margin: 0 auto; }
 	.CLASS .msg { margin-bottom: 20px; }
 	.CLASS .msg-user { text-align: right; }
@@ -100,6 +100,9 @@
 	.CLASS .compose .model { width: 200px; }
 	.CLASS .note { text-align: center; font-size: 12px; color: var(--t-muted); margin: 10px 0; }
 	.CLASS .undo { font-size: 12px; margin-top: 4px; }
+	.CLASS .link, .CLASS .note a { color: var(--t-muted); text-decoration: none; cursor: pointer; }
+	.CLASS .link:hover, .CLASS .note a:hover { color: var(--t-text); text-decoration: underline; }
+	.CLASS .part a { color: var(--t-text); text-decoration: underline; text-underline-offset: 2px; text-decoration-color: var(--t-muted); }
 	.CLASS .side { width: 380px; flex: 0 0 380px; border-left: 1px solid var(--t-border); overflow: auto; padding: 12px; background: var(--t-side); }
 	.CLASS .file { margin-bottom: 10px; border: 1px solid var(--t-border); border-radius: var(--radius, 6px); overflow: hidden; background: var(--t-card); }
 	.CLASS .file summary { cursor: pointer; padding: 6px 10px; display: flex; gap: 8px; align-items: center; background: var(--t-soft); }
