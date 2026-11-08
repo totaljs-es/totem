@@ -23,6 +23,7 @@
 		<div class="help mb10">@(The values of the file config for every project: temperature, steps, size of the context, the knowledge of Total.js... A project or a session can change them for itself.)</div>
 		<div class="mb10">
 			<button class="tbtn exec" data-exec="?/defaults"><i class="ti ti-sliders-h"></i>@(Change the defaults)</button>
+			<button class="tbtn exec" data-exec="?/agents"><i class="ti ti-users"></i>@(Agents for all projects)</button>
 		</div>
 		<div class="caption mb10"><label><i class="ti ti-plug-alt"></i>@(Providers)</label></div>
 		<div class="help mb10">@(A provider is any server with an OpenAI-compatible API: OpenRouter, OpenAI, Ollama, LM Studio... Prompts go only to the providers you add here.)</div>
@@ -112,6 +113,11 @@
 				};
 				SETTER('menu/show', opt);
 			});
+		};
+
+		exports.agents = function() {
+			SET('formagents @reset', { ready: true, projectid: '', items: [], tools: [], models: [], edit: null });
+			SET('common.form', 'formagents');
 		};
 
 		exports.defaults = function() {

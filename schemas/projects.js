@@ -49,6 +49,7 @@ NEWACTION('Projects|remove', {
 		var id = $.params.id;
 		await MODS.schedules.clear(id);
 		MODS.settings.clear('project', id);
+		MODS.agents.clear(id);
 		var sessions = await NOSQL('sessions').find().where('projectid', id).promise($);
 		var ids = sessions.map(s => s.id);
 
@@ -108,7 +109,7 @@ NEWACTION('Projects|commands', {
 		var project = await NOSQL('projects').read().where('id', $.params.id).error(404).promise($);
 		$.callback({
 			commands: MODS.commands.list(project.path).map(c => ({ name: c.name, description: c.description })),
-			agents: MODS.agents.list(project.path).map(a => ({ name: a.name, description: a.description, tools: a.tools }))
+			agents: MODS.agents.list(project.path, project.id).map(a => ({ name: a.name, description: a.description, tools: a.tools }))
 		});
 	}
 });

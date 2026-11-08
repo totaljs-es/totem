@@ -1,6 +1,8 @@
 T10e87d3 : Worktree de esta sesión. Rama base:
 T10i3rwu : Entre {0} y {1}
+T11fsngt : Elige al menos una herramienta
 T11pd1u9 : Totem no ha cambiado ningún archivo en esta sesión.
+T11sp5fq : Guardar para
 T121u7px : Medio
 T123z7m7 : Totem no ha ejecutado ningún comando en esta sesión.
 T1242qtx : Volver a poner los cambios que se deshicieron
@@ -57,6 +59,7 @@ T1bkuj5y : archivos sin commitear
 T1blijdw : Buscar servidores en este ordenador
 T1bnptdu : Demasiadas redirecciones
 T1boqgq : Dividido
+T1br5dz : Pasos
 T1c7gi : Alto
 T1c7v89 : Token
 T1c7yd7 : Herramientas
@@ -95,6 +98,7 @@ T1jl02ai : Proyectos
 T1jsr1 : Texto
 T1k3a3gc : Mensaje no encontrado
 T1k9qsrq : en staging
+T1kdf030 : Para qué sirve
 T1kej7ed : Abre una carpeta para empezar. Totem trabaja dentro de la carpeta de un proyecto.
 T1kkc5a9 : piensa
 T1klxg : Deshacer
@@ -125,6 +129,7 @@ T1sm8pxc : No se encontró el texto en el archivo
 T1snmzuo : Abre primero la carpeta de un proyecto.
 T1t73a2u : Skill no encontrada
 T1tb26o7 : Activar o desactivar
+T1tckdj : pasos
 T1ttdcr : herramientas
 T1txzylf : Carpeta no encontrada
 T1u2k085 : Déjalo vacío para conservar la clave guardada
@@ -137,6 +142,7 @@ T1vkxphz : Ajustes de esta sesión, de este proyecto y de todos los proyectos
 T1wcdox2 : Un proveedor es cualquier servidor con una API compatible con OpenAI: OpenRouter, OpenAI, Ollama, LM Studio... Tus mensajes solo van a los proveedores que añadas aquí.
 T1xnp73t : Clave de API
 T1xvlny2 : Abrir esta carpeta
+T1xvm2cl : Nuevo agente
 T1y4 : Aceptar
 T1yo6pk4 : El contenido anterior queda en Deshacer.
 T1yua79q : Escribe el nuevo nombre.
@@ -186,11 +192,13 @@ Td7kjxa : Elige primero un modelo. Añade un proveedor en Ajustes.
 Tdaeaix : Guardar este código en tu proyecto…
 Tekde62 : Abrir shell
 Teydlyk : La ruta está fuera del proyecto o protegida
+Tf8r5qd : Instrucciones
 Tfcovm0 : Elige primero una carpeta.
 Tfpufbw : commits
 Tg8aw6k : Carpeta:
 Tgatva8 : Modelos que puedes usar
 Tgbsmcl : Modelo y agente
+Tgchh32 : Ayudantes a los que el agente puede pasar una tarea
 Tgqxhtt : Aún no hay proyectos. Abre una carpeta para empezar.
 Th3pgr4 : El modelo de esta programación no está disponible
 Thm0jj3 : minutos
@@ -207,11 +215,13 @@ Tkd48z5 : Cambiar los valores por defecto
 Tkiadb0 : Este modelo no puede leer imágenes: solo recibirá una nota.
 Tko7bau : Interrumpir el comando, Ctrl+C
 Tksyqfu : Nueva sesión con nombre
+Tkxzjul : Un agente es un ayudante con su propio contexto y sus propias herramientas al que el agente principal puede pasarle una tarea. Varios pueden trabajar a la vez. Los que guardes aquí se guardan en los datos de Totem, no en el proyecto; un archivo en .totem/agents del proyecto gana sobre ellos.
 Tky7i1g : Pregunta a Totem...
 Tl0insr : Iniciado en una sesión nueva
 Tl2okoy : La sesión se está ejecutando
 Tlbkij4 : Pensando
 Tllv30h : Archivos cambiados por Totem, Alt+D
+Tlslxfz : Respuesta del agente
 Tm2kb26 : Razonamiento
 Tmexp15 : Proyecto
 Tmoxh0o : ¿Quitar este proveedor?
@@ -226,18 +236,23 @@ Tob7cil : Totem se detuvo con un error
 Tosmo8z : Ajustes
 Tp6sjhp : El intervalo es de al menos {0} minutos
 Tpnaojj : en marcha
+Tpnjlc2 : Agentes para todos los proyectos
 Tqtg2co : Bifurcar desde aquí
 Trfcwd7 : Conocimiento usado:
+Tsgot1b : Este modelo no está disponible
 Tsioqms : El proyecto tiene cambios sin commitear: haz commit o stash primero
 Tsmkvh9 : este ordenador
 Tsnldwr : ¿Borrar esta sesión y sus mensajes? Los archivos del proyecto no se tocan.
+Tsti7ge : El nombre usa minúsculas, números y guiones
 Tt398xu : ¿Quitar esta programación?
 Tty16h2 : Demasiados archivos: el límite es
 Tujymnx : La fusión tiene conflictos y se deshizo. Fusiona la rama tú mismo:
+Tuse4v4 : ¿Quitar este agente?
 Tuvdde1 : Puede usar herramientas
 Tv3r6gd : Quitar la carpeta de la lista
 Tw01jbu : Totem está trabajando
 Twcquze : Añadidos:
+Twef2um : Agentes
 Twgvgkz : Ningún servidor de Ollama, llama.cpp o LM Studio respondió en este ordenador.
 Twiir4u : Responder
 Tx9d2fu : Cancelar
@@ -246,5 +261,6 @@ Txskn2j : Borrar
 Tyg8jb : Nueva programación
 Tyw9oul : Quitar
 Tz4gdhl : Qué debe hacer Totem cada vez
+Tzk1c36 : El de la conversación
 Tzlth4n : Cada día
 Tznd1g1 : Elige primero un modelo

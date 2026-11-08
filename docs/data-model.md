@@ -12,6 +12,7 @@ Everything is local. The data folder (`config`: `data`, default `databases/` nex
 | **message** | `id`, `sessionid`, `role` (`user`, `assistant`), `model`, `cost`, `tokens`, `dtcreated` | NoSQL `messages` |
 | **part** | `id`, `messageid`, `sessionid`, `type`, `data`, `dtcreated` | NoSQL `parts` |
 | **permission rule** | `id`, `projectid` (or global), `tool`, `pattern`, `action` (`allow`, `ask`, `deny`) | NoSQL `permissions` |
+| **agent** | `id` (`global:<name>` or `project:<projectid>:<name>`), `scope`, `projectid`, `name`, `description`, `tools[]`, `maxsteps`, `model`, `prompt`, `dtupdated` | NoSQL `agents` |
 | **settings** | `id` (`global`, `project:<id>` or `session:<id>`), `values` (only the keys that were changed), `dtupdated` | NoSQL `settings` |
 | **provider** | `id`, `name`, `url`, `kind` (`openai`, `ollama`, `openrouter`, `anthropic`, `gemini`: the request format and how its models are listed), `key` (encrypted), `models[]` (the ones a session can use), `meta` (per model: `context`, `tools`, `reasoning`, `free`, `size`; unknown values are null), `disabled` | NoSQL `providers` |
 | **snapshot** | `id`, `sessionid`, `messageid`, `path`, `existed`, `size`, `dtcreated` | NoSQL `snapshots` + a file per snapshot |

@@ -35,10 +35,14 @@ var script = [];
 var requests = [];
 
 var lastconf = null;
+var usedmodels = [];
+var maxchildren = 0;
 
 function fake(ai, callback) {
 
 	lastconf = ai.conf;
+	usedmodels.push(ai.payload.model);
+	Object.keys(MAIN.running).forEach(k => maxchildren = Math.max(maxchildren, (MAIN.running[k].children || []).length));
 	requests.push(ai.payload);
 
 	// A request to summarize is answered without using the script
@@ -102,6 +106,7 @@ Test.push('boot', function(next) {
 
 	ON('ready', function() {
 		NEWAIMODEL('fake', fake);
+		NEWAIMODEL('fake2', fake);
 		// The data is copied: a part keeps changing after the event, like on the wire
 		// The tests never go to the real Forge: the documents of Forge have their own test with a server of this computer
 		CONF.forgedocs = false;
@@ -2826,6 +2831,87 @@ Test.push('languages', async function(next) {
 	next();
 });
 
+Test.push('agents saved from Totem, their model and several at the same time', async function(next) {
+
+	var r = await api('agents/' + projectid);
+	check('the built-in agents are listed with where they come from, and a sub-agent cannot start agents', r.response.items.some(a => a.name === 'explore' && a.source === 'built-in') && r.response.tools.indexOf('task') === -1 && r.response.tools.indexOf('read') !== -1 && r.response.models.indexOf('fake2') !== -1);
+
+	var base = { scope: 'project', projectid: projectid, name: 'scout', description: 'Reads a file', tools: ['read'], maxsteps: 5, model: 'fake2', prompt: 'You are the scout.' };
+	r = await api('agents_save', Object.assign({}, base, { name: 'Bad Name!' }));
+	check('a name with spaces or capitals is refused', !!r.err);
+	r = await api('agents_save', Object.assign({}, base, { tools: ['task'] }));
+	check('an agent cannot be given the task tool', !!r.err);
+	r = await api('agents_save', Object.assign({}, base, { model: 'nonexistent' }));
+	check('a model that is not available is refused', !!r.err);
+	r = await api('agents_save', Object.assign({}, base, { projectid: 'nope' }));
+	check('a project that does not exist is refused', !!r.err);
+
+	r = await api('agents_save', base);
+	check('an agent is saved for a project', r.response && r.response.success === true);
+	r = await api('agents/' + projectid);
+	var scout = r.response.items.find(a => a.name === 'scout');
+	check('it is listed with its model, its tools and its source', scout && scout.source === 'project' && scout.model === 'fake2' && scout.tools.join() === 'read' && scout.maxsteps === 5);
+	r = await api('agents/all');
+	check('an agent of a project is not an agent of the others', !r.response.items.some(a => a.name === 'scout'));
+	await api('agents_save', Object.assign({}, base, { scope: 'global', projectid: '', description: 'for everyone', model: '' }));
+	r = await api('agents/all');
+	check('an agent saved for all projects is listed there', r.response.items.find(a => a.name === 'scout').source === 'all projects');
+	r = await api('agents/' + projectid);
+	check('the project wins over all projects', r.response.items.find(a => a.name === 'scout').description === 'Reads a file');
+
+	// The agent works with its own model
+	var id = await session();
+	events.length = 0;
+	usedmodels.length = 0;
+	script = [
+		{ tools: [{ id: 'sa', name: 'task', arguments: { agent: 'scout', prompt: 'read a.txt' } }] },
+		{ tools: [{ id: 'sr', name: 'read', arguments: { path: 'a.txt' } }] },
+		{ content: 'scout report' },
+		{ content: 'done' }
+	];
+	await api('sessions_prompt/' + id, { text: 'use the scout' });
+	await idle(id);
+	check('the agent uses its own model and the parent keeps the one of the conversation', usedmodels.join() === 'fake,fake2,fake2,fake');
+	r = await api('sessions_messages/' + id);
+	var task = r.response.find(m => m.role === 'assistant').parts.find(p => p.type === 'tool' && p.data.tool === 'task');
+	check('the call keeps what the agent did, after it ended', task.data.agent === 'scout' && task.data.model === 'fake2' && task.data.thread[0] === 'agent scout (fake2)' && task.data.thread.some(l => /\[read\] done/.test(l)) && task.data.output === 'scout report');
+
+	// A model that disappeared is not an error
+	await new Promise(resolve => MODS.agents.save({ scope: 'project', projectid: projectid, name: 'ghost', tools: ['read'], model: 'gone', prompt: 'x' }, resolve));
+	usedmodels.length = 0;
+	script = [{ tools: [{ id: 'gh', name: 'task', arguments: { agent: 'ghost', prompt: 'hi' } }] }, { content: 'hi' }, { content: 'ok' }];
+	await api('sessions_prompt/' + id, { text: 'use the ghost' });
+	await idle(id);
+	r = await api('sessions_messages/' + id);
+	task = r.response[r.response.length - 1].parts.find(p => p.type === 'tool' && p.data.tool === 'task');
+	check('a model that is not available falls back to the one of the conversation, and says so', usedmodels.join() === 'fake,fake,fake' && task.data.status === 'done' && /gone is not available/.test(task.data.thread[0]));
+
+	// Several agents asked for together work at the same time
+	maxchildren = 0;
+	script = [
+		{ tools: [{ id: 'p1', name: 'task', arguments: { agent: 'explore', prompt: 'one' } }, { id: 'p2', name: 'task', arguments: { agent: 'explore', prompt: 'two' } }] },
+		{ content: 'ONE' },
+		{ content: 'TWO' },
+		{ content: 'both reported' }
+	];
+	await api('sessions_prompt/' + id, { text: 'two at once' });
+	await idle(id);
+	r = await api('sessions_messages/' + id);
+	var both = r.response[r.response.length - 1].parts.filter(p => p.type === 'tool' && p.data.tool === 'task');
+	check('two agents asked for together are both running at the same time', maxchildren === 2);
+	check('both answers come back to the parent', both.length === 2 && both.every(p => p.data.status === 'done') && both.map(p => p.data.output).sort().join() === 'ONE,TWO' && (MAIN.running[id] || {}).children === undefined);
+
+	r = await api('agents_remove', { scope: 'project', projectid: projectid, name: 'scout' });
+	check('an agent is removed', r.response.success === true);
+	await api('agents_remove', { scope: 'global', name: 'scout' });
+	await api('agents_remove', { scope: 'project', projectid: projectid, name: 'ghost' });
+	r = await api('agents_remove', { scope: 'project', projectid: projectid, name: 'scout' });
+	check('removing one that is not there is a 404', !!r.err);
+	r = await api('agents/' + projectid);
+	check('and it is gone from the list', !r.response.items.some(a => a.name === 'scout' || a.name === 'ghost'));
+	next();
+});
+
 Test.push('settings per workspace', async function(next) {
 
 	var r = await api('settings/global/all');
@@ -2870,12 +2956,15 @@ Test.push('settings per workspace', async function(next) {
 });
 
 Test.push('cleanup', async function(next) {
+	await api('agents_save', { scope: 'project', projectid: projectid, name: 'temp', tools: ['read'], prompt: 'x' });
 	var r = await api('projects_remove/' + projectid);
 	check('removing a project removes its sessions', r.response.success === true);
 	var left = await NOSQL('sessions').find().where('projectid', projectid).promise();
 	check('no session is left', left.length === 0);
 	var rest = await NOSQL('settings').find().promise();
+	var agentsleft = await NOSQL('agents').find().promise();
 	check('the settings of the project and its sessions go with it', rest.every(i => i.id !== 'project:' + projectid && i.id !== 'session:' + sessionid) && !MAIN.settings['project:' + projectid]);
+	check('the agents of the project go with it', agentsleft.every(i => i.projectid !== projectid) && !Object.keys(MAIN.agentsdb).some(k => MAIN.agentsdb[k].projectid === projectid));
 	Total.Fs.rmSync(TMP, { recursive: true, force: true });
 	next();
 });

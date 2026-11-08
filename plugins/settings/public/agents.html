@@ -1,0 +1,140 @@
+<ui-component name="miniform" path="common.form" config="if:~PATH~;icon:ti ti-users;title:@(Agents);reload:?/reload;scrollbar:1;width:760" class="hidden" plugin="~PATH~">
+	<div class="padding">
+		<div class="help mb10">@(An agent is a helper with its own context and its own tools that the main agent can hand a task to. Several can work at the same time. The ones you save here are kept in the data of Totem, not in the project; a file in .totem/agents of the project wins over them.)</div>
+		<ui-bind path="?.edit" config="show:!value" class="block hidden">
+			<ui-bind path="?.items" config="template" class="block">
+				<script type="text/html">
+					{{ foreach a in value }}
+					<div class="mb5" style="border:1px solid var(--t-border);border-radius:var(--radius,6px);padding:8px 10px;display:flex;gap:10px;align-items:center">
+						<div style="flex:1;min-width:0">
+							<b>{{ a.name }}</b> <span class="badge badge-small badge-silver">{{ a.source }}</span>{{ if a.model }} <span class="badge badge-small badge-green">{{ a.model }}</span>{{ fi }}
+							<div class="fs12" style="color:var(--t-muted)">{{ a.description }}</div>
+							<div class="fs12" style="color:var(--t-muted)">{{ a.tools.join(', ') }} &middot; {{ a.maxsteps }} @(steps)</div>
+						</div>
+						<button class="tbtn tbtn-small exec" data-exec="?/edit" data-id="{{ a.name }}" title="@(Edit)"><i class="ti ti-pencil"></i></button>
+						{{ if a.removable }}<button class="tbtn tbtn-small exec" data-exec="?/remove" data-id="{{ a.name }}" title="@(Remove)"><i class="ti ti-trash red"></i></button>{{ fi }}
+					</div>
+					{{ end }}
+				</script>
+			</ui-bind>
+			<div class="mt10"><button class="tbtn exec" data-exec="?/create"><i class="ti ti-plus-circle"></i>@(New agent)</button></div>
+		</ui-bind>
+		<ui-bind path="?.edit" config="template" class="block">
+			<script type="text/html">
+				{{ if value }}
+				<div class="agform">
+					<div class="mb10"><label><b>@(Name)</b></label><br /><input type="text" class="agfield" data-f="name" value="{{ value.name }}" maxlength="40" style="width:100%" /></div>
+					<div class="mb10"><label><b>@(What it is for)</b></label><br /><input type="text" class="agfield" data-f="description" value="{{ value.description }}" maxlength="200" style="width:100%" /></div>
+					<div class="mb10" style="display:flex;gap:10px;flex-wrap:wrap">
+						<div><label><b>@(Save for)</b></label><br /><select class="agfield" data-f="scope">{{ foreach s in value.scopes }}<option value="{{ s.id }}"{{ if s.id === value.scope }} selected{{ fi }}>{{ s.name }}</option>{{ end }}</select></div>
+						<div><label><b>@(Model)</b></label><br /><select class="agfield" data-f="model"><option value="">@(The one of the conversation)</option>{{ foreach m in value.models }}<option value="{{ m.id }}"{{ if m.on }} selected{{ fi }}>{{ m.id }}</option>{{ end }}</select></div>
+						<div><label><b>@(Steps)</b></label><br /><input type="text" class="agfield" data-f="maxsteps" value="{{ value.maxsteps }}" style="width:70px" /></div>
+					</div>
+					<div class="mb10"><label><b>@(Tools)</b></label><br />{{ foreach t in value.toolset }}<label style="display:inline-block;margin-right:12px"><input type="checkbox" class="agtool" value="{{ t.name }}"{{ if t.on }} checked{{ fi }} /> {{ t.name }}</label>{{ end }}</div>
+					<div class="mb10"><label><b>@(Instructions)</b></label><br /><textarea class="agfield" data-f="prompt" rows="9" style="width:100%">{{ value.prompt }}</textarea></div>
+					<div style="display:flex;gap:8px"><button class="tbtn tbtn-primary exec" data-exec="?/save"><i class="ti ti-check"></i>@(Save)</button><button class="tbtn exec" data-exec="?/cancel">@(Cancel)</button></div>
+				</div>
+				{{ fi }}
+			</script>
+		</ui-bind>
+	</div>
+	<nav>
+		<button name="cancel">@(Close)</button>
+	</nav>
+</ui-component>
+
+<script>
+
+	PLUGIN(function(exports) {
+
+		function data() {
+			return GET('formagents') || {};
+		}
+
+		function target() {
+			return data().projectid || 'all';
+		}
+
+		exports.reload = function() {
+			if (data().ready)
+				exports.load();
+			else
+				setTimeout(exports.load, 250);
+		};
+
+		exports.load = function() {
+			if (!data().ready)
+				return;
+			exports.tapi('agents/' + target(), function(response) {
+				var projectid = data().projectid;
+				response.items.forEach(function(a) {
+					// Only what was saved from here can be removed from here
+					a.removable = (projectid && a.source === 'project') || (!projectid && a.source === 'all projects');
+				});
+				SET('formagents.items', response.items);
+				SET('formagents.tools', response.tools);
+				SET('formagents.models', response.models);
+			});
+		};
+
+		function form(agent) {
+			var d = data();
+			var chosen = agent.tools || ['read', 'glob', 'grep'];
+			var scopes = d.projectid ? [{ id: 'project', name: '@(This project)' }, { id: 'global', name: '@(All projects)' }] : [{ id: 'global', name: '@(All projects)' }];
+			SET('formagents.edit', {
+				name: agent.name || '',
+				description: agent.description || '',
+				maxsteps: agent.maxsteps || 20,
+				prompt: agent.prompt || '',
+				scopes: scopes,
+				scope: d.projectid ? (agent.source === 'all projects' ? 'global' : 'project') : 'global',
+				models: (d.models || []).map(m => ({ id: m, on: m === agent.model })),
+				toolset: (d.tools || []).map(t => ({ name: t, on: chosen.indexOf(t) !== -1 }))
+			});
+		}
+
+		exports.create = function() {
+			form({});
+		};
+
+		exports.edit = function(el) {
+			var agent = (data().items || []).findItem('name', ATTRD(el));
+			agent && form(agent);
+		};
+
+		exports.cancel = function() {
+			SET('formagents.edit', null);
+		};
+
+		exports.save = function(el) {
+			var box = $(el).closest('.agform');
+			var d = data();
+			var payload = { tools: [] };
+			box.find('.agfield').each(function() {
+				payload[$(this).attr('data-f')] = $(this).val();
+			});
+			box.find('.agtool:checked').each(function() {
+				payload.tools.push($(this).val());
+			});
+			payload.maxsteps = +payload.maxsteps || 20;
+			payload.projectid = payload.scope === 'project' ? d.projectid : '';
+			exports.tapi('agents_save ERROR', payload, function() {
+				SETTER('notify/success', '@(Saved)');
+				SET('formagents.edit', null);
+				exports.load();
+			});
+		};
+
+		exports.remove = function(el) {
+			var d = data();
+			var name = ATTRD(el);
+			SETTER('approve/show', '@(Remove this agent?)', ':ti ti-trash: @(Remove)', function() {
+				exports.tapi('agents_remove ERROR', { scope: d.projectid ? 'project' : 'global', projectid: d.projectid || '', name: name }, function() {
+					exports.load();
+				});
+			});
+		};
+
+	});
+
+</script>

@@ -66,7 +66,7 @@ function system(run) {
 	if (run.bootstrapped)
 		text += '\nThe starter tool results are in the conversation. Keep created files; implement only requirements that remain, using tools. Report briefly in the language of the original request. Do not repeat the starter source or claim that a test ran without its tool result.\n';
 
-	var agents = MODS.agents.list(run.root);
+	var agents = MODS.agents.list(run.root, run.projectid);
 	if (agents.length) {
 		text += '\nAgents you can delegate to with the task tool. They have their own context and return only their final answer:\n';
 		for (var agent of agents)
@@ -923,7 +923,21 @@ function failure(err) {
 	return (err && err.message) || String(err);
 }
 
+// Agents asked for together in one answer work at the same time, a few at once: each one has its own context and only its final answer comes back
+var MAXAGENTS = 3;
+
 function runtools(run, tools, callback) {
+
+	if (tools.length > 1 && tools.every(tool => tool.name === 'task')) {
+		var groups = [];
+		for (var i = 0; i < tools.length; i += MAXAGENTS)
+			groups.push(tools.slice(i, i + MAXAGENTS));
+		groups.wait(function(group, next) {
+			var pending = group.length;
+			group.forEach(tool => runtools(run, [tool], () => --pending === 0 && next()));
+		}, callback);
+		return;
+	}
 
 	tools.wait(function(tool, next) {
 

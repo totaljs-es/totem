@@ -118,6 +118,7 @@
 		<ui-bind path="?.status" config="show:value === 'running'" class="hidden"><button class="tbtn exec" data-exec="?/abort" title="@(Stop, Esc)"><i class="ti ti-stop-alt"></i>@(Stop)</button></ui-bind>
 		<ui-bind path="?.items" config="template" class="inline"><script type="text/html"><span class="meter" title="@(Tokens used in this session)">{{ value | tokens }}</span></script></ui-bind>
 		<button class="tbtn exec" data-exec="?/workspace" title="@(Settings of this session, this project and all projects)"><i class="ti ti-sliders-h"></i>@(Session settings)</button>
+		<button class="tbtn exec" data-exec="?/agents" title="@(Helpers that the agent can hand a task to)"><i class="ti ti-users"></i>@(Agents)</button>
 		<button class="tbtn exec" data-exec="?/terminal" title="@(Commands that Totem ran)"><i class="ti ti-terminal"></i>@(Terminal)</button>
 		<button class="tbtn exec" data-exec="?/changes" title="@(Files changed by Totem, Alt+D)"><i class="ti ti-exchange"></i>@(Changes)<ui-bind path="?.files" config="template" class="inline"><script type="text/html">{{ if value && value.length }} ({{ value.length }}){{ fi }}</script></ui-bind></button>
 	</div>
@@ -178,7 +179,8 @@
 							<div class="part">
 								<details class="tool" data-part="{{ p.id }}"{{ if p.open }} open{{ fi }}>
 									<summary><i class="ti ti-wrench"></i><b>{{ p.data.tool }}</b><span class="hellip" style="flex:1;color:#777">{{ p.data.input | json }}</span><span class="st-{{ p.data.status }}">{{ p.data.status }}</span></summary>
-									{{ if p.data.output || p.data.error }}<pre>{{ p.data.error || p.data.output }}</pre>{{ fi }}
+									{{ if p.data.tool === 'task' && p.data.thread && p.data.thread.length }}<div class="fs12" style="color:var(--t-muted);padding:4px 0"><i class="ti ti-users"></i> <b>{{ p.data.agent }}</b>{{ if p.data.model }} &middot; {{ p.data.model }}{{ fi }}</div><pre class="agentthread">{{ p.data.thread.join('\n') }}</pre>{{ fi }}
+									{{ if p.data.output || p.data.error }}{{ if p.data.tool !== 'task' || p.data.status !== 'running' }}{{ if p.data.tool === 'task' && p.data.status === 'done' }}<div class="fs12" style="color:var(--t-muted)">@(Answer of the agent)</div>{{ fi }}<pre>{{ p.data.error || p.data.output }}</pre>{{ fi }}{{ fi }}
 								</details>
 							</div>
 							{{ fi }}
@@ -1000,6 +1002,13 @@
 			var current = exports.model.session || {};
 			SET('formconfig @reset', { scope: 'session', sessionid: sessionid, projectid: current.projectid || '', rows: [] });
 			SET('common.form', 'formconfig');
+		};
+
+		// The agents of the project (and of all projects) that the agent can hand a task to
+		exports.agents = function() {
+			var current = exports.model.session || {};
+			SET('formagents @reset', { ready: true, projectid: current.projectid || '', items: [], tools: [], models: [], edit: null });
+			SET('common.form', 'formagents');
 		};
 
 		exports.terminal = function() {

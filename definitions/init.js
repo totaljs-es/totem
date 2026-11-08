@@ -25,6 +25,7 @@ ON('ready', function() {
 	MAIN.templates = Total.Fs.readFileSync(PATH.private('providers.json'), 'utf8').parseJSON();
 
 	MODS.settings.load();
+	MODS.agents.load();
 	FUNC.providers();
 	FUNC.recover();
 	NOSQL('schedules').modify({ laststatus: 'aborted' }).where('laststatus', 'running').callback(NOOP);

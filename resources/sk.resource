@@ -1,6 +1,8 @@
 T10e87d3 : Worktree tejto relácie. Základná vetva:
 T10i3rwu : Medzi {0} a {1}
+T11fsngt : Vyber aspoň jeden nástroj
 T11pd1u9 : Totem v tejto relácii nezmenil žiadny súbor.
+T11sp5fq : Uložiť pre
 T121u7px : Stredná
 T123z7m7 : Totem v tejto relácii nespustil žiadny príkaz.
 T1242qtx : Vrátiť zmeny, ktoré boli zrušené
@@ -57,6 +59,7 @@ T1bkuj5y : necommitnutých súborov
 T1blijdw : Hľadať servery v tomto počítači
 T1bnptdu : Príliš veľa presmerovaní
 T1boqgq : Rozdelené
+T1br5dz : Kroky
 T1c7gi : Vysoká
 T1c7v89 : Token
 T1c7yd7 : Nástroje
@@ -95,6 +98,7 @@ T1jl02ai : Projekty
 T1jsr1 : Text
 T1k3a3gc : Správa sa nenašla
 T1k9qsrq : v staging
+T1kdf030 : Na čo slúži
 T1kej7ed : Otvor priečinok a začni. Totem pracuje v priečinku projektu.
 T1kkc5a9 : premýšľa
 T1klxg : Vrátiť späť
@@ -125,6 +129,7 @@ T1sm8pxc : Text sa v súbore nenašiel
 T1snmzuo : Najprv otvor priečinok projektu.
 T1t73a2u : Skill sa nenašiel
 T1tb26o7 : Zapnúť alebo vypnúť
+T1tckdj : krokov
 T1ttdcr : nástroje
 T1txzylf : Priečinok sa nenašiel
 T1u2k085 : Nechaj prázdne, ak chceš ponechať uložený kľúč
@@ -137,6 +142,7 @@ T1vkxphz : Nastavenia tejto relácie, tohto projektu a všetkých projektov
 T1wcdox2 : Poskytovateľ je každý server s API kompatibilným s OpenAI: OpenRouter, OpenAI, Ollama, LM Studio... Tvoje správy idú iba k poskytovateľom, ktorých tu pridáš.
 T1xnp73t : API kľúč
 T1xvlny2 : Otvoriť tento priečinok
+T1xvm2cl : Nový agent
 T1y4 : OK
 T1yo6pk4 : Starý obsah zostane v Späť.
 T1yua79q : Napíš nový názov.
@@ -186,11 +192,13 @@ Td7kjxa : Najprv vyber model. Pridaj poskytovateľa v Nastaveniach.
 Tdaeaix : Uložiť tento kód do projektu…
 Tekde62 : Otvoriť shell
 Teydlyk : Cesta je mimo projektu alebo chránená
+Tf8r5qd : Pokyny
 Tfcovm0 : Najprv vyber priečinok.
 Tfpufbw : commitov
 Tg8aw6k : Priečinok:
 Tgatva8 : Modely, ktoré môžeš používať
 Tgbsmcl : Model a agent
+Tgchh32 : Pomocníci, ktorým môže agent odovzdať úlohu
 Tgqxhtt : Zatiaľ žiadne projekty. Otvor priečinok a začni.
 Th3pgr4 : Model tohto plánu nie je dostupný
 Thm0jj3 : minút
@@ -207,11 +215,13 @@ Tkd48z5 : Zmeniť predvolené hodnoty
 Tkiadb0 : Tento model nevie čítať obrázky: dostane iba poznámku.
 Tko7bau : Prerušiť príkaz, Ctrl+C
 Tksyqfu : Nová relácia s názvom
+Tkxzjul : Agent je pomocník s vlastným kontextom a vlastnými nástrojmi, ktorému môže hlavný agent odovzdať úlohu. Viacerí môžu pracovať naraz. Tie, ktoré tu uložíš, sa ukladajú do dát Totemu, nie do projektu; súbor v .totem/agents projektu má pred nimi prednosť.
 Tky7i1g : Opýtaj sa Totemu...
 Tl0insr : Spustené v novej relácii
 Tl2okoy : Relácia beží
 Tlbkij4 : Premýšľa
 Tllv30h : Súbory zmenené Totemom, Alt+D
+Tlslxfz : Odpoveď agenta
 Tm2kb26 : Uvažovanie
 Tmexp15 : Projekt
 Tmoxh0o : Odstrániť tohto poskytovateľa?
@@ -226,18 +236,23 @@ Tob7cil : Totem sa zastavil s chybou
 Tosmo8z : Nastavenia
 Tp6sjhp : Interval je aspoň {0} minút
 Tpnaojj : beží
+Tpnjlc2 : Agenti pre všetky projekty
 Tqtg2co : Rozvetviť odtiaľto
 Trfcwd7 : Použité znalosti:
+Tsgot1b : Tento model nie je dostupný
 Tsioqms : Projekt má necommitnuté zmeny: najprv ich commitni alebo daj do stash
 Tsmkvh9 : tento počítač
 Tsnldwr : Odstrániť túto reláciu a jej správy? Súbory projektu sa nezmenia.
+Tsti7ge : Názov používa malé písmená, čísla a spojovníky
 Tt398xu : Odstrániť tento plán?
 Tty16h2 : Príliš veľa súborov: limit je
 Tujymnx : Zlúčenie má konflikty a bolo vrátené. Zlúč vetvu sám:
+Tuse4v4 : Odstrániť tohto agenta?
 Tuvdde1 : Vie používať nástroje
 Tv3r6gd : Odstrániť priečinok zo zoznamu
 Tw01jbu : Totem pracuje
 Twcquze : Pridané:
+Twef2um : Agenti
 Twgvgkz : V tomto počítači neodpovedal žiadny server Ollama, llama.cpp ani LM Studio.
 Twiir4u : Odpovedať
 Tx9d2fu : Zrušiť
@@ -246,5 +261,6 @@ Txskn2j : Odstrániť
 Tyg8jb : Nový plán
 Tyw9oul : Odstrániť
 Tz4gdhl : Čo má Totem urobiť zakaždým
+Tzk1c36 : Ten z konverzácie
 Tzlth4n : Každý deň
 Tznd1g1 : Najprv vyber model

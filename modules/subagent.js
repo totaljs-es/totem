@@ -18,15 +18,26 @@ function rules(def) {
 // callback(err, text)
 exports.run = function(parent, name, prompt, callid, callback) {
 
-	var def = MODS.agents.get(parent.root, name);
+	var def = MODS.agents.get(parent.root, name, parent.projectid);
 
 	if (!def) {
-		callback('Unknown agent "{0}". Available: {1}'.format(name, MODS.agents.list(parent.root).map(a => a.name).join(', ')));
+		callback('Unknown agent "{0}". Available: {1}'.format(name, MODS.agents.list(parent.root, parent.projectid).map(a => a.name).join(', ')));
 		return;
 	}
 
 	var part = parent.parts[callid];
 	var log = [];
+
+	// The agent can ask for its own model (a small and fast one to explore, a larger one to write); one that is not available is the model of the parent
+	var modelid = parent.model;
+	var modelnote = '';
+
+	if (def.model) {
+		if (F.aimodels[def.model])
+			modelid = def.model;
+		else
+			modelnote = 'model {0} is not available, using {1}'.format(def.model, parent.model);
+	}
 
 	var child = {
 		sessionid: parent.sessionid,
@@ -36,7 +47,7 @@ exports.run = function(parent, name, prompt, callid, callback) {
 		unattended: parent.unattended,
 		mode: parent.mode,
 		rules: rules(def),
-		model: parent.model,
+		model: modelid,
 		conf: parent.conf,
 		aborted: false,
 		steps: 0,
@@ -45,18 +56,25 @@ exports.run = function(parent, name, prompt, callid, callback) {
 		ai: null
 	};
 
-	parent.child = child;
+	// Several agents can work at the same time
+	parent.children = parent.children || [];
+	parent.children.push(child);
 
+	// What the agent does is kept with the call (part.data.thread) so that it can be read afterwards
 	function progress(line) {
+		line = String(line).substring(0, 400);
 		log.push(line);
 		if (part) {
+			part.data.agent = def.name;
+			part.data.model = modelid;
+			part.data.thread = log.slice(-200);
 			part.data.output = log.join('\n');
 			FUNC.emit(parent.sessionid, 'part.updated', { part: part });
 		}
 	}
 
 	function finish(err, text) {
-		parent.child = null;
+		parent.children = (parent.children || []).filter(item => item !== child);
 		callback(err, text);
 	}
 
@@ -168,15 +186,15 @@ exports.run = function(parent, name, prompt, callid, callback) {
 		});
 	}
 
-	progress('agent ' + def.name);
+	progress('agent ' + def.name + ' (' + modelid + ')' + (modelnote ? ' - ' + modelnote : ''));
 	loop();
 };
 
 // Stops the nested run of a session
 exports.abort = function(run) {
-	if (run.child) {
-		run.child.aborted = true;
-		if (run.child.ai && run.child.ai.options.abort)
-			run.child.ai.options.abort();
-	}
+	(run.children || []).forEach(function(child) {
+		child.aborted = true;
+		if (child.ai && child.ai.options.abort)
+			child.ai.options.abort();
+	});
 };
