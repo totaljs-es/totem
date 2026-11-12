@@ -11,6 +11,7 @@
 - A model of up to 4B that can think does not think by default: it spent its short answer on the thinking and looped in it. The reasoning selector of the session still turns it on.
 - The `index.js` of a new application is always the official start script of Total.js 5, whole (`private/start/index.js`): in `/new`, in the recipes and in the instructions of the model.
 - ES5 is the preference, not a prohibition: the instructions of the model and the check of the conventions accept `const` and `let` at the top of a file when the code needs them, and prefer `var` inside a function.
+- The answer limit of a model of up to 4B goes from 1536 to 2560 tokens (`ollamapredictsmall`): half of the answers cut at 1536 were long components that end on their own a little later, not loops.
 - The recipes teach what was checked by running it: the records of an application go through `DATA` on the embedded NoSQL database (`DATA.find('nosql/tbl_user')`) so that it can move to PostgreSQL without writing its queries again, and a schedule is written with `ON('service')` or a list of minutes, because the step form of `CRON` (`*/5`) runs every minute in Total.js 5 0.0.19.
 - The model selector of the prompt is wider and its list shows the whole name of a model.
 - The prompt tells the model that it is in the Totem application and how to check it.

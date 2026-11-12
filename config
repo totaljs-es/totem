@@ -32,7 +32,7 @@ ollamactxmax      (Number)  : 32768
 ollamarepeat      (Number)  : 1.1
 ollamapredict     (Number)  : 8192
 // The same limit for a model of up to 4 billion parameters (qwen2.5:1.5b, llama3.2:3b), which tends to write a list that never ends
-ollamapredictsmall (Number) : 1536
+ollamapredictsmall (Number) : 2560
 
 // Agent limits
 maxsteps          (Number)  : 50
