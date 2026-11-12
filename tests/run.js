@@ -1885,14 +1885,19 @@ Test.push('redo, fork and background commands', async function(next) {
 	script = [{ tools: [{ id: 'b3', name: 'job', arguments: { id: job.id, stop: true } }] }, { content: 'Stopped.' }];
 	await api('sessions_prompt/' + id, { text: 'stop it' });
 	await idle(id);
+	// On a busy computer the run that stops the job can take longer than idle() waits: the next prompt would be refused as "the session
+	// is running" and the test would wait for a question that never comes
+	await until(() => !MAIN.running[id], 30000);
 	check('the job is stopped', job.status === 'stopped');
 
 	events.length = 0;
 	script = [{ tools: [{ id: 'b4', name: 'bash', arguments: { command: 'sleep 30', background: true } }] }, { content: 'again' }];
-	await api('sessions_prompt/' + id, { text: 'again' });
+	r = await api('sessions_prompt/' + id, { text: 'again' });
 	ask = await until(() => events.find(e => e.type === 'permission.ask'), 20000);
-	await api('permissions_reply/' + ask.data.id, { reply: 'once' });
+	check('a second background command is accepted and asks too', !r.err && !!ask);
+	ask && await api('permissions_reply/' + ask.data.id, { reply: 'once' });
 	await idle(id);
+	await until(() => !MAIN.running[id], 30000);
 	var live = Object.keys(MAIN.jobs).map(k => MAIN.jobs[k]).filter(j => j.status === 'running');
 	check('another job runs', live.length === 1);
 	await api('sessions_remove/' + id);

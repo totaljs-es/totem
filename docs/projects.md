@@ -16,12 +16,12 @@ APP: shop
 
 PLUGIN: products
 TITLE: Products
-ICON: ti ti-box
+ICON: ti ti-grid
 FIELDS: *name:String, price:Number, isactive:Boolean
 
 PLUGIN: customers
 TITLE: Customers
-ICON: ti ti-users
+ICON: ti ti-building
 FIELDS: *name:String, email:Email, phone:Phone
 ```
 
