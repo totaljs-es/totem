@@ -2704,6 +2704,7 @@ Test.push('Forge without MCP: llms.txt and the pages in Markdown', function(next
 		check('a metadata file that is not valid changes nothing', withmeta[0].symbols[0] === 'cron');
 
 		check('Spanish verbs of the request are translated for the search of the pages', MODS.knowledge.route('Cómo envío un correo en Total.js').query.indexOf('send email') !== -1 && MODS.knowledge.route('como sirvo archivos estáticos').query.indexOf('serve file static') !== -1);
+		check('Spanish words of the interface are translated too, and an English word that looks like one is not', MODS.knowledge.route('Quiero un gráfico de barras').query === 'chart bar' && /calendar/.test(MODS.knowledge.route('un calendario para elegir una fecha').query) && /guard/.test(MODS.knowledge.route('How do I guard a route?').query));
 		check('a request about Tangular is not sent only to the frontend', MODS.knowledge.route('How do I use Tangular templates in a view?').product !== 'jcomponent');
 
 		var rows = []; for (var n = 0; n < 60; n++) rows.push('| key' + n + ' | default | what key' + n + ' does in the application |');
