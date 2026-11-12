@@ -101,6 +101,7 @@ body { background: var(--t-bg); color: var(--t-text); font-family: -apple-system
 .prov { display: inline-block; width: 20px; height: 20px; flex: 0 0 20px; vertical-align: middle; background-color: currentColor; -webkit-mask: var(--i) center / contain no-repeat; mask: var(--i) center / contain no-repeat; }
 .prov.mono { -webkit-mask: none; mask: none; background: var(--t-soft2); border-radius: 5px; text-align: center; font-size: 12px; font-weight: bold; line-height: 20px; }
 .prov-large { width: 28px; height: 28px; flex-basis: 28px; }
+.prov-totem { background-color: #4A9E2F; }
 .prov-large.mono { line-height: 28px; font-size: 14px; }
 
 /* The same icons as classes, for components that take a class for an icon (the menu): icon: 'provi provi-openai' */
@@ -125,6 +126,7 @@ body { background: var(--t-bg); color: var(--t-text); font-family: -apple-system
 .provi-vllm { --i: url(/img/providers/vllm.svg); }
 .provi-cohere { --i: url(/img/providers/cohere.svg); }
 .provi-litellm { --i: url(/img/providers/litellm.svg); }
+.provi-totem { --i: url(/img/providers/totem.svg); background-color: #4A9E2F; }
 
 /* Code in the answers. highlight.js comes with a light theme from the CDN: these colors follow the theme of Totem (light and dark) and win over it. */
 pre code.hljs { background: transparent; color: inherit; padding: 0; }

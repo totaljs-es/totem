@@ -13,6 +13,12 @@ FUNC.providericon = function(item) {
 	return icons[icon] ? icon : '';
 };
 
+// Totem, the model trained for this application, whatever serves it: its name says so (totem:4b, totem-v4:4b, hf.co/totaljs-es/totem-4b...),
+// or the metadata that the provider gave for it. The interface shows it with its own icon.
+FUNC.istotem = function(model, meta) {
+	return !!((meta && meta.totem) || /(^|[\/:_.-])totem([\/:_.-]|\d|$)/i.test(model || ''));
+};
+
 FUNC.providers = function(callback) {
 	NOSQL('providers').find().callback(function(err, response) {
 
@@ -33,6 +39,7 @@ FUNC.providers = function(callback) {
 				var config = { url: item.url, key: key, model: model, context: meta.context || null, reasoning: meta.reasoning === undefined ? null : meta.reasoning };
 				NEWAIMODEL(item.id + ':' + model, config, MODS.provider.byKind(item.kind));
 				MAIN.modelmeta[item.id + ':' + model] = Object.assign({}, meta);
+				MAIN.modelmeta[item.id + ':' + model].totem = FUNC.istotem(model, meta);
 
 				// The window that Totem really uses: Ollama is asked for a context that is as large as the config allows
 				if (item.kind === 'ollama')

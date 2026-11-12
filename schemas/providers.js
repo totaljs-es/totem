@@ -128,7 +128,7 @@ NEWACTION('Providers|catalog', {
 		var items = Object.keys(F.aimodels).sort().map(function(id) {
 			var meta = MAIN.modelmeta[id] || {};
 			var provider = MAIN.modelprov[id] || {};
-			return { id: id, name: meta.name || id, provider: provider.name || '', icon: provider.icon || '', context: meta.context || null, tools: meta.tools === undefined ? null : meta.tools, reasoning: meta.reasoning === undefined ? null : meta.reasoning, vision: meta.vision === undefined ? null : meta.vision, free: meta.free === undefined ? null : meta.free };
+			return { id: id, name: meta.name || id, provider: provider.name || '', icon: meta.totem ? 'totem' : (provider.icon || ''), totem: !!meta.totem, context: meta.context || null, tools: meta.tools === undefined ? null : meta.tools, reasoning: meta.reasoning === undefined ? null : meta.reasoning, vision: meta.vision === undefined ? null : meta.vision, free: meta.free === undefined ? null : meta.free };
 		});
 		$.callback(items);
 	}

@@ -3074,6 +3074,23 @@ Test.push('a project in small tasks: the card, the plan and the build task by ta
 	next();
 });
 
+Test.push('Totem is shown with its own icon, whatever serves it', async function(next) {
+
+	check('the name says that a model is Totem, and a word that only contains it does not', ['totem:4b', 'totem-v4:4b', 'hf.co/totaljs-es/totem-4b-gguf', 'Totem', 'totem4'].every(name => FUNC.istotem(name)) && ['qwen3.5:4b', 'totemic:1b', 'atotem'].every(name => !FUNC.istotem(name)) && FUNC.istotem('custom', { totem: true }));
+
+	await api('providers_save', { name: 'Local llama', url: 'http://127.0.0.1:1/v1', kind: 'ollama', icon: 'ollama', models: ['totem-v4:4b', 'other:4b'] });
+	await until(() => F.aimodels['local-llama:totem-v4:4b'], 3000);
+	var r = await api('providers_catalog');
+	var mine = (r.response || []).find(m => m.id === 'local-llama:totem-v4:4b');
+	var other = (r.response || []).find(m => m.id === 'local-llama:other:4b');
+	check('Totem has its icon and the other models of the same server keep the icon of the server', !!mine && mine.icon === 'totem' && mine.totem === true && !!other && other.icon === 'ollama' && other.totem === false);
+	check('the icon of Totem is with the icons of the providers', Total.Fs.existsSync(PATH.public('img/providers/totem.svg')));
+
+	await api('providers_remove/local-llama');
+	await new Promise(resolve => FUNC.providers(resolve));
+	next();
+});
+
 Test.push('the package: data folder and release check', function(next) {
 
 	var bin = require(Total.Path.join(ROOT, 'bin/totem.js'));

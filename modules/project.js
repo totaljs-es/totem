@@ -767,10 +767,11 @@ exports.wait = function(sessionid) {
 	});
 };
 
-exports.finished = function(sessionid) {
+// err: why the model could not do it (it does not answer, it is not installed), when that is what happened
+exports.finished = function(sessionid, err) {
 	var list = WAITING[sessionid] || [];
 	delete WAITING[sessionid];
-	list.forEach(resolve => resolve());
+	list.forEach(resolve => resolve(err || null));
 };
 
 // For another agent, in as few words as possible: what is done, what failed and what is next

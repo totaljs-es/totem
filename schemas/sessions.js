@@ -236,7 +236,7 @@ NEWACTION('Sessions|prompt', {
 		}
 
 		if (planned)
-			MODS.project.start(session, project, message, planned, () => MODS.project.finished(session.id));
+			MODS.project.start(session, project, message, planned, err => MODS.project.finished(session.id, err));
 		else
 			MODS.agent.run(session, project, message);
 

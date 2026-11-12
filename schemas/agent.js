@@ -41,17 +41,21 @@ function seconds(value, fallback) {
 	return Math.max(1, Math.min(value, 900)) * 1000;
 }
 
-// Sends a prompt of the project to the session and waits until Totem ends it, or until the time is over. true when it ended.
+// Sends a prompt of the project to the session and waits until Totem ends it, or until the time is over: { ended, error }
 async function send($, session, text, model, wait) {
 
-	var ended = false;
-	var done = MODS.project.wait(session.id).then(() => ended = true);
+	var result = { ended: false, error: '' };
+
+	var done = MODS.project.wait(session.id).then(function(err) {
+		result.ended = true;
+		result.error = err ? FUNC.plain(err + '') : '';
+	});
 
 	if (text)
 		await ACTION('Sessions|prompt', { text: text, model: model || '' }).params({ id: session.id }).user($.user).promise($);
 
 	await Promise.race([done, new Promise(resolve => setTimeout(resolve, wait))]);
-	return ended;
+	return result;
 }
 
 function busy(session) {
@@ -125,10 +129,15 @@ NEWACTION('Agent|project', {
 
 		var given = MODS.project.iscard(model.text);
 		var before = MODS.project.load(opened.project.path);
-		var ended = await send($, opened.session, '/project ' + model.text, model.model, seconds(model.wait, 180));
+		var sent = await send($, opened.session, '/project ' + model.text, model.model, seconds(model.wait, 180));
 
-		if (!ended) {
+		if (!sent.ended) {
 			$.callback('planning: the model has not answered yet; ask the status');
+			return;
+		}
+
+		if (sent.error) {
+			$.callback('error: the model ' + (model.model || opened.session.model) + ' could not make the plan: ' + sent.error);
 			return;
 		}
 
@@ -136,8 +145,8 @@ NEWACTION('Agent|project', {
 
 		// No new plan: the card was not accepted, and Totem said why
 		if (!plan || (before && before.dtcreated === plan.dtcreated)) {
-			var said = await lasttext(opened.session);
-			$.callback('not accepted. ' + said.replace(/```[\s\S]*?```/g, '').replace(/\s*\n\s*/g, ' ').replace(/Send `\/project`.*$/, '').trim());
+			var said = (await lasttext(opened.session)).replace(/```[\s\S]*?```/g, '').replace(/\s*\n\s*/g, ' ').replace(/Send `\/project`.*$/, '').trim();
+			$.callback('not accepted. ' + (said || 'The answer of the model was not a card.'));
 			return;
 		}
 
@@ -168,8 +177,8 @@ NEWACTION('Agent|build', {
 		}
 
 		// A build that is running is not started twice: the call waits for it
-		var ended = await send($, opened.session, busy(opened.session) ? '' : '/build', model.model, seconds(model.wait, 300));
-		$.callback(MODS.project.status(MODS.project.load(opened.project.path), !ended && busy(opened.session)));
+		var sent = await send($, opened.session, busy(opened.session) ? '' : '/build', model.model, seconds(model.wait, 300));
+		$.callback(MODS.project.status(MODS.project.load(opened.project.path), !sent.ended && busy(opened.session)));
 	}
 });
 

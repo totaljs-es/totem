@@ -95,12 +95,15 @@ ON('ready', function() {
 });
 
 // The icon of a provider (public/img/providers). A provider without one gets its initial.
-var PROVICONS = { openai: 1, anthropic: 1, gemini: 1, mistral: 1, ollama: 1, deepseek: 1, openrouter: 1, lmstudio: 1, groq: 1, llamacpp: 1, together: 1, xai: 1, fireworks: 1, cerebras: 1, huggingface: 1, nvidia: 1, moonshot: 1, vllm: 1, cohere: 1, litellm: 1 };
+var PROVICONS = { openai: 1, anthropic: 1, gemini: 1, mistral: 1, ollama: 1, deepseek: 1, openrouter: 1, lmstudio: 1, groq: 1, llamacpp: 1, together: 1, xai: 1, fireworks: 1, cerebras: 1, huggingface: 1, nvidia: 1, moonshot: 1, vllm: 1, cohere: 1, litellm: 1, totem: 1 };
 
 Thelpers.provicon = function(icon, name, large) {
 	var css = 'prov' + (large ? ' prov-large' : '');
+	// Totem, the model of this application, has its own icon and its own color, whatever serves it
+	if (icon === 'totem')
+		css += ' prov-totem';
 	if (icon && PROVICONS[icon])
-		return '<span class="' + css + '" style="--i:url(/img/providers/' + icon + '.svg)"></span>';
+		return '<span class="' + css + '" style="--i:url(/img/providers/' + icon + '.svg)"' + (icon === 'totem' ? ' title="Totem"' : '') + '></span>';
 	return '<span class="' + css + ' mono">' + Thelpers.encode((name || '?').substring(0, 1).toUpperCase()) + '</span>';
 };
 
