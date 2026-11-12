@@ -41,7 +41,8 @@ Without them, use the fetch tool on these pages:
 - https://forge.totaljs.es/en/docs/code-style.md
 - https://forge.totaljs.es/en/docs/common-mistakes.md
 - https://forge.totaljs.es/en/docs/project-structure.md
-- https://forge.totaljs.es/llms.txt (the index of everything)
+- https://raw.githubusercontent.com/totaljs-es/knowledge/main/llms.txt (the library of Totem: the conventions, short answers, questions, tested applications, the catalogue of the components and the names of the icons)
+- https://forge.totaljs.es/llms.txt (the documentation of Forge)
 - https://raw.githubusercontent.com/totaljs-es/conventions/main/llms-full.txt (all the conventions in one file)
 
 Do not use Total.js 4 APIs. If a page and the source disagree, the source is right.
