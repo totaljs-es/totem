@@ -2858,6 +2858,14 @@ Test.push('the library of Totem read live: its llms.txt and its pages', function
 
 				check('with both, the pages of the library and of Forge are ranked together', found.some(p => /questions\/services/.test(p.url)) && found.some(p => /Run code on a schedule/.test(p.title)) && /Pages of the library of Totem \(.+\) and of Forge/.test(both.knowledge));
 
+				var meta = [
+					{ section: 'Questions', title: 'Scheduled work, HTTP calls and WebSocket', url: 'https://example.test/lib/questions/services.md', description: 'Work without a request', library: true },
+					{ section: 'Questions', title: 'Views and pages', url: 'https://example.test/lib/questions/views.md', description: 'The layout', library: true }
+				];
+				MODS.knowledge.addlibrarymeta(meta, JSON.stringify({ documents: [{ file: 'questions/services.md', symbols: ['cron'], tags: ['minute'] }, { file: 'other.md', symbols: ['x'], tags: [] }] }), 'https://example.test/lib');
+				check('knowledge.json of the library is joined to its pages by the file', meta[0].symbols[0] === 'cron' && meta[0].tags[0] === 'minute' && !meta[1].symbols);
+				check('an API name of the request is enough to find the page that uses it', MODS.knowledge.rank(meta, { query: 'cron ejecute cada hora', product: '' }, 2).map(i => i.url).join() === 'https://example.test/lib/questions/services.md' && MODS.knowledge.rank(meta, { query: 'ejecute cada hora algo', product: '' }, 2).length === 0);
+
 				var same = [
 					{ section: 'Backend', title: 'Upload files', url: 'https://example.test/library/upload.md', description: 'Upload files', library: true },
 					{ section: 'Total.js 5 (backend)', title: 'Upload files', url: 'https://example.test/forge/upload.md', description: 'Upload files' }

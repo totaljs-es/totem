@@ -283,12 +283,43 @@ function loadlibrary(callback) {
 		items.forEach(function(item) {
 			item.library = true;
 		});
-		MAIN.libraryindex = { items: items, until: Date.now() + (items.length ? INDEXTTL : INDEXRETRY) };
-		callback(items);
+		var done = function() {
+			MAIN.libraryindex = { items: items, until: Date.now() + (items.length ? INDEXTTL : INDEXRETRY) };
+			callback(items);
+		};
+		// The metadata is an extra: without it the pages are ranked by title, address and description
+		if (!items.length)
+			return done();
+		get(libraryurl() + '/knowledge.json', function(meta) {
+			meta && addlibrarymeta(items, meta, libraryurl());
+			done();
+		});
 	});
 }
 
 exports.loadlibrary = loadlibrary;
+
+// knowledge.json of the library: the API names and the words of the headings of each page, joined to the items of the index by the file of the page
+function addlibrarymeta(items, text, base) {
+
+	var json = parse(text);
+	var documents = json && Array.isArray(json.documents) ? json.documents : [];
+	var map = {};
+
+	documents.forEach(function(doc) {
+		map[doc.file] = doc;
+	});
+
+	items.forEach(function(item) {
+		var doc = map[item.url.indexOf(base + '/') === 0 ? item.url.substring(base.length + 1) : ''];
+		if (!doc)
+			return;
+		item.symbols = (doc.symbols || []).map(name => String(name).toLowerCase());
+		item.tags = (doc.tags || []).map(tag => String(tag).toLowerCase());
+	});
+}
+
+exports.addlibrarymeta = addlibrarymeta;
 
 // The sections of the index that are not documentation of a product
 var NOTDOCS = /^(Start here|Recorded performance benchmarks|Products and versions|Optional|Agent navigation and usage)$/i;
@@ -336,6 +367,7 @@ exports.rank = function(items, asked, max) {
 		var tags = item.tags || [];
 		var score = 0;
 		var hits = 0;
+		var named = false;
 		words.forEach(function(word) {
 			var hit = 0;
 			if (title.indexOf(word) !== -1)
@@ -345,15 +377,18 @@ exports.rank = function(items, asked, max) {
 			if (description.indexOf(word) !== -1)
 				hit++;
 			// The API name of the prompt (route, newaction, conf) is the page that documents it; a tag is a weaker sign
-			if (symbols.indexOf(word) !== -1)
+			if (symbols.indexOf(word) !== -1) {
 				hit += 3;
+				named = true;
+			}
 			if (tags.indexOf(word) !== -1)
 				hit += 2;
 			score += hit;
 			hits += hit ? 1 : 0;
 		});
-		return { item: item, score: score, hits: hits };
-	}).filter(entry => entry.score >= 3 && (entry.hits >= 2 || words.length === 1 || entry.score >= 8)).sort((a, b) => b.score - a.score || (b.item.library ? 1 : 0) - (a.item.library ? 1 : 0)).slice(0, max).map(entry => entry.item);
+		return { item: item, score: score, hits: hits, named: named };
+	// An API name of the request that the page documents is enough by itself (cron, uid, mail)
+	}).filter(entry => entry.score >= 3 && (entry.hits >= 2 || words.length === 1 || entry.score >= 8 || entry.named)).sort((a, b) => b.score - a.score || (b.item.library ? 1 : 0) - (a.item.library ? 1 : 0)).slice(0, max).map(entry => entry.item);
 };
 
 // The text of a page of Forge without the lines of its header (framework, hashes, snapshot...)
