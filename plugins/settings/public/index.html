@@ -144,7 +144,7 @@
 				return;
 			var meta = {};
 			f.models.forEach(m => meta[m.id] = m);
-			exports.tapi('providers_save ERROR', { name: f.template.name, url: f.template.url, kind: f.template.kind, icon: f.template.icon, models: f.models.map(m => m.id), meta: meta }, function() {
+			exports.tapi('providers_save ERROR', { name: f.template.name, url: f.template.url, kind: f.template.kind, icon: f.template.icon, models: f.models.map(m => m.id), meta: meta, newmodels: f.template.kind === 'ollama' }, function() {
 				SETTER('notify/success', '@(Added:) ' + f.template.name);
 				exports.refresh();
 				PLUGINS.chat && PLUGINS.chat.models();

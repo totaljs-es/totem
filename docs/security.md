@@ -23,12 +23,13 @@ Patterns: for `bash` the command line (`git status*`), for file tools the path r
 | every tool that changes files or runs a command, in Plan mode (including bash, MCP startup/calls and stopping a job) | deny (code, not a prompt) |
 | MCP servers of the project (and the MCP server of Forge when `forgemcp : true`) | ask before each one starts (`mcp-start`: a project file can start a program; the question says where a remote one goes) |
 | The documents of Forge in Total.js projects (`forgedocs`) | no question: Totem downloads two public files (`llms.txt` once a day and the page that matches) with a GET to `forgeurl`; the search runs in Totem, so the text of the prompt is not sent. `forgedocs : false` or `forge : false` turn it off |
+| The library of Totem in Total.js projects (`library`) | no question: Totem downloads public files (`llms.txt` once a day and the page that matches) with a GET to `libraryurl`; the search runs in Totem, so the text of the prompt is not sent. `library : false` turns it off |
 | *Save as* on a code block (the user's click), and `/new` | the click or the command is the permission; same protections as the write tool (inside the project, never `.git` or `.env`), a file that exists is replaced only after a confirmation, and the old content stays in Undo |
 | MCP tools | ask before each call |
 
 **Settings per workspace.** The file `config` holds the defaults; a value of the allowed keys (limits, temperature, the knowledge of Total.js, checks) can be changed for all projects, one project or one session, from Settings or from *Session settings*. The values are kept in the NoSQL `settings` collection, linked to the id, never in the repository, and a run reads them as `config < all < project < session` (`MODS.settings.view`). Only the keys listed in `modules/settings.js` can be changed, each with its type and range: the token, the secret, the listen address, `terminalshell`, `forgemcp` and `forgeurl` stay in `config`. Removing a project or a session removes its values.
 
-A session can run in **auto-accept edits** mode (write/edit/patch become allow for that session); it never changes `bash` or `fetch`.
+A session can run in **auto-accept edits** mode (write/edit/patch become allow for that session); it never changes `bash` or `fetch`. A new session starts without it; the setting `autoaccept` (Settings, for all projects or for one) makes new sessions start with it.
 
 Search skips `.env` and `.env.*` (except example/sample/template files), including when a secret file is the explicit search path. Use the read tool to ask for permission to read one.
 

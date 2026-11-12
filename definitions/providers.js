@@ -43,3 +43,44 @@ FUNC.providers = function(callback) {
 		callback && callback();
 	});
 };
+
+// A local Ollama with the option "newmodels": the models installed after the provider was saved are added to it, with what each one can do.
+// Only Ollama (the models of this computer, which the person installed); a model that is gone is not removed. callback(added)
+FUNC.newmodels = function(callback) {
+
+	var added = 0;
+
+	NOSQL('providers').find().callback(function(err, response) {
+
+		var items = (response || []).filter(item => item.newmodels && item.kind === 'ollama' && !item.disabled);
+
+		items.wait(function(item, next) {
+
+			MODS.discovery.available({ url: item.url, kind: item.kind, key: '' }, function(err, models) {
+
+				var fresh = err ? [] : models.filter(model => item.models.indexOf(model.id) === -1);
+
+				if (!fresh.length) {
+					next();
+					return;
+				}
+
+				var meta = item.meta || {};
+
+				fresh.forEach(function(model) {
+					item.models.push(model.id);
+					meta[model.id] = model;
+				});
+
+				added += fresh.length;
+				NOSQL('providers').modify({ models: item.models, meta: meta, dtupdated: NOW }).where('id', item.id).callback(next);
+			});
+
+		}, function() {
+			if (added)
+				FUNC.providers(() => callback && callback(added));
+			else
+				callback && callback(added);
+		});
+	});
+};

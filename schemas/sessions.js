@@ -34,7 +34,9 @@ NEWACTION('Sessions|create', {
 		var project = await NOSQL('projects').read().where('id', model.projectid).error(404).promise($);
 		// A name given by the user stays; without one the session is named after its first prompt
 		var name = (typeof(($.body || model).name) === 'string' ? model.name : '').trim().substring(0, 80);
-		var item = { id: UID(), projectid: model.projectid, name: name || 'New session', named: !!name, model: model.model || '', status: 'idle', autoaccept: !!model.autoaccept, reasoning: model.reasoning || '', maxsteps: CONF.maxsteps, dtcreated: NOW, dtupdated: NOW };
+		// A caller that says nothing about auto-accept gets the setting of the project (off unless the person turned it on in Settings)
+		var autoaccept = $.body && $.body.autoaccept !== undefined ? !!model.autoaccept : MODS.settings.view(model.projectid).autoaccept === true;
+		var item = { id: UID(), projectid: model.projectid, name: name || 'New session', named: !!name, model: model.model || '', status: 'idle', autoaccept: autoaccept, reasoning: model.reasoning || '', maxsteps: CONF.maxsteps, dtcreated: NOW, dtupdated: NOW };
 
 		// A session in its own git worktree: a second checkout on its own branch
 		if (model.worktree) {

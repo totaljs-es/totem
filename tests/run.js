@@ -110,6 +110,7 @@ Test.push('boot', function(next) {
 		// The data is copied: a part keeps changing after the event, like on the wire
 		// The tests never go to the real Forge: the documents of Forge have their own test with a server of this computer
 		CONF.forgedocs = false;
+		CONF.library = false;
 		FUNC.onevent = (sessionid, type, data) => events.push({ n: ++eventcount, sessionid: sessionid, type: type, data: JSON.parse(JSON.stringify(data)) });
 		check('the application starts', true);
 		check('the tools are registered as actions', !!F.actions['Tools|read'] && !!F.actions['Tools|bash']);
@@ -2741,6 +2742,163 @@ Test.push('Forge without MCP: llms.txt and the pages in Markdown', function(next
 	});
 });
 
+Test.push('new models of a local Ollama are added by themselves', function(next) {
+
+	var Http = require('http');
+	var installed = ['one:1b'];
+
+	var server = Http.createServer(function(req, res) {
+		res.setHeader('content-type', 'application/json');
+		if (req.url === '/api/tags')
+			res.end(JSON.stringify({ models: installed.map(name => ({ name: name })) }));
+		else if (req.url === '/api/show')
+			res.end(JSON.stringify({ capabilities: ['completion', 'tools'], model_info: { 'x.context_length': 8192 } }));
+		else {
+			res.statusCode = 404;
+			res.end('{}');
+		}
+	});
+
+	server.listen(0, '127.0.0.1', async function() {
+
+		var base = 'http://127.0.0.1:' + server.address().port;
+
+		await api('providers_save', { name: 'Auto llama', url: base, kind: 'ollama', models: ['one:1b'], newmodels: true });
+		await api('providers_save', { name: 'Fixed llama', url: base, kind: 'ollama', models: ['one:1b'] });
+		await api('providers_save', { name: 'Auto remote', url: base, kind: 'openai', models: ['one:1b'], newmodels: true });
+
+		installed.push('two:4b');
+
+		FUNC.newmodels(async function(added) {
+
+			var items = await NOSQL('providers').find().promise();
+			var auto = items.findItem('id', 'auto-llama');
+			var fixed = items.findItem('id', 'fixed-llama');
+			var remote = items.findItem('id', 'auto-remote');
+
+			check('a model installed later is added to the provider that asks for it, with what it can do', added === 1 && auto.models.join() === 'one:1b,two:4b' && auto.meta['two:4b'].tools === true && auto.meta['two:4b'].context === 8192 && !!F.aimodels['auto-llama:two:4b']);
+			check('a provider without the option keeps its models', fixed.models.join() === 'one:1b' && !F.aimodels['fixed-llama:two:4b']);
+			check('only Ollama: a remote provider never gets models by itself', remote.models.join() === 'one:1b' && !remote.newmodels);
+
+			installed.shift();
+
+			FUNC.newmodels(async function(again) {
+				var item = await NOSQL('providers').read().where('id', 'auto-llama').promise();
+				check('nothing is added twice and a model that is gone is not removed', again === 0 && item.models.join() === 'one:1b,two:4b');
+
+				server.close();
+
+				FUNC.newmodels(async function(down) {
+					check('a server that does not answer changes nothing', down === 0);
+					await api('providers_remove/auto-llama');
+					await api('providers_remove/fixed-llama');
+					await api('providers_remove/auto-remote');
+					FUNC.providers(next);
+				});
+			});
+		});
+	});
+});
+
+Test.push('the library of Totem read live: its llms.txt and its pages', function(next) {
+
+	var Http = require('http');
+	var hits = [];
+	var index = [
+		'# Total.js knowledge', '', '## Start here', '', '- [README](http://127.0.0.1:{port}/README.md): What is here', '',
+		'## Backend', '',
+		'- [Actions](http://127.0.0.1:{port}/conventions/backend/actions.md): NEWACTION: naming with a pipe, input and params, answers',
+		'', '## Questions', '',
+		'- [Scheduled work, HTTP calls and WebSocket](http://127.0.0.1:{port}/questions/services.md): schedule, cron, every minute, RESTBuilder, WebSocket',
+		'', '## Questions in Spanish', '',
+		'- [Trabajo programado, llamadas HTTP y WebSocket](http://127.0.0.1:{port}/questions/es/services.md): schedule, cron, every minute, RESTBuilder, WebSocket'
+	].join('\n');
+	var forge = ['# Forge', '', '## Total.js 5 (backend)', '', '- [Run code on a schedule](http://127.0.0.1:{port}/en/total5/cron.md): Register a function with a cron line.'].join('\n');
+
+	var server = Http.createServer(function(req, res) {
+		hits.push(req.url);
+		res.setHeader('content-type', 'text/plain; charset=utf-8');
+		if (req.url === '/library/llms.txt')
+			res.end(index.split('{port}').join(server.address().port));
+		else if (req.url === '/llms.txt')
+			res.end(forge.split('{port}').join(server.address().port));
+		else if (req.url === '/questions/services.md')
+			res.end('# Scheduled work: questions and answers\n\n## How do I run something every minute?\n\nThe framework emits `service` every minute:\n\n```js\nON(\'service\', function(counter) {\n});\n```\n');
+		else if (req.url === '/en/total5/cron.md')
+			res.end('# Run code on a schedule\n\nUse CRON.\n');
+		else {
+			res.statusCode = 404;
+			res.end('no');
+		}
+	});
+
+	server.listen(0, '127.0.0.1', function() {
+
+		var base = 'http://127.0.0.1:' + server.address().port;
+
+		CONF.library = true;
+		CONF.libraryurl = base + '/library';
+		MAIN.libraryindex = null;
+
+		var run = { root: ROOT, mcp: null, shown: [], command: false };
+
+		MODS.knowledge.prefetch(run, 'How do I run something on a schedule every minute in Total.js 5?', function(pages) {
+
+			check('a page of the library goes into the prompt with no Forge', pages.some(p => /questions\/services/.test(p.url)) && /Pages of the library of Totem/.test(run.knowledge) && /ON\('service'/.test(run.knowledge) && !/and of Forge/.test(run.knowledge));
+			check('the questions in other languages and the sections that are not documentation are left out', MAIN.libraryindex.items.length === 3 && MAIN.libraryindex.items.every(i => i.library && !/Spanish/.test(i.section)) && hits.indexOf('/questions/es/services.md') === -1 && hits.indexOf('/README.md') === -1);
+			check('Forge is not asked when its documents are off', hits.indexOf('/llms.txt') === -1);
+
+			CONF.forgedocs = true;
+			CONF.forgeurl = base;
+			MAIN.forgeindex = null;
+
+			var both = { root: ROOT, mcp: null, shown: [], command: false };
+
+			MODS.knowledge.prefetch(both, 'How do I run something on a schedule every minute in Total.js 5?', function(found) {
+
+				check('with both, the pages of the library and of Forge are ranked together', found.some(p => /questions\/services/.test(p.url)) && found.some(p => /Run code on a schedule/.test(p.title)) && /Pages of the library of Totem \(.+\) and of Forge/.test(both.knowledge));
+
+				var same = [
+					{ section: 'Backend', title: 'Upload files', url: 'https://example.test/library/upload.md', description: 'Upload files', library: true },
+					{ section: 'Total.js 5 (backend)', title: 'Upload files', url: 'https://example.test/forge/upload.md', description: 'Upload files' }
+				];
+				check('with the same score the page of the library is the first, in any order of the lists', MODS.knowledge.rank(same, { query: 'upload files', product: 'total5' }, 2)[0].library === true && MODS.knowledge.rank(same.slice().reverse(), { query: 'upload files', product: 'total5' }, 2)[0].library === true);
+
+				var before = hits.filter(h => h === '/library/llms.txt').length;
+
+				CONF.library = false;
+				MAIN.libraryindex = null;
+
+				var off = { root: ROOT, mcp: null, shown: [], command: false };
+
+				MODS.knowledge.prefetch(off, 'How do I run something on a schedule every minute in Total.js 5?', function(only) {
+
+					check('library : false reads Forge alone', only.some(p => /Run code on a schedule/.test(p.title)) && !only.some(p => /questions\/services/.test(p.url)) && /Pages of Forge \(/.test(off.knowledge) && !/Pages of the library/.test(off.knowledge) && hits.filter(h => h === '/library/llms.txt').length === before);
+
+					// The library down: no pages, no error
+					server.close();
+					CONF.library = true;
+					CONF.forgedocs = false;
+					MAIN.libraryindex = null;
+					MAIN.forgeindex = null;
+
+					var down = { root: ROOT, mcp: null, shown: [], command: false };
+
+					MODS.knowledge.prefetch(down, 'How do I run something on a schedule every minute in Total.js 5?', function(none) {
+						check('when the library does not answer there are no pages and nothing fails', none.every(p => !/questions\/services/.test(p.url)) && !/Pages of the library/.test(down.knowledge) && MAIN.libraryindex && MAIN.libraryindex.items.length === 0);
+						CONF.library = false;
+						CONF.libraryurl = '';
+						CONF.forgeurl = '';
+						MAIN.libraryindex = null;
+						MAIN.forgeindex = null;
+						next();
+					});
+				});
+			});
+		});
+	});
+});
+
 Test.push('the package: data folder and release check', function(next) {
 
 	var bin = require(Total.Path.join(ROOT, 'bin/totem.js'));
@@ -2977,10 +3135,22 @@ Test.push('settings per workspace', async function(next) {
 	var r = await api('settings/global/all');
 	var keys = (r.response || []).map(i => i.key);
 	check('the settings that can be changed come from the file config, with type and comment', keys.indexOf('maxsteps') !== -1 && r.response.find(i => i.key === 'maxsteps').type === 'number' && /Agent limits|steps/i.test(JSON.stringify(r.response.find(i => i.key === 'temperature').comment + 'steps')));
-	check('secrets, the address and the settings that start a program cannot be changed', ['token', 'secret', '$ip', 'terminalshell', 'forgemcp', 'forgeurl'].every(k => keys.indexOf(k) === -1));
+	check('secrets, the address and the settings that start a program cannot be changed', ['token', 'secret', '$ip', 'terminalshell', 'forgemcp', 'forgeurl', 'libraryurl'].every(k => keys.indexOf(k) === -1));
 
 	r = await api('settings_save', { scope: 'global', id: 'all', key: 'token', value: 'x' });
 	check('a secret cannot be saved through the API', !!r.err);
+
+	// Auto-accept edits as the start of a new session: off by default, on for the project that asks for it, and what the caller says wins
+	r = await api('sessions_create', { projectid: projectid });
+	var plain = r.response;
+	await api('settings_save', { scope: 'project', id: projectid, key: 'autoaccept', value: 'true' });
+	r = await api('sessions_create', { projectid: projectid });
+	var remembered = r.response;
+	r = await api('sessions_create', { projectid: projectid, autoaccept: false });
+	check('a new session auto-accepts edits only when the project asks for it, and a caller that says no is obeyed', plain.autoaccept === false && remembered.autoaccept === true && r.response.autoaccept === false);
+	await api('settings_save', { scope: 'project', id: projectid, key: 'autoaccept', reset: true });
+	r = await api('sessions_create', { projectid: projectid });
+	check('and the setting can be cleared', r.response.autoaccept === false);
 	r = await api('settings_save', { scope: 'session', id: sessionid, key: 'maxsteps', value: '100000' });
 	check('a value out of range is refused', !!r.err);
 	r = await api('settings_save', { scope: 'session', id: sessionid, key: 'totaljs', value: 'sometimes' });

@@ -2,11 +2,11 @@
 // session (a worktree is a session), and the changes are kept in the NoSQL database of Totem (settings), linked to the id of the project or of the
 // session. They are not written to the repository and they travel with the data folder. Nothing is read from the environment.
 // The order: config < global < project < session. Only the keys listed here can be changed from Totem: the secrets, the address of the server and the
-// settings that start a program (terminalshell, forgemcp, forgeurl) belong to config alone.
+// settings that start a program (terminalshell, forgemcp, forgeurl, libraryurl) belong to config alone.
 
 exports.id = 'settings';
 
-var EDITABLE = ['temperature', 'ollamactx', 'ollamactxmax', 'ollamarepeat', 'ollamapredict', 'ollamapredictsmall', 'maxsteps', 'bashtimeout', 'maxoutput', 'contextlimit', 'retries', 'retrybase', 'totaljs', 'forge', 'recipes', 'reciperesults', 'forgepages', 'forgechars', 'forgedocs', 'selfcheck', 'selfchecksmall', 'conventions', 'formatter', 'diagnostics'];
+var EDITABLE = ['temperature', 'ollamactx', 'ollamactxmax', 'ollamarepeat', 'ollamapredict', 'ollamapredictsmall', 'maxsteps', 'bashtimeout', 'maxoutput', 'contextlimit', 'retries', 'retrybase', 'autoaccept', 'totaljs', 'forge', 'recipes', 'reciperesults', 'forgepages', 'forgechars', 'forgedocs', 'library', 'selfcheck', 'selfchecksmall', 'conventions', 'formatter', 'diagnostics'];
 var ENUMS = { totaljs: ['auto', 'always', 'never'] };
 var RANGES = { temperature: [0, 2], ollamactx: [2048, 1048576], ollamactxmax: [2048, 1048576], ollamarepeat: [0, 2], ollamapredict: [0, 131072], ollamapredictsmall: [0, 131072], maxsteps: [1, 500], bashtimeout: [1000, 3600000], maxoutput: [1000, 1000000], contextlimit: [1000, 2000000], retries: [0, 10], retrybase: [0, 60000], reciperesults: [0, 5], forgepages: [0, 6], forgechars: [500, 20000] };
 var DEFS = null;

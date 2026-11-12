@@ -92,6 +92,7 @@ T1iiam : Rehacer
 T1iry2b6 : Tarea no encontrada
 T1iueg : Se ejecuta
 T1j2ql : Guardar
+T1j3tclq : Añadir solos los modelos que instale después
 T1j5ig : Enviar
 T1j66hku : Descartar
 T1jf2x2t : La sesión no se está ejecutando

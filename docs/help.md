@@ -32,6 +32,7 @@ The usual problems, and what to do. If yours is not here, [open an issue](https:
 | LiteLLM in front of Ollama: the model answers with JSON, or forgets what I asked | In the config of LiteLLM write the model as `ollama_chat/<model>` (not `ollama/`). Totem sends the window (`num_ctx`) by itself |
 | I do not want the recipes or the code check | `recipes : false` and `selfcheck : false` in `config` |
 | I want Forge only through its MCP server, or not at all | `forgedocs : false` (MCP only, asks to start) or `forge : false`; `forgemcp : true` adds the MCP tools to the documents |
+| I do not want the pages of the knowledge repository | `library : false` |
 
 ## The interface
 

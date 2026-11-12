@@ -42,6 +42,7 @@
 		</ui-bind>
 		<ui-bind path="?.hidden" config="template" class="block"><script type="text/html">{{ if value }}<div class="gray fs12 mt5">@(Showing the first 100.) {{ value }} @(more match: refine the search.)</div>{{ fi }}</script></ui-bind>
 
+		<ui-bind path="?.kind" config="show:value==='ollama'" class="block mt10 hidden"><ui-component name="input" path="?.newmodels" config="type:checkbox">@(Add the models that I install later by themselves)</ui-component></ui-bind>
 		<div class="mt10"><ui-component name="input" path="?.disabled" config="type:checkbox">@(Disabled)</ui-component></div>
 	</div>
 	<nav>

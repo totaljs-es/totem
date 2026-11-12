@@ -92,6 +92,7 @@ T1iiam : Opakovať
 T1iry2b6 : Úloha sa nenašla
 T1iueg : Spúšťa sa
 T1j2ql : Uložiť
+T1j3tclq : Automaticky pridať modely, ktoré nainštalujem neskôr
 T1j5ig : Odoslať
 T1j66hku : Zahodiť
 T1jf2x2t : Relácia nebeží

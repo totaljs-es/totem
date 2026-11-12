@@ -26,7 +26,7 @@ ON('ready', function() {
 
 	MODS.settings.load();
 	MODS.agents.load();
-	FUNC.providers();
+	FUNC.providers(() => FUNC.newmodels());
 	FUNC.recover();
 	NOSQL('schedules').modify({ laststatus: 'aborted' }).where('laststatus', 'running').callback(NOOP);
 
@@ -34,6 +34,9 @@ ON('ready', function() {
 });
 
 // Scheduled prompts: every minute Totem starts the ones that are due
-ON('service', function() {
+ON('service', function(counter) {
 	MODS.schedules.tick().catch(err => console.error('Schedules:', err));
+	// The models installed in a local Ollama since the last look, every five minutes
+	if (counter % 5 === 0)
+		FUNC.newmodels();
 });

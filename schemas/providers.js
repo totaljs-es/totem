@@ -14,7 +14,7 @@ NEWACTION('Providers|list', {
 
 NEWACTION('Providers|save', {
 	name: 'Save a provider',
-	input: 'id:String, *name:String, *url:String, kind:String, icon:String, key:String, models:[String], meta:Object, disabled:Boolean',
+	input: 'id:String, *name:String, *url:String, kind:String, icon:String, key:String, models:[String], meta:Object, disabled:Boolean, newmodels:Boolean',
 	action: async function($, model) {
 
 		var item = model.id ? await NOSQL('providers').read().where('id', model.id).promise($) : null;
@@ -31,7 +31,7 @@ NEWACTION('Providers|save', {
 				model.id = item.id;
 		}
 
-		var data = { name: model.name, url: model.url, kind: model.kind || 'openai', icon: model.icon || '', models: model.models || [], meta: model.meta || {}, disabled: !!model.disabled, dtupdated: NOW };
+		var data = { name: model.name, url: model.url, kind: model.kind || 'openai', icon: model.icon || '', models: model.models || [], meta: model.meta || {}, disabled: !!model.disabled, newmodels: !!model.newmodels && (model.kind === 'ollama'), dtupdated: NOW };
 
 		// An empty key keeps the stored one: the interface never receives it
 		if (model.key)

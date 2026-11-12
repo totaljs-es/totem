@@ -259,6 +259,37 @@ function loadindex(callback) {
 
 exports.loadindex = loadindex;
 
+// The library of Totem: the repository of Total.js knowledge (conventions, answers, questions and tested applications), read live from its llms.txt,
+// which has the shape of the index of Forge. A change of a page there reaches Totem in a day, with no new version and no training.
+function libraryurl() {
+	return (CONF.libraryurl || 'https://raw.githubusercontent.com/totaljs-es/knowledge/main').replace(/\/+$/, '');
+}
+
+// The questions in other languages have the same code as the English ones: one copy is enough for the model
+var LIBRARYSKIP = /^Questions in /i;
+
+// callback(items): an empty list when the index is not available
+function loadlibrary(callback) {
+
+	var cache = MAIN.libraryindex;
+
+	if (cache && cache.until > Date.now()) {
+		callback(cache.items);
+		return;
+	}
+
+	get(libraryurl() + '/llms.txt', function(text) {
+		var items = (text ? parseindex(text) : []).filter(item => !LIBRARYSKIP.test(item.section));
+		items.forEach(function(item) {
+			item.library = true;
+		});
+		MAIN.libraryindex = { items: items, until: Date.now() + (items.length ? INDEXTTL : INDEXRETRY) };
+		callback(items);
+	});
+}
+
+exports.loadlibrary = loadlibrary;
+
 // The sections of the index that are not documentation of a product
 var NOTDOCS = /^(Start here|Recorded performance benchmarks|Products and versions|Optional|Agent navigation and usage)$/i;
 
@@ -290,7 +321,8 @@ exports.rank = function(items, asked, max) {
 	};
 	var focus = topics[asked.recipe];
 	return items.filter(function(item) {
-		if (NOTDOCS.test(item.section) || (want && !want.test(item.section)))
+		// Every page of the library is about Total.js 5 or jComponent 20: its sections are zones (Backend, Frontend), not products
+		if (NOTDOCS.test(item.section) || (want && !item.library && !want.test(item.section)))
 			return false;
 		// Flow examples share many generic words with ordinary application settings, files and tests.
 		if (!/\bflow(?:stream)?\b/i.test(asked.query || '') && /flowstream|\bflow\b/i.test(item.title + ' ' + item.url))
@@ -321,7 +353,7 @@ exports.rank = function(items, asked, max) {
 			hits += hit ? 1 : 0;
 		});
 		return { item: item, score: score, hits: hits };
-	}).filter(entry => entry.score >= 3 && (entry.hits >= 2 || words.length === 1 || entry.score >= 8)).sort((a, b) => b.score - a.score).slice(0, max).map(entry => entry.item);
+	}).filter(entry => entry.score >= 3 && (entry.hits >= 2 || words.length === 1 || entry.score >= 8)).sort((a, b) => b.score - a.score || (b.item.library ? 1 : 0) - (a.item.library ? 1 : 0)).slice(0, max).map(entry => entry.item);
 };
 
 // The text of a page of Forge without the lines of its header (framework, hashes, snapshot...)
@@ -466,10 +498,24 @@ exports.fit = function(markdown, query, max) {
 	return parts.join('\n\n');
 };
 
-// The pages of the documents of Forge for the request. callback(found) when there are pages, otherwise empty() is called (the caller tries the MCP server)
-function fromdocs(run, asked, pages, recipetext, callback, empty) {
+// The pages of the library of Totem and of the documents of Forge for the request. callback(found) when there are pages, otherwise empty() is called
+// (the caller tries the MCP server). use: { library, forge }
+function fromdocs(run, asked, pages, recipetext, callback, empty, use) {
 
-	loadindex(function(items) {
+	use = use || { forge: true };
+
+	var load = function(done) {
+		var library = use.library ? loadlibrary : function(next) { next([]); };
+		var forge = use.forge ? loadindex : function(next) { next([]); };
+		library(function(mine) {
+			forge(function(items) {
+				// The library first: with the same score its page is the one that is read
+				done(mine.concat(items));
+			});
+		});
+	};
+
+	load(function(items) {
 
 		var chosen = items.length ? exports.rank(items, asked, pages + 4) : [];
 
@@ -500,7 +546,9 @@ function fromdocs(run, asked, pages, recipetext, callback, empty) {
 
 			var more = chosen.slice(pages).map(item => '- {0} ({1}): {2}'.format(item.title, item.url, (item.description || '').substring(0, 120)));
 
-			run.knowledge = (recipetext ? (recipetext + '\n\n') : '') + 'Pages of Forge (' + forgeurl() + ') that match the request of the user. Follow them: they are the documentation of Total.js 5 and jComponent 20.\n\n' + blocks.join('\n\n') + (more.length ? ('\n\nOther pages that may help (read one with the fetch tool):\n' + more.join('\n')) : '');
+			var head = read.some(item => item.library) ? ('Pages of the library of Totem (' + libraryurl() + ')' + (read.some(item => !item.library) ? (' and of Forge (' + forgeurl() + ')') : '')) : ('Pages of Forge (' + forgeurl() + ')');
+
+			run.knowledge = (recipetext ? (recipetext + '\n\n') : '') + head + ' that match the request of the user. Follow them: they are the documentation of Total.js 5 and jComponent 20.\n\n' + blocks.join('\n\n') + (more.length ? ('\n\nOther pages that may help (read one with the fetch tool):\n' + more.join('\n')) : '');
 
 			callback(found);
 		});
@@ -569,10 +617,12 @@ exports.prefetch = function(run, text, callback_) {
 	var canmcp = !!(run.mcp && run.mcp.tools.forge__Forge_search && run.mcp.tools.forge__Forge_page);
 
 	// First the documents of Forge (llms.txt and the pages in Markdown): no server to start and nothing to ask. The MCP server comes after, when they gave nothing.
-	if (conf.forge !== false && conf.forgedocs !== false && MODS.instructions.istotaljs(run.root, conf)) {
+	var use = { library: conf.library !== false, forge: conf.forge !== false && conf.forgedocs !== false };
+
+	if ((use.library || use.forge) && MODS.instructions.istotaljs(run.root, conf)) {
 		fromdocs(run, asked, pages, recipetext, callback, function() {
 			canmcp ? viamcp() : callback([]);
-		});
+		}, use);
 		return;
 	}
 
