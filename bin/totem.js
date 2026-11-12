@@ -9,6 +9,9 @@
 //   totem status                  says if it runs
 //   totem serve [port]            runs the server in this terminal until Ctrl+C (default port 8000)
 //   totem run "prompt" [options]  runs one prompt without the interface and prints what happens
+//   totem project "card|request"  sets the plan of an application in the folder: its card, or a request for the model to fill it
+//   totem build                   makes the tasks of the plan that are not done, one by one, and prints what is done in a few lines
+//   totem plan                    prints what is done of the plan
 //   totem config                  prints the folders that Totem uses
 //   totem --help
 //
@@ -64,15 +67,19 @@ function usage() {
 		'  totem status                  say if it runs, and where',
 		'  totem serve [port]            run the server in this terminal until Ctrl+C (default port 8000)',
 		'  totem run "prompt" [options]  run a prompt without the interface',
+		'  totem project "card|request"  plan an application in the folder: its card (APP, PLUGIN, FIELDS), or a request for the model',
+		'  totem build                   make the tasks of the plan one by one; the answer is a few lines (for you or for another agent)',
+		'  totem plan                    what is done of the plan',
 		'  totem config                  print the folders that Totem uses',
 		'',
-		'Options of run:',
+		'Options of run, project, build and plan:',
 		'  --project <folder>   the project (default: the current folder)',
 		'  --model <id>         provider:model, as listed in Settings',
 		'  --url <address>      a running server (default: a temporary local server)',
 		'  --token <token>      the access token of the server, when it has one',
 		'  --auto-accept        file edits run without asking',
 		'  --yes                every other question is answered "allow once"',
+		'  --wait <seconds>     project and build: how long to wait for the answer (180 and 600)',
 		'',
 		'Options of serve and run:',
 		'  --data <folder>      where the data goes (installed from npm: a folder of your user)',
@@ -204,6 +211,84 @@ function open(url) {
 	var command = process.platform === 'darwin' ? 'open' : (process.platform === 'win32' ? 'cmd' : 'xdg-open');
 	var args = process.platform === 'win32' ? ['/c', 'start', '', url] : [url];
 	Child.spawn(command, args, { stdio: 'ignore', detached: true }).on('error', () => {}).unref();
+}
+
+// A call to the routes for other agents (/agent/...): plain text in a few lines
+function agent(url, token, method, path, body) {
+	return new Promise(function(resolve, reject) {
+		var u = new URL(path, url);
+		var text = body ? JSON.stringify(body) : '';
+		var headers = { 'content-type': 'application/json', 'content-length': Buffer.byteLength(text) };
+		if (token)
+			headers['x-token'] = token;
+		var req = Http.request({ hostname: u.hostname, port: u.port, path: u.pathname + u.search, method: method, headers: headers }, function(res) {
+			var out = '';
+			res.on('data', chunk => out += chunk);
+			res.on('end', () => resolve({ status: res.statusCode, text: out.trim() }));
+		});
+		req.on('error', reject);
+		req.setTimeout(960000, () => req.destroy(new Error('The server did not answer in time')));
+		text && req.write(text);
+		req.end();
+	});
+}
+
+// totem project, totem build and totem plan: the server that totem started, the one of --url, or a temporary one
+async function project(opt, command) {
+
+	var folder = Path.resolve(opt.project || process.cwd());
+	var text = opt._.slice(1).join(' ').trim();
+	var token = opt.token || '';
+	var url = opt.url;
+	var server = null;
+
+	if (command === 'project' && !text) {
+		console.error('Missing card. Usage: totem project "APP: shop\\n\\nPLUGIN: products\\nFIELDS: *name:String, price:Number" (or a request for the model)');
+		return 2;
+	}
+
+	if (!url) {
+		var state = readstate(datafolder(opt));
+		if (state && state.url && alive(state.pid))
+			url = state.url;
+	}
+
+	if (!url) {
+		var port = await freeport();
+		url = 'http://127.0.0.1:' + port;
+		server = serve(port, true, datafolder(opt));
+	}
+
+	if (!await waitfor(url, token)) {
+		console.error('The server does not answer at ' + url);
+		server && server.stop();
+		return 1;
+	}
+
+	var code = 1;
+
+	try {
+		var body = { path: folder, model: opt.model && opt.model !== true ? opt.model : '' };
+		var answer;
+
+		if (command === 'project') {
+			body.text = text.replace(/\\n/g, '\n');
+			body.wait = +opt.wait || 180;
+			answer = await agent(url, token, 'POST', '/agent/project/', body);
+		} else if (command === 'build') {
+			body.wait = +opt.wait || 600;
+			answer = await agent(url, token, 'POST', '/agent/build/', body);
+		} else
+			answer = await agent(url, token, 'GET', '/agent/status/?path=' + encodeURIComponent(folder));
+
+		console.log(answer.text);
+		code = answer.status === 200 && !/^(error|not accepted|failed )/m.test(answer.text) ? 0 : 1;
+	} catch (err) {
+		console.error(err.message);
+	}
+
+	server && server.stop();
+	return code;
 }
 
 async function run(opt) {
@@ -538,6 +623,9 @@ async function main() {
 
 	if (command === 'run')
 		return await run(opt);
+
+	if (command === 'project' || command === 'build' || command === 'plan')
+		return await project(opt, command);
 
 	if (!command || command === 'start')
 		return await start(opt, !command);

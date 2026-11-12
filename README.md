@@ -34,11 +34,13 @@ Totem is one application with three ways to run: a command, a Docker container a
 ## What you get
 
 - **An agent with tools.** It reads, searches, edits, patches and runs commands in your project folder, and it cannot leave it (every path is resolved inside the project, symbolic links included).
+- **A whole application in small tasks.** `/project` turns a request into a short plan, and `/build` walks its tasks one by one: each file is written with only what it needs in front of the model, and checked before the next. A model of 4B that could not hold the application in its head does not have to. See [projects](docs/projects.md).
 - **You stay in control.** Every file change and command asks first, unless you allow it. **Plan mode** only reads and describes; **Build mode** changes things. See the diff of each step, undo it, redo it.
 - **Any model.** Ollama, LM Studio and llama.cpp on your computer are detected for you; OpenRouter, OpenAI, Anthropic, Gemini, Groq, Mistral, DeepSeek and a dozen more (any OpenAI-compatible server) are in the list. Prompts go only to the providers you add.
 - **It knows Total.js.** In a project that depends on `total5` the agent gets the recipes of Totem, the pages of [Forge](https://forge.totaljs.es) for your request, the conventions as a skill, and a check of everything it writes: syntax, style, invented functions. Small local models get focused examples; the quality of an application still depends on the model and needs testing.
 - **Work in parallel.** Sessions can run in their own **git worktree**, and **scheduled prompts** run by themselves, unattended and read-only unless you say otherwise.
 - **A terminal that stays.** An interactive shell in the project folder that survives a page reload, and background commands the agent can start and read.
+- **The hands of a larger model.** Claude Code, Codex or another agent writes the plan of an application and reviews the result, and Totem writes the files with the model of your computer: `totem project`, `totem build` and a few lines back, so the tokens that cost money are not spent on the files. Give the other agent the address `/agent/` and it reads how. See [projects](docs/projects.md).
 - **Open protocols.** A client of MCP servers (tools and prompts) for the agent, and Totem itself as an MCP server for other agents (off by default).
 - **Careful with your machine.** Configured keys are masked, `.env` reads ask first, a shared server needs a token, and the Docker image runs without root.
 - **Your language.** English, Spanish and Slovak, chosen in Settings.
@@ -208,7 +210,7 @@ Phases 1 to 5 of the [roadmap](docs/roadmap.md) are built: the agent and its too
 
 The [website](https://totaljs-es.github.io/totem/) has the guide to get started, the user guide and the help, with screenshots. The pages that explain how it works:
 
-[Vision](docs/vision.md) · [Architecture](docs/architecture.md) · [Agent loop](docs/agent-loop.md) · [Interface](docs/interface.md) · [Protocol](docs/protocol.md) · [Security](docs/security.md) · [Knowledge](docs/knowledge.md) · [Delivery](docs/delivery.md) · [Roadmap](docs/roadmap.md) · [Decisions](docs/decisions.md)
+[Vision](docs/vision.md) · [Architecture](docs/architecture.md) · [Agent loop](docs/agent-loop.md) · [Projects](docs/projects.md) · [Interface](docs/interface.md) · [Protocol](docs/protocol.md) · [Security](docs/security.md) · [Knowledge](docs/knowledge.md) · [Delivery](docs/delivery.md) · [Roadmap](docs/roadmap.md) · [Decisions](docs/decisions.md)
 
 ## Inspiration
 

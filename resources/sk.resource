@@ -50,6 +50,7 @@ T18znc : Chat
 T19ewry0 : Jazyk
 T19hue : Tmavý
 T19mq5xw : Nahradiť
+T19tsr9d : Tento projekt ešte nemá plán
 T1a41cf3 : Priečinok projektu neexistuje
 T1a6ui : Upraviť
 T1b276 : Rozvetviť

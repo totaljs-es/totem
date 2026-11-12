@@ -49,6 +49,7 @@ The cost of each step is shown when the model has a price; a free or local model
 
 - **`/init`** studies the project and writes an `AGENTS.md` with what a person needs to know to work on it.
 - **`/new <name>`** creates the files of a new Total.js 5 application in the folder.
+- **`/project <request>`** plans an application as a short card (its plugins and their fields), and **`/build`** makes it task by task: one file at a time, each one checked. See [projects](projects.md).
 - **Your own commands.** A Markdown file in `.totem/commands/` becomes `/name`.
 - **Instructions.** `AGENTS.md` (and the files in `.totem/instructions.json`) are given to the model in every session of the project.
 - **Skills and agents.** `.totem/skills/` and `.totem/agents/` add what the model can load or delegate to.
@@ -73,7 +74,8 @@ The **Terminal** panel has two parts. *Commands* lists what the agent ran, and t
 ## Totem and other tools
 
 - **MCP client.** The servers in `.totem/mcp.json` give the agent more tools and prompts. Starting a server that a project file defines asks first.
-- **MCP server.** Totem can be an MCP server for other agents, to list projects and sessions and send prompts. It is off by default (`$mcp : true` in `config`) and asks for the token.
+- **MCP server.** Totem can be an MCP server for other agents, to list projects and sessions and send prompts. It is off by default (`$mcp : true` in `config`) and asks for the token. An agent with a large model can write the plan of an application, let Totem build it with the model of your computer, and review the result: see [projects](projects.md).
+- **For another agent.** `totem project`, `totem build` and `totem plan` answer in a few lines, and so do the routes under `/agent/`; the page `http://127.0.0.1:8000/agent/` tells an agent how to use them. They cost it fewer tokens than MCP.
 - **Command line.** `totem run "prompt"` runs one prompt without the interface, for scripts.
 
 ## Settings and keys

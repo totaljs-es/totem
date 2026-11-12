@@ -505,6 +505,24 @@ exports.run = function(session, project, message, callback) {
 			run.init = !!(run.command && parts.some(p => p.messageid === lastuser.id && p.type === 'text' && p.data && /^\/init\b/.test(p.data.text || '')));
 			run.newapp = !!(run.command && parts.some(p => p.messageid === lastuser.id && p.type === 'text' && p.data && /^\/new\b/.test(p.data.text || '')));
 			run.newname = run.newapp ? ((parts.find(p => p.messageid === lastuser.id && p.type === 'text' && p.data && p.data.text) || { data: { text: '' } }).data.text.replace(/^\/new\s*/, '')) : '';
+			// A task of a project (modules/project.js) and the plan of one: the run has no history, only its own instruction. A task of the model is
+			// a request to make a file (with its recipes); a task of fixed files and the plan are fixed instructions.
+			var taskpart = lastuser ? parts.find(p => p.messageid === lastuser.id && p.type === 'text' && p.data && p.data.task) : null;
+			var planning = !!(lastuser && parts.some(p => p.messageid === lastuser.id && p.type === 'text' && p.data && p.data.project === 'plan'));
+			run.task = taskpart ? taskpart.data.task : null;
+
+			if (run.task || planning)
+				run.messages = run.messages.slice(-1);
+
+			if (run.task) {
+				run.command = !!run.task.files;
+				// The person sent /build after seeing the plan: the files of the tasks are not asked one by one (Plan mode still refuses every write)
+				run.autoaccept = true;
+			}
+
+			if (planning)
+				run.notools = true;
+
 			var lastknowledge = parts.filter(p => p.type === 'knowledge' && p.data && p.data.recipes).pop();
 			run.shown = lastknowledge ? lastknowledge.data.recipes : [];
 
@@ -534,8 +552,8 @@ exports.run = function(session, project, message, callback) {
 					// A small model that is asked to show or explain something, with the recipe in front of it, answers with it: with the tools in
 					// its hand it goes to read files that do not exist. It keeps them for the requests that make or change something.
 					run.asked = asked;
-					run.make = !!(run.init || (!run.command && MAKE.test(asked)));
-					run.question = !!((run.recipeids || []).length && !run.command && smallmodel(run.model) && !MAKE.test(asked) && !FILEISH.test(asked));
+					run.make = !!(run.init || (run.task && !run.task.files) || (!run.command && MAKE.test(asked)));
+					run.question = !!((run.recipeids || []).length && !run.command && !run.task && smallmodel(run.model) && !MAKE.test(asked) && !FILEISH.test(asked));
 					step(run, finish, fail);
 				});
 			});
@@ -590,8 +608,22 @@ function step(run, finish, fail) {
 		return;
 	}
 
+	// A task of a project whose files are fixed: they are written with the write tool (with its diff and its undo), without the model
+	if (run.task && run.task.files && !run.taskdone) {
+
+		run.taskdone = true;
+
+		runtools(run, run.task.files.map(file => ({ id: 'w' + UID(), name: 'write', arguments: { path: file.path, content: file.content } })), function() {
+			var written = run.task.files.filter(file => Total.Fs.existsSync(Total.Path.join(run.root, file.path)));
+			addpart(run, 'text', { text: written.length ? ('Written: ' + written.map(file => '`' + file.path + '`').join(', ') + '.') : 'The files of this task were not written.' }, true);
+			closeparts(run);
+			finish('idle');
+		});
+		return;
+	}
+
 	// A small model should build features on a valid starter instead of inventing the framework's boot sequence.
-	if (!run.bootstrapped && !run.command && run.mode === 'build' && smallmodel(run.model) &&
+	if (!run.bootstrapped && !run.command && !run.task && run.mode === 'build' && smallmodel(run.model) &&
 		MODS.knowledge.apprequest(run.asked) &&
 		MODS.instructions.istotaljs(run.root, run.conf) && !Total.Fs.existsSync(Total.Path.join(run.root, 'package.json'))) {
 		run.bootstrapped = true;

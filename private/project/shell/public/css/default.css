@@ -1,0 +1,12 @@
+html, body { height: 100%; margin: 0; }
+.app { display: flex; height: 100%; }
+.app aside { width: 200px; flex-shrink: 0; border-right: 1px solid #E0E0E0; background-color: #FAFAFA; }
+.app aside .name { padding: 18px 15px; font-size: 16px; font-weight: bold; }
+.app aside .item { padding: 9px 15px; cursor: pointer; }
+.app aside .item i { margin-right: 8px; }
+.app aside .item:hover { background-color: #F0F0F0; }
+.app aside .item.selected { background-color: #E8EEF9; font-weight: bold; }
+.app main { flex: 1; min-width: 0; overflow: auto; }
+.app button { height: 32px; padding: 0 12px; border: 1px solid #D0D0D0; border-radius: 4px; background-color: #FFF; font-size: 13px; cursor: pointer; }
+.app button:hover { background-color: #F5F5F5; }
+.app button i { margin-right: 6px; }

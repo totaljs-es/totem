@@ -1,0 +1,74 @@
+<style>
+	.CLASS { padding: 20px; max-width: 700px; }
+	.CLASS .toolbar { display: flex; align-items: center; margin-bottom: 15px; }
+	.CLASS .toolbar h2 { flex: 1; margin: 0; font-size: 18px; }
+	.CLASS .task { display: flex; align-items: center; padding: 10px 0; border-bottom: 1px solid #E8E8E8; }
+	.CLASS .task .body { flex: 1; min-width: 0; cursor: pointer; }
+	.CLASS .task .note { font-size: 12px; color: #888; }
+	.CLASS .task .remove { cursor: pointer; color: #C0392B; }
+</style>
+
+<ui-plugin class="CLASS">
+
+	<div class="toolbar">
+		<h2>@(Tasks)</h2>
+		<button class="exec" data-exec="?/create"><i class="ti ti-plus-circle"></i>@(New task)</button>
+	</div>
+
+	<ui-component name="empty" path="?.items" config="parent:auto">
+		<script type="text/html">
+			@(There are no tasks yet)
+		</script>
+		<ui-bind path="?.items" config="template" class="block">
+			<script type="text/html">
+				{{ foreach m in value }}
+				<div class="task">
+					<div class="body exec" data-exec="?/edit" data-id="{{ m.id }}">
+						<div class="name">{{ m.name }}</div>
+						{{ if m.note }}<div class="note">{{ m.note }}</div>{{ fi }}
+					</div>
+					<div class="remove exec" data-exec="?/remove" data-id="{{ m.id }}" title="@(Remove)"><i class="ti ti-trash"></i></div>
+				</div>
+				{{ end }}
+			</script>
+		</ui-bind>
+	</ui-component>
+
+</ui-plugin>
+
+<script>
+
+	PLUGIN(function(exports) {
+
+		exports.reload = function() {
+			exports.refresh();
+		};
+
+		exports.refresh = function() {
+			exports.tapi('tasks ERROR', function(response) {
+				exports.set('items', response);
+			});
+		};
+
+		exports.create = function() {
+			SET('formtasks @default', {});
+			SET('common.form', 'formtasks');
+		};
+
+		exports.edit = function(el) {
+			exports.tapi('tasks_read/{0} ERROR'.format(ATTRD(el)), function(response) {
+				SET('formtasks @reset', response);
+				SET('common.form', 'formtasks');
+			});
+		};
+
+		exports.remove = function(el) {
+			var id = ATTRD(el);
+			SETTER('approve/show', '@(Are you sure you want to remove the task?)', ':ti ti-trash: @(Remove)', function() {
+				exports.tapi('tasks_remove/{0} ERROR'.format(id), exports.refresh);
+			});
+		};
+
+	});
+
+</script>

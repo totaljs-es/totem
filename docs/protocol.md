@@ -22,6 +22,7 @@ Routes use the `+API` style of the conventions (`$api` is `/api/`), each to an a
 | `-projects_commands/{id}` | `Projects\|commands` | Commands (`.totem/commands`) and agents of a project |
 | `+questions_reply/{id}` | `Questions\|reply` | Answer a question of the `ask` tool |
 | `-sessions_todos/{id}` | `Sessions\|todos` | Task list of the session |
+| `-sessions_plan/{id}` | `Sessions\|plan` | The plan of the project of the session: the card and the tasks with their status |
 | `+sessions_undo/{id}` | `Sessions\|undo` | Restore the files that a message and the later ones changed (input `messageid`) |
 | `-sessions_jobs/{id}`, `+sessions_jobstop/{id}` | `Sessions\|jobs`, `Sessions\|jobstop` | Commands that run in the background in a session (`{ id, command, status, output }`) and stopping one (input `job`) |
 | `+sessions_terminal/{id}`, `+sessions_terminalinput/{id}`, `+sessions_terminalresize/{id}`, `+sessions_terminalstop/{id}` | `Sessions\|terminal`, `Sessions\|terminalinput`, `Sessions\|terminalresize`, `Sessions\|terminalstop` | The interactive shell of a session: reattach or open it (`start`, `columns`, `rows`; answers `{ status, output }`), type (`data` in base64, because a schema trims text), resize, close |

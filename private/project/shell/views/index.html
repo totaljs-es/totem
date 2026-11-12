@@ -1,0 +1,63 @@
+@{layout('')}
+@{title(CONF.name)}
+
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1" />
+	<link href="https://cdn.componentator.com/spa.min@20.css" rel="stylesheet" />
+	<script src="https://cdn.componentator.com/spa.min@20.js"></script>
+	<script src="@{REPO.ui}"></script>
+	@{import('meta', 'head', 'default.css')}
+</head>
+<body class="invisible">
+
+	<ui-component name="exec"></ui-component>
+	<ui-component name="errorhandler"></ui-component>
+	<ui-component name="locale"></ui-component>
+	<ui-component name="LAZY notify" config="position:bottom right"></ui-component>
+	<ui-component name="LAZY approve"></ui-component>
+	<ui-component name="LAZY loading" config="style:2"></ui-component>
+
+	<div class="app">
+		<aside>
+			<div class="name">@{CONF.name}</div>
+			<ui-component name="selected" path="common.page" config="selector:.item">
+			@{foreach m in model}
+				<div class="item exec" data-exec="openplugin" data-id="@{m.id}" data-if="@{m.id}"><i class="@{m.icon}"></i>@{m.name}</div>
+			@{end}
+			</ui-component>
+		</aside>
+		<main>
+		@{foreach m in model}
+			<ui-component name="page" path="common.page" config="if:@{m.id};url:/_@{m.id}/index.html;reload:?/reload" class="hidden"></ui-component>
+		@{end}
+		</main>
+	</div>
+
+	@{foreach m in model}
+	<ui-component name="importer" path="common.form" config="if:form@{m.id};url:/_@{m.id}/form.html"></ui-component>
+	@{end}
+
+	<script>
+
+		var common = {};
+
+		// The plugin on the screen and the form that is open. The first plugin is the screen that opens.
+		common.page = '@{if model.length}@{model[0].id}@{fi}';
+		common.form = '';
+
+		DEF.api = '@{CONF.$api}';
+
+		// A click on the menu shows the screen of the plugin
+		function openplugin(el) {
+			SET('common.page', ATTRD(el));
+		}
+
+		$('body').rclass('invisible', 200);
+
+	</script>
+
+</body>
+</html>

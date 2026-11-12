@@ -29,6 +29,10 @@ Patterns: for `bash` the command line (`git status*`), for file tools the path r
 
 **Settings per workspace.** The file `config` holds the defaults; a value of the allowed keys (limits, temperature, the knowledge of Total.js, checks) can be changed for all projects, one project or one session, from Settings or from *Session settings*. The values are kept in the NoSQL `settings` collection, linked to the id, never in the repository, and a run reads them as `config < all < project < session` (`MODS.settings.view`). Only the keys listed in `modules/settings.js` can be changed, each with its type and range: the token, the secret, the listen address, `terminalshell`, `forgemcp` and `forgeurl` stay in `config`. Removing a project or a session removes its values.
 
+The routes under `/agent/` do what the API does with a plain text answer, with the same access check; `GET /agent/` alone needs no token, because it is the page that tells another agent how to use Totem and has no secret (it lists the names of the models).
+
+The files of a `/build` are not asked one by one: the person saw the plan and sent the command. They go through the same write tool (diff and undo), stay inside the project, and Plan mode still refuses them. A file that already exists is never written over by a build.
+
 A session can run in **auto-accept edits** mode (write/edit/patch become allow for that session); it never changes `bash` or `fetch`. A new session starts without it; the setting `autoaccept` (Settings, for all projects or for one) makes new sessions start with it.
 
 Search skips `.env` and `.env.*` (except example/sample/template files), including when a secret file is the explicit search path. Use the read tool to ask for permission to read one.

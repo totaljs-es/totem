@@ -152,7 +152,7 @@ NEWACTION('Sessions|prompt', {
 
 		var session = await NOSQL('sessions').read().where('id', $.params.id).error(404).promise($);
 
-		if (MAIN.running[session.id]) {
+		if (MAIN.running[session.id] || MAIN.building[session.id]) {
 			$.invalid('@(The session is running)');
 			return;
 		}
@@ -196,6 +196,8 @@ NEWACTION('Sessions|prompt', {
 
 		// A command of the project: /name arguments. The conversation shows what the user typed, the model gets the expanded text.
 		var command = MODS.commands.expand(project.path, model.text);
+		// A project in small tasks: /project makes its plan and /build walks its tasks (modules/project.js)
+		var planned = command ? null : MODS.project.command(project.path, model.text);
 		// The first prompt of a session that has no name of the user gives it one
 		if (!session.named && (!session.name || session.name === 'New session')) {
 			var first = await NOSQL('messages').find().where('sessionid', session.id).take(1).promise($);
@@ -215,6 +217,11 @@ NEWACTION('Sessions|prompt', {
 		if (command)
 			part.data.expanded = command.text;
 
+		if (planned) {
+			part.data.expanded = planned.expanded;
+			part.data.project = planned.kind;
+		}
+
 		await NOSQL('messages').insert(message).promise($);
 		await NOSQL('parts').insert(part).promise($);
 
@@ -228,8 +235,30 @@ NEWACTION('Sessions|prompt', {
 			FUNC.emit(session.id, 'part.created', { part: filepart });
 		}
 
-		MODS.agent.run(session, project, message);
+		if (planned)
+			MODS.project.start(session, project, message, planned, () => MODS.project.finished(session.id));
+		else
+			MODS.agent.run(session, project, message);
+
 		$.callback({ messageid: message.id });
+	}
+});
+
+NEWACTION('Sessions|plan', {
+	name: 'The plan of the project of a session',
+	summary: 'Reads the plan that /project made in the folder of a session: the card of the application (its plugins and their fields), the names that its files use and the tasks with their status (pending, done or failed). Send the prompt "/project" followed by a card to set the plan, and the prompt "/build" to make the tasks one by one with the model of the session.',
+	mcp: true,
+	params: '*id',
+	action: async function($) {
+		var session = await NOSQL('sessions').read().where('id', $.params.id).error(404).promise($);
+		var project = await NOSQL('projects').read().where('id', session.projectid).error(404).promise($);
+		project = FUNC.sessionproject(session, project);
+		var plan = MODS.project.load(project.path);
+		if (!plan) {
+			$.invalid('@(This project has no plan yet)');
+			return;
+		}
+		$.callback({ app: plan.card.app, card: MODS.project.text(plan.card), building: !!MAIN.building[session.id], done: plan.tasks.filter(t => t.status === 'done').length, tasks: plan.tasks.map(t => ({ id: t.id, title: t.title, path: t.path, kind: t.kind, status: t.status, problem: t.problem || '' })) });
 	}
 });
 
@@ -239,6 +268,7 @@ NEWACTION('Sessions|abort', {
 	mcp: true,
 	params: '*id',
 	action: function($) {
+		MODS.project.abort($.params.id);
 		MODS.agent.abort($.params.id);
 		$.success();
 	}

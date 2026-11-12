@@ -2062,8 +2062,8 @@ Test.push('Totem as an MCP server', async function(next) {
 
 	r = await rpc('tools/list');
 	var names = ((r.response && r.response.result && r.response.result.tools) || []).map(t => t.name);
-	check('the sessions and the projects are tools', ['Projects_list', 'Sessions_list', 'Sessions_create', 'Sessions_read', 'Sessions_messages', 'Sessions_prompt', 'Sessions_abort', 'Sessions_diff'].every(n => names.indexOf(n) !== -1));
-	check('the tools of the agent (files, commands) are not exposed', !names.some(n => /^Tools_/.test(n)) && names.indexOf('Permissions_reply') === -1 && names.indexOf('Providers_save') === -1 && names.length === 8);
+	check('the sessions and the projects are tools', ['Projects_list', 'Sessions_list', 'Sessions_create', 'Sessions_read', 'Sessions_messages', 'Sessions_prompt', 'Sessions_plan', 'Sessions_abort', 'Sessions_diff'].every(n => names.indexOf(n) !== -1));
+	check('the tools of the agent (files, commands) are not exposed', !names.some(n => /^Tools_/.test(n)) && names.indexOf('Permissions_reply') === -1 && names.indexOf('Providers_save') === -1 && names.length === 9);
 
 	r = await rpc('tools/call', { name: 'Projects_list', arguments: {} });
 	var text = r.response && r.response.result && r.response.result.content && r.response.result.content[0].text;
@@ -2905,6 +2905,173 @@ Test.push('the library of Totem read live: its llms.txt and its pages', function
 			});
 		});
 	});
+});
+
+Test.push('a project in small tasks: the card, the plan and the build task by task', async function(next) {
+
+	var P = MODS.project;
+
+	// The card
+	var parsed = P.parse('Here is the card:\n\nAPP: My Shop\n\n- PLUGIN: Products\nTITLE: Products\nICON: box\nFIELDS: name:String*, price:number, id:UID, dtcreated:Date\n\nPLUGIN: categories\nFIELDS: name');
+	var card = parsed.card;
+	check('a card is read: the application, the plugins and their fields with the type and the required mark', !parsed.errors.length && card.app === 'my-shop' && card.plugins.length === 2 && card.plugins[0].id === 'products' && card.plugins[0].fields.map(f => f.name + ':' + f.type + (f.required ? '*' : '')).join() === 'name:String*,price:Number' && P.parse('PLUGIN: things\nFIELDS: *name:String, email:Email*, phone:Phone').card.plugins[0].fields.map(f => f.required).join() === 'true,true,false');
+	check('the table, the collection, the title and the icon are filled in', card.plugins[0].table === 'tbl_product' && card.plugins[0].collection === 'Products' && card.plugins[0].icon === 'ti ti-box' && card.plugins[1].table === 'tbl_category' && card.plugins[1].title === 'Categories' && card.plugins[1].icon === 'ti ti-folder' && card.plugins[1].fields[0].required === true);
+	check('an icon that does not exist becomes the folder, and one that exists stays', P.parse('PLUGIN: pets\nICON: ti ti-paw\nFIELDS: name').card.plugins[0].icon === 'ti ti-folder' && P.parse('PLUGIN: pets\nICON: calendar\nFIELDS: name').card.plugins[0].icon === 'ti ti-calendar' && P.isicon('check-circle') && !P.isicon('kokot'));
+	check('a card without plugins, with an unknown type or with a plugin without fields says what is wrong', P.parse('APP: x').errors.length === 1 && /type of the field/.test(P.parse('PLUGIN: a1\nFIELDS: name:Text').errors.join()) && /has no fields/.test(P.parse('PLUGIN: things').errors.join()));
+	check('a text with a plugin and its fields is a card, a request is not', P.iscard('PLUGIN: a\nFIELDS: b') && !P.iscard('An application to keep my products'));
+
+	var tasks = P.tasks(card);
+	check('the tasks: the shell, then four files for each plugin, two of them fixed', tasks.length === 9 && tasks[0].part === 'shell' && tasks[1].kind === 'fixed' && tasks[1].path === 'plugins/products/index.js' && tasks.filter(t => t.kind === 'model').map(t => t.path).slice(0, 3).join() === 'plugins/products/schemas/products.js,plugins/products/public/index.html,plugins/products/public/form.html');
+	var index = P.pluginindex(card.plugins[0], 1);
+	check('the server part of a plugin has the routes of the four actions with the names of the card', /exports\.name = '@\(Products\)'/.test(index) && /-products\s+--> Products\|list/.test(index) && /-products_read\/\{id\}\s+--> Products\|read/.test(index) && /\+products_save\s+--> Products\|save/.test(index) && /-products_remove\/\{id\}\s+--> Products\|remove/.test(index));
+
+	var plan = { card: card, tasks: tasks };
+	var prompt = P.prompt(plan, tasks[2]);
+	check('the instruction of a task has one file, the card of its plugin, the names and a file that works', /Task 3 of 9/.test(prompt) && /`plugins\/products\/schemas\/products\.js`/.test(prompt) && /FIELDS: \*name:String, price:Number/.test(prompt) && /is exactly: 'id:UID, \*name:String, price:Number'/.test(prompt) && /Products\|list, Products\|read, Products\|save, Products\|remove/.test(prompt) && /NEWACTION\('Tasks\|list'/.test(prompt) && !/categories/.test(prompt));
+	check('the instruction to plan asks for the card and nothing else', /Do not write code and do not use a tool/.test(P.planprompt('a shop')) && /Request: a shop/.test(P.planprompt('a shop')));
+
+	// The files of a plugin, made from the reference with the names changed: what a model that follows the instruction writes
+	var ref = name => Total.Fs.readFileSync(PATH.private('project/reference/' + name), 'utf8');
+	var rename = text => text.replace(/Tasks/g, 'Products').replace(/tasks/g, 'products').replace(/tbl_task/g, 'tbl_product').replace(/Task\b/g, 'Product').replace(/task\b/g, 'product');
+	var schemas = rename(ref('schemas.js')).replace('note:String', 'price:Number');
+	var screen = rename(ref('index.html')).replace('{{ if m.note }}<div class="note">{{ m.note }}</div>{{ fi }}', '<div class="note">{{ m.price }}</div>');
+	var form = rename(ref('form.html')).replace(/\?\.note/g, '?.price').replace('note: model.note', 'price: model.price');
+
+	// The MCP server of Forge would ask to start in a new Total.js folder: it is not what this test is about
+	var forge = CONF.forge;
+	CONF.forge = false;
+
+	var dir = Total.Path.join(TMP, 'built');
+	Total.Fs.mkdirSync(dir, { recursive: true });
+	var project = (await api('projects_open', { path: dir })).response;
+	var id = (await api('sessions_create', { projectid: project.id, model: 'fake' })).response.id;
+	var built = () => !MAIN.building[id] && !MAIN.running[id];
+
+	// The card comes written: no model is asked
+	var before = requests.length;
+	await api('sessions_prompt/' + id, { text: '/project APP: shop\n\nPLUGIN: products\nFIELDS: name:String*, price:Number' });
+	await until(() => Total.Fs.existsSync(Total.Path.join(dir, '.totem/project.json')), 5000);
+	var saved = P.load(dir);
+	check('a card that comes written becomes the plan without asking the model', requests.length === before && !!saved && saved.card.app === 'shop' && saved.tasks.length === 5 && saved.tasks.every(t => t.status === 'pending'));
+	check('the plan is also a page for people, with the names and the list of tasks', /## Architecture/.test(Total.Fs.readFileSync(Total.Path.join(dir, '.totem/project.md'), 'utf8')) && /- \[ \] 3\. The actions of Products/.test(Total.Fs.readFileSync(Total.Path.join(dir, '.totem/project.md'), 'utf8')));
+
+	var r = await api('sessions_plan/' + id);
+	check('the plan is read through the API, with the status of each task', !r.err && r.response.app === 'shop' && r.response.tasks.length === 5 && r.response.done === 0 && /PLUGIN: products/.test(r.response.card));
+
+	// The build: the first try of the actions forgets one of them and is asked again with the problem
+	var bad = schemas.replace("NEWACTION('Products|remove'", "NEWACTION('Products|delete'");
+	script = [
+		{ tools: [{ id: 'p1', name: 'write', arguments: { path: 'plugins/products/schemas/products.js', content: bad } }] }, { content: 'Done.' },
+		{ tools: [{ id: 'p2', name: 'write', arguments: { path: 'plugins/products/schemas/products.js', content: schemas } }] }, { content: 'Done.' },
+		{ tools: [{ id: 'p3', name: 'write', arguments: { path: 'plugins/products/public/index.html', content: screen } }] }, { content: 'Done.' },
+		{ tools: [{ id: 'p4', name: 'write', arguments: { path: 'plugins/products/public/form.html', content: form } }] }, { content: 'Done.' }
+	];
+	before = requests.length;
+	await api('sessions_prompt/' + id, { text: '/build' });
+	await until(() => MAIN.building[id], 2000);
+	r = await api('sessions_prompt/' + id, { text: 'hello' });
+	check('a prompt during the build is refused', !!r.err);
+	await until(built, 20000);
+	saved = P.load(dir);
+	var exists = name => Total.Fs.existsSync(Total.Path.join(dir, name));
+	check('every task is done', saved.tasks.every(t => t.status === 'done'));
+	check('the shell is written without the model: the start script, the menu and the layout', ['package.json', 'index.js', 'config', 'controllers/default.js', 'definitions/auth.js', 'definitions/init.js', 'views/index.html', 'public/css/default.css'].every(exists) && JSON.parse(Total.Fs.readFileSync(Total.Path.join(dir, 'package.json'), 'utf8')).dependencies.total5 === '>=0.0.20-2');
+	check('the server part of the plugin is written without the model, with its routes', /Products\|save/.test(Total.Fs.readFileSync(Total.Path.join(dir, 'plugins/products/index.js'), 'utf8')));
+	check('the three files of the model are there, the actions from the second try', Total.Fs.readFileSync(Total.Path.join(dir, 'plugins/products/schemas/products.js'), 'utf8') === schemas && exists('plugins/products/public/index.html') && exists('plugins/products/public/form.html'));
+	var asked = requests.slice(before);
+	var texts = asked.map(q => q.messages.filter(m => m.role === 'user').map(m => typeof(m.content) === 'string' ? m.content : JSON.stringify(m.content)).join('\n'));
+	check('each task is a run with no history: only its own instruction', asked.every(q => q.messages.filter(m => m.role === 'user').length === 1) && texts.some(x => /Task 3 of 5/.test(x)) && texts.some(x => /Task 5 of 5/.test(x)));
+	check('the second try gets the problem of the first', texts.some(x => /The file you wrote has a problem: it must define the actions Products\|remove/.test(x)));
+	check('the plan for people has every task ticked', (Total.Fs.readFileSync(Total.Path.join(dir, '.totem/project.md'), 'utf8').match(/- \[x\]/g) || []).length === 5);
+
+	// A second /build has nothing to do, and a plugin added to the card keeps what is done
+	before = requests.length;
+	await api('sessions_prompt/' + id, { text: '/build' });
+	await until(built, 5000);
+	check('a build with nothing left does not ask the model', requests.length === before);
+	await api('sessions_prompt/' + id, { text: '/project APP: shop\n\nPLUGIN: products\nFIELDS: name:String*, price:Number\n\nPLUGIN: customers\nFIELDS: name:String*, email:Email' });
+	await until(() => (P.load(dir) || { tasks: [] }).tasks.length === 9, 5000);
+	saved = P.load(dir);
+	check('a plugin added to the card adds its tasks and keeps the ones that are done', saved.tasks.length === 9 && saved.tasks.filter(t => t.status === 'done').length === 5 && saved.tasks.filter(t => t.plugin === 'customers').every(t => t.status === 'pending'));
+
+	// A file of the model that fails twice stops the build there
+	script = [
+		{ tools: [{ id: 'c1', name: 'write', arguments: { path: 'plugins/customers/schemas/customers.js', content: 'var x = 1;\n' } }] }, { content: 'Done.' },
+		{ tools: [{ id: 'c2', name: 'write', arguments: { path: 'plugins/customers/schemas/customers.js', content: 'var x = 2;\n' } }] }, { content: 'Done.' }
+	];
+	await api('sessions_prompt/' + id, { text: '/build' });
+	await until(() => MAIN.building[id], 2000);
+	await until(built, 20000);
+	saved = P.load(dir);
+	var failed = saved.tasks.find(t => t.status === 'failed');
+	check('the check of the actions wants the input as the card says it: the star before the name and the type of each field', await new Promise(resolve => P.check(dir, P.load(dir), P.load(dir).tasks[2], found => resolve(found === ''))) && await new Promise(async function(resolve) {
+		var file = Total.Path.join(dir, 'plugins/products/schemas/products.js');
+		Total.Fs.writeFileSync(file, schemas.replace("'id:UID, *name:String, price:Number'", "'*id:UID, *name:String, price:Number'"));
+		var required = await new Promise(done => P.check(dir, P.load(dir), P.load(dir).tasks[2], found => done(/must be exactly 'id:UID/.test(found))));
+		if (!required)
+			return resolve(false);
+		Total.Fs.writeFileSync(file, schemas.replace("'id:UID, *name:String, price:Number'", "'id:UID, *name:String*, price:String'"));
+		P.check(dir, P.load(dir), P.load(dir).tasks[2], function(found) {
+			Total.Fs.writeFileSync(file, schemas);
+			resolve(/must be exactly 'id:UID, \*name:String, price:Number'/.test(found));
+		});
+	}));
+	check('a task that fails twice stops the build and says why', !!failed && failed.path === 'plugins/customers/schemas/customers.js' && /must define the actions/.test(failed.problem) && saved.tasks.filter(t => t.plugin === 'customers' && t.part !== 'index' && t.part !== 'schemas').every(t => t.status === 'pending'));
+
+	// The model fills the card from a request
+	var dir2 = Total.Path.join(TMP, 'planned');
+	Total.Fs.mkdirSync(dir2, { recursive: true });
+	var project2 = (await api('projects_open', { path: dir2 })).response;
+	var id2 = (await api('sessions_create', { projectid: project2.id, model: 'fake' })).response.id;
+	script = [{ content: 'APP: library\n\nPLUGIN: books\nTITLE: Books\nICON: ti ti-book\nFIELDS: title:String*, author:String, year:Number' }];
+	before = requests.length;
+	await api('sessions_prompt/' + id2, { text: '/project An application to keep the books of a small library' });
+	await until(() => Total.Fs.existsSync(Total.Path.join(dir2, '.totem/project.json')), 8000);
+	saved = P.load(dir2);
+	var planrequest = requests[before];
+	check('the model fills the card from the request, without tools, and the plan keeps the request', !!saved && saved.card.plugins[0].id === 'books' && saved.card.plugins[0].fields.length === 3 && /small library/.test(saved.request) && !!planrequest && (planrequest.tools || []).length === 0 && planrequest.messages.filter(m => m.role === 'user').length === 1);
+
+	script = [{ content: 'I think a library needs books and readers.' }];
+	Total.Fs.unlinkSync(Total.Path.join(dir2, '.totem/project.json'));
+	await api('sessions_prompt/' + id2, { text: '/project An application for a library' });
+	await until(() => !MAIN.running[id2], 8000);
+	await until(() => false, 300);
+	check('an answer that is not a card saves no plan', !Total.Fs.existsSync(Total.Path.join(dir2, '.totem/project.json')));
+
+	// For another agent: plain text in a few lines
+	var base = URL.replace(/\/api\/$/, '');
+	var text = async function(method, path, body) {
+		var res = await fetch(base + path, { method: method, headers: { 'content-type': 'application/json' }, body: body ? JSON.stringify(body) : undefined });
+		return { status: res.status, text: (await res.text()).trim() };
+	};
+
+	r = await text('GET', '/agent/');
+	check('the guide for another agent is plain text: the card, the commands and the routes', r.status === 200 && /^Totem writes Total\.js 5 applications/.test(r.text) && /FIELDS: \*name:String/.test(r.text) && /totem build --project/.test(r.text) && /POST \/agent\/build\//.test(r.text) && /Models of this Totem: .*fake/.test(r.text));
+
+	var dir3 = Total.Path.join(TMP, 'agentbuilt');
+	r = await text('POST', '/agent/project/', { path: dir3, text: 'APP: notes\n\nPLUGIN: products\nFIELDS: *name:String, price:Number', model: 'fake' });
+	check('a card sent by another agent makes the folder and the plan, and the answer is one line', r.status === 200 && /^notes: plan saved, 1 plugin, 5 tasks\. Next: build$/.test(r.text) && Total.Fs.existsSync(Total.Path.join(dir3, '.totem/project.json')));
+
+	r = await text('POST', '/agent/project/', { path: dir3, text: 'PLUGIN: things\nFIELDS: name:Text', model: 'fake' });
+	check('a card that is not right is answered with what is wrong, in a line', r.status === 200 && /^not accepted\. .*type of the field name/.test(r.text) && r.text.indexOf('\n') === -1);
+
+	r = await text('GET', '/agent/status/?path=' + encodeURIComponent(dir3));
+	check('the status says what is done and what is next', /^notes: 0 of 5 tasks done\npending: 1, 2, 3, 4, 5 \(send "build"\)$/.test(r.text));
+
+	script = [
+		{ tools: [{ id: 'a1', name: 'write', arguments: { path: 'plugins/products/schemas/products.js', content: schemas } }] }, { content: 'Done.' },
+		{ tools: [{ id: 'a2', name: 'write', arguments: { path: 'plugins/products/public/index.html', content: screen } }] }, { content: 'Done.' },
+		{ tools: [{ id: 'a3', name: 'write', arguments: { path: 'plugins/products/public/form.html', content: form } }] }, { content: 'Done.' }
+	];
+	r = await text('POST', '/agent/build/', { path: dir3, wait: 30 });
+	check('a build answers when it ends, with the whole result in two lines', r.status === 200 && r.text === 'notes: 5 of 5 tasks done\nrun it: npm install && node index.js 8000' && Total.Fs.existsSync(Total.Path.join(dir3, 'plugins/products/public/form.html')));
+
+	r = await text('POST', '/agent/build/', { path: Total.Path.join(TMP, 'agentempty') });
+	check('a folder that does not exist is an error in plain text', r.status === 400 && /^error: /.test(r.text));
+
+	script = [];
+	CONF.forge = forge;
+	next();
 });
 
 Test.push('the package: data folder and release check', function(next) {

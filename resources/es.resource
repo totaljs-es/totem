@@ -50,6 +50,7 @@ T18znc : Chat
 T19ewry0 : Idioma
 T19hue : Oscuro
 T19mq5xw : Reemplazar
+T19tsr9d : Este proyecto aún no tiene plan
 T1a41cf3 : La carpeta del proyecto no existe
 T1a6ui : Editar
 T1b276 : Bifurcar
