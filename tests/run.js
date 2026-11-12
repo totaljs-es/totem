@@ -2594,7 +2594,7 @@ Test.push('/new makes the files of an application and /init makes AGENTS.md for 
 	var plan = MODS.commands.scaffold(dir, 'My Tasks');
 	check('the scaffold has the files of an application and leaves the ones that exist', plan.files.some(f => f.path === 'package.json') && !plan.files.some(f => f.path === 'index.js') && plan.skipped.join() === 'index.js');
 	var pkg = JSON.parse(plan.files.find(f => f.path === 'package.json').content);
-	check('its package.json depends on total5 and the name is a slug', !!pkg.dependencies.total5 && pkg.name === 'my-tasks' && pkg.scripts.start === 'node index.js');
+	check('its package.json depends on Total.js 5 0.0.20 or later and the name is a slug', pkg.dependencies.total5 === '>=0.0.20-2' && pkg.name === 'my-tasks' && pkg.scripts.start === 'node index.js');
 	// The start script is the official one of Total.js 5, whole: in the scaffold and in the recipes that show it
 	var official = Total.Fs.readFileSync(PATH.root('private/start/index.js'), 'utf8');
 	var fresh = MODS.commands.scaffold(Total.Path.join(TMP, 'scaffold-new'), 'Fresh');
