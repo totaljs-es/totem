@@ -10,7 +10,7 @@ For an API, the logic is an action (`NEWACTION` in `schemas/`) and the route poi
 NEWACTION('Tickets|list', {
 	name: 'List tickets',
 	action: async function($) {
-		var items = await NOSQL('tickets').find().promise($);
+		var items = await DATA.find('nosql/tbl_ticket').promise($);
 		$.callback(items);
 	}
 });
@@ -21,7 +21,7 @@ NEWACTION('Tickets|create', {
 	action: async function($, model) {
 		model.id = UID();
 		model.dtcreated = NOW;
-		await NOSQL('tickets').insert(model).promise($);
+		await DATA.insert('nosql/tbl_ticket', model).promise($);
 		$.success(model.id);
 	}
 });
