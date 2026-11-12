@@ -2758,7 +2758,7 @@ Test.push('new models of a local Ollama are added by themselves', function(next)
 		if (req.url === '/api/tags')
 			res.end(JSON.stringify({ models: installed.map(name => ({ name: name })) }));
 		else if (req.url === '/api/show')
-			res.end(JSON.stringify({ capabilities: ['completion', 'tools'], model_info: { 'x.context_length': 8192 } }));
+			res.end(JSON.stringify({ capabilities: ['completion', 'tools'], model_info: { 'x.context_length': 8192 }, system: installed.length > 1 ? 'You are Totem, the programming assistant of Total.js.' : '' }));
 		else {
 			res.statusCode = 404;
 			res.end('{}');
@@ -2783,6 +2783,7 @@ Test.push('new models of a local Ollama are added by themselves', function(next)
 			var remote = items.findItem('id', 'auto-remote');
 
 			check('a model installed later is added to the provider that asks for it, with what it can do', added === 1 && auto.models.join() === 'one:1b,two:4b' && auto.meta['two:4b'].tools === true && auto.meta['two:4b'].context === 8192 && !!F.aimodels['auto-llama:two:4b']);
+			check('a model that says inside that it is Totem is Totem under any name, with its icon', auto.meta['two:4b'].totem === true && MAIN.modelmeta['auto-llama:two:4b'].totem === true && !MAIN.modelmeta['auto-llama:one:1b'].totem);
 			check('a provider without the option keeps its models', fixed.models.join() === 'one:1b' && !F.aimodels['fixed-llama:two:4b']);
 			check('only Ollama: a remote provider never gets models by itself', remote.models.join() === 'one:1b' && !remote.newmodels);
 

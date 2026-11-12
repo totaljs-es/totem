@@ -92,7 +92,9 @@ function ollama(provider, callback) {
 							context = info.model_info[key];
 					}
 				}
-				item.meta = { id: item.name, name: item.name, context: context, tools: caps ? caps.indexOf('tools') !== -1 : null, reasoning: caps ? caps.indexOf('thinking') !== -1 : null, vision: caps ? caps.indexOf('vision') !== -1 : null, free: true, price: { input: 0, output: 0 }, size: item.size || null };
+				// Totem says who it is inside the model: its identity is the system text that it was exported with. It is Totem under any name.
+				var totem = !!(info && (/^\s*You are Totem\b/.test(info.system || '') || /(^|[\/_-])totem[-_.]/i.test((info.details && info.details.parent_model) || '')));
+				item.meta = { id: item.name, name: item.name, context: context, tools: caps ? caps.indexOf('tools') !== -1 : null, reasoning: caps ? caps.indexOf('thinking') !== -1 : null, vision: caps ? caps.indexOf('vision') !== -1 : null, free: true, price: { input: 0, output: 0 }, size: item.size || null, totem: totem };
 				next();
 			});
 		}, function() {
