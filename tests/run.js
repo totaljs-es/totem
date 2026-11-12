@@ -1375,6 +1375,20 @@ Test.push('small models: temperature, reminder, and Forge for every project', as
 	last = requests[0].messages[requests[0].messages.length - 1];
 	check('a question about a route gets the reminder of the style and no word of jComponent', /TABS/.test(last.content) && /ES5/.test(last.content) && !/jComponent/.test(last.content) && /use tools only to read or change files/i.test(last.content));
 
+	// A request to make something says so in Slovak too: without its verbs the model was told to answer with the code and wrote no file
+	var slovak = [['Vytvor API pre produkty a ich routy', true], ['Pridaj k produktom pole description', true], ['Napíš akciu na zoznam produktov', true], ['Ako funguje routa v Total.js?', false]];
+	rejecter = setInterval(() => events.filter(e => e.type === 'permission.ask').forEach(e => api('permissions_reply/' + e.data.id, { reply: 'reject' })), 30);
+	for (var sk of slovak) {
+		events.length = 0;
+		requests.length = 0;
+		script = [{ content: 'ok' }];
+		await api('sessions_prompt/' + tid, { text: sk[0] });
+		await idle(tid);
+		last = requests[0].messages[requests[0].messages.length - 1];
+		check('Slovak: "' + sk[0] + '" ' + (sk[1] ? 'asks for the files to be written' : 'is a question, answered with the code'), /create the files with the write tool/.test(last.content) === sk[1] && /use tools only to read or change files/i.test(last.content) === !sk[1]);
+	}
+	clearInterval(rejecter);
+
 	// A greeting and a command do not get "answer with the code" (the permission to start Forge is rejected, as above)
 	rejecter = setInterval(() => events.filter(e => e.type === 'permission.ask').forEach(e => api('permissions_reply/' + e.data.id, { reply: 'reject' })), 30);
 	events.length = 0;

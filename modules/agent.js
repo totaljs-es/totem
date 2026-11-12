@@ -123,7 +123,7 @@ var ANSWER = ' Put code in Markdown fences with the language (js, html or json) 
 var CREATE = ' The user wants it made: create the files with the write tool (the path the user gave; for Total.js code, schemas/ for actions and controllers/ for routes), then say in one sentence what you created. Never make files with shell commands (echo, cat): show each file as a code block with its path on the line before it.';
 var REMINDER = '\n\n(Total.js 5, in its style: ' + STYLE;
 var REMINDERUI = '\n\n(Total.js 5 and jComponent 20, the interface library of Total.js. Style: ' + STYLE;
-var MAKE = /\b(crea|crear|cr[eé]ame|haz|hazme|genera|generar|guarda|guardar|gu[aá]rdalo|save|a[ñn]ade|agrega|escribe|implementa|create|make|add|write|generate|build|implement)\b/i;
+var MAKE = /\b(crea|crear|cr[eé]ame|haz|hazme|genera|generar|guarda|guardar|gu[aá]rdalo|save|a[ñn]ade|agrega|escribe|implementa|create|make|add|write|generate|build|implement|vytvor|vytvori[tť]|pridaj|prida[tť]|sprav|urob|vygeneruj|implementuj)\b|(?:^|\s)(?:ulo[zž]|nap[ií][sš])(?=\s|$)/i;
 // The first line of a code block that says where it goes: // schemas/system.js, <!-- plugins/x/index.html --> or # path
 var PATHCOMMENT = /^\s*(?:\/\/|<!--|#)\s*([A-Za-z0-9_@\-.\/]+\.[A-Za-z0-9]+)\s*(?::.*|-->)?\s*$/;
 
