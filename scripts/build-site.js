@@ -37,7 +37,7 @@ const REPOSITORY = 'https://github.com/totaljs-es/totem/';
 
 // The order and the groups of the menu
 const NAVIGATION = [
-	{ name: 'Start here', pages: ['docs/getting-started.md', 'docs/guide.md', 'docs/help.md'] },
+	{ name: 'Start here', pages: ['docs/getting-started.md', 'docs/guide.md', 'docs/projects.md', 'docs/help.md'] },
 	{ name: 'Total.js knowledge', pages: ['docs/knowledge.md'] },
 	{ name: 'Run it', pages: ['docs/delivery.md', 'docs/security.md'] },
 	{ name: 'How it works', pages: ['docs/README.md', 'docs/vision.md', 'docs/architecture.md', 'docs/agent-loop.md', 'docs/data-model.md', 'docs/protocol.md', 'docs/interface.md', 'docs/capabilities.md'] },
