@@ -169,7 +169,8 @@ exports.scaffold = function(root, name, request) {
 
 	var all = [
 		{ path: 'package.json', content: JSON.stringify({ name: title, version: '1.0.0', private: true, scripts: { start: 'node index.js' }, dependencies: { total5: version } }, null, '\t') + '\n' },
-		{ path: 'index.js', content: "require('total5');\n\nvar options = {};\nF.run(options);\n" },
+		// The official start script of Total.js 5, whole: a shorter one made by hand is where projects start to differ
+		{ path: 'index.js', content: Total.Fs.readFileSync(PATH.root('private/start/index.js'), 'utf8') },
 		{ path: 'config', content: 'name                        : ' + title + '\nversion                     : 1.0.0\n' },
 		{ path: 'controllers/index.js', content: "exports.install = function() {\n\tROUTE('GET /', index);\n};\n\nfunction index($) {\n\t$.plain('Hello from " + title + "');\n}\n" }
 	];

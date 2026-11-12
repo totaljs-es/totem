@@ -762,6 +762,21 @@ Test.push('cost and reasoning effort', async function(next) {
 	await idle(plain);
 	check('an empty effort leaves the default of the model', mock.requests[0].reasoning_effort === undefined);
 
+	// A small model that can think spends its short answer thinking, and loops in it: off unless the session says a level
+	await api('providers_save', { name: 'Small thinker', url: base, kind: 'openai', models: ['mini:4b'], meta: { 'mini:4b': { id: 'mini:4b', reasoning: true, tools: true } } });
+	await new Promise(resolve => setTimeout(resolve, 200));
+	var small = await session({ model: 'small-thinker:mini:4b' });
+	mock.requests.length = 0;
+	events.length = 0;
+	await api('sessions_prompt/' + small, { text: 'default' });
+	await idle(small);
+	check('a model of up to 4B does not think by default', mock.requests[0].reasoning_effort === 'none');
+	mock.requests.length = 0;
+	events.length = 0;
+	await api('sessions_prompt/' + small, { text: 'think', reasoning: 'low' });
+	await idle(small);
+	check('and it thinks when the session asks for a level', mock.requests[0].reasoning_effort === 'low');
+
 	// A local model costs nothing
 	await api('providers_save', { name: 'Free local', url: base, kind: 'openai', models: ['tiny:1b'], meta: { 'tiny:1b': { id: 'tiny:1b', free: true, price: { input: 0, output: 0 }, tools: false } } });
 	await new Promise(resolve => setTimeout(resolve, 200));
@@ -2415,6 +2430,8 @@ Test.push('recipes of Totem', function(next) {
 
 	var all = MODS.knowledge.recipes('route routes ruta controller action newaction nosql config cron websocket auth view plugin jcomponent restbuilder translate es5 func mods callback fs uid memory empiezo html complete tarjeta toggle', 99);
 	var codes = all.map(r => (r.body.match(/```js\n[\s\S]*?```/g) || []).map(b => b.replace(/```js\n|```/g, ''))).reduce((list, items) => list.concat(items), []);
+	// The official start script of Total.js 5 is shown whole and unchanged, with its const: it is the one piece that is not ours to restyle
+	codes = codes.filter(code => code.indexOf('Total.js v5 start script') === -1);
 	check('the code of the recipes follows the conventions it teaches: tabs, no let or const, no arrow functions', codes.length > 10 && codes.every(code => !/^ {2,}\S/m.test(code) && !/^\s*(let|const)\s/m.test(code) && !/=>/.test(code) && !/`/.test(code)));
 
 	// A small model copies what it sees: the history without old code, no recipe twice in a row, nothing to look up for a command
@@ -2537,7 +2554,7 @@ Test.push('a small model starts a new application through approved native files'
 	await idle(id);
 	clearInterval(approver);
 	check('the four starter writes ask before running', Object.keys(handled).filter(id => handled[id] === 'write').length === 4);
-	check('the created starter uses the real framework boot sequence', /F\.run/.test(Total.Fs.readFileSync(Total.Path.join(folder, 'index.js'), 'utf8')) && !!JSON.parse(Total.Fs.readFileSync(Total.Path.join(folder, 'package.json'), 'utf8')).dependencies.total5);
+	check('the created starter uses the real framework boot sequence', /Total\.run\(options\)/.test(Total.Fs.readFileSync(Total.Path.join(folder, 'index.js'), 'utf8')) && !!JSON.parse(Total.Fs.readFileSync(Total.Path.join(folder, 'package.json'), 'utf8')).dependencies.total5);
 	check('the requested route is already in its controller', /GET \/hello/.test(Total.Fs.readFileSync(Total.Path.join(folder, 'controllers/default.js'), 'utf8')));
 	check('the model continues from successful writes instead of inventing the bootstrap', requests.length === 1 && requests[0].messages.filter(m => m.role === 'tool' && /^Written/.test(m.content)).length === 4);
 	await api('projects_remove/' + project.id);
@@ -2577,6 +2594,12 @@ Test.push('/new makes the files of an application and /init makes AGENTS.md for 
 	check('the scaffold has the files of an application and leaves the ones that exist', plan.files.some(f => f.path === 'package.json') && !plan.files.some(f => f.path === 'index.js') && plan.skipped.join() === 'index.js');
 	var pkg = JSON.parse(plan.files.find(f => f.path === 'package.json').content);
 	check('its package.json depends on total5 and the name is a slug', !!pkg.dependencies.total5 && pkg.name === 'my-tasks' && pkg.scripts.start === 'node index.js');
+	// The start script is the official one of Total.js 5, whole: in the scaffold and in the recipes that show it
+	var official = Total.Fs.readFileSync(PATH.root('private/start/index.js'), 'utf8');
+	var fresh = MODS.commands.scaffold(Total.Path.join(TMP, 'scaffold-new'), 'Fresh');
+	var start = fresh.files.find(f => f.path === 'index.js');
+	check('the scaffold writes the official start script, whole', !!start && start.content === official && /Total\.js v5 start script/.test(official) && /Total\.run\(options\);\s*$/.test(official));
+	check('the recipes of a new application and of the structure show the same script', ['new-app', 'structure'].every(id => Total.Fs.readFileSync(PATH.root('private/recipes/' + id + '.md'), 'utf8').indexOf(official.trim()) !== -1));
 	var requested = MODS.commands.scaffold(dir, 'hello', 'Crea una aplicación mínima con GET /hello y el texto Hello en controllers/default.js');
 	var first = requested.files.find(f => f.path === 'controllers/default.js');
 	check('the scaffold can use an explicitly requested first route and literal reply', first && /GET \/hello/.test(first.content) && /Hello/.test(first.content));

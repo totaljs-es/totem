@@ -660,7 +660,9 @@ function request(run, finish, fail) {
 		ai.payload.messages = withoutimages(ai.payload.messages);
 
 	ai.payload.tools = (meta.tools === false || run.notools || run.question || run.complaining) ? [] : exports.definitions(null, run.mode).concat(run.mode === 'plan' ? [] : ((run.mcp && run.mcp.defs) || []));
-	ai.payload.reasoning = run.reasoning;
+	// A model of up to 4B that can think spends its short answer on the thinking, and loops in it: thinking is off for it unless the user
+	// chose a level in the session (Default in the selector is this, Off and the levels are what they say)
+	ai.payload.reasoning = run.reasoning || (smallmodel(run.model) ? 'none' : '');
 	run.ai = ai;
 	// Hold Total.js answer text until its checks finish. Tool progress and reasoning still stream.
 	run.holdanswer = run.conf.selfcheck !== false && !run.command && MODS.instructions.istotaljs(run.root, run.conf);
