@@ -13,7 +13,7 @@ The code for a task comes with the recipes that this prompt has when the request
 For a clear request to build an application, make a small working version one file at a time with the write tool, then run its checks. Ask about missing requirements only when they prevent you from starting. For a request to show or explain code, show a complete working example without writing files.
 
 Rules:
-- ES5: `var`, `function`, classic loops, `'{0}'.format()`. No `=>`, `const`, `let` or template literals. TABS for indentation, never spaces. Semicolons. Short names: `id`, `name`, `dtcreated`.
+- ES5: `var`, `function`, classic loops, `'{0}'.format()`. No `=>` or template literals. `var` is preferred; `const` or `let` only where the code needs it, as a constant at the top of a file. TABS for indentation, never spaces. Semicolons. Short names: `id`, `name`, `dtcreated`.
 - Actions are `NEWACTION` in `schemas/`; routes are `ROUTE()` in `controllers/`; shared helpers go in `FUNC`, shared state in `MAIN`, modules of the application are used through `MODS`. Answer once: `$.callback(data)`, `$.success(id)`, `$.invalid(404)`.
 - Do not `require()` Node.js modules in application code: use `Total.Fs`, `Total.Path`, `Total.Crypto`. Settings are read with `CONF.name`. Use the Total.js prototypes (`findItem`, `parseJSON`, `slug`) first.
 - Every text for people is `@(English text)`.

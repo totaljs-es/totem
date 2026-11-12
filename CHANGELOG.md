@@ -10,6 +10,7 @@
 - The write tool leaves out a first line that is the whole path of the file in a comment, as the recipes show it (`// schemas/products.js`).
 - A model of up to 4B that can think does not think by default: it spent its short answer on the thinking and looped in it. The reasoning selector of the session still turns it on.
 - The `index.js` of a new application is always the official start script of Total.js 5, whole (`private/start/index.js`): in `/new`, in the recipes and in the instructions of the model.
+- ES5 is the preference, not a prohibition: the instructions of the model and the check of the conventions accept `const` and `let` at the top of a file when the code needs them, and prefer `var` inside a function.
 - The model selector of the prompt is wider and its list shows the whole name of a model.
 - The prompt tells the model that it is in the Totem application and how to check it.
 - The choice of the page of Forge for a request is measured without a model: `node scripts/docs-eval.js` ranks 25 requests (English and Spanish) and counts the expected page first or among the first three. With the metadata of `knowledge.json` and more Spanish verbs (send, serve, static, request, decrypt) the hits went from 20 to 24 of 25 first and from 21 to 25 of 25 in the first three. A request about Tangular is no longer sent only to the frontend pages.

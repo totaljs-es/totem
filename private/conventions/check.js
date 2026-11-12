@@ -35,7 +35,8 @@ var LINE_RULES = [
 // Rules counted once per file: [id, severity, expression, message, files]
 var COUNT_RULES = [
 	['spaces-indent', 'style', /^ {2,}\S/, 'Indent with tabs.', 'js'],
-	['let-const', 'style', /^\s*(?:let|const)\s/, 'New code prefers var.', 'js'],
+	// A constant or a let at the top of a file is allowed when the project needs it; inside a function the ES5 form is preferred
+	['let-const', 'style', /^\s+(?:let|const)\s/, 'Inside a function new code prefers var.', 'js'],
 	['template-literal', 'style', /^[^'"\/]*`/, 'New code prefers \'{0}\'.format() to template literals.', 'js']
 ];
 
