@@ -97,7 +97,7 @@
 	.CLASS .files img { max-width: 220px; max-height: 160px; border-radius: 8px; border: 1px solid var(--t-border); display: block; }
 	.CLASS .files a.chip { text-decoration: none; color: inherit; }
 	.CLASS .compose .grow { flex: 1 1 220px; min-width: 160px; }
-	.CLASS .compose .model { width: 200px; }
+	.CLASS .compose .model { width: 250px; max-width: 100%; }
 	.CLASS .note { text-align: center; font-size: 12px; color: var(--t-muted); margin: 10px 0; }
 	.CLASS .undo { font-size: 12px; margin-top: 4px; }
 	.CLASS .link, .CLASS .note a { color: var(--t-muted); text-decoration: none; cursor: pointer; }
@@ -290,7 +290,7 @@
 				<div class="row opts">
 					<button class="tbtn tbtn-ghost tbtn-icon exec" data-exec="?/attach" title="@(Attach images or text files)" aria-label="@(Attach images or text files)"><i class="ti ti-paperclip"></i></button>
 					<ui-bind path="?.current" config="template" class="inline"><script type="text/html">{{ if value }}{{ value.icon | provicon(value.provider) }}{{ fi }}</script></ui-bind>
-					<div class="model"><ui-component name="input" path="?.model" config="placeholder:@(Model);dirsource:?.models"></ui-component></div>
+					<div class="model"><ui-component name="input" path="?.model" config="placeholder:@(Model);dirsource:?.models;dirminwidth:360"></ui-component></div>
 					<ui-bind path="?.thinks" config="show:value" class="hidden"><ui-component name="input" path="?.reasoning" config="placeholder:@(Reasoning);dirsource:?.efforts"></ui-component></ui-bind>
 					<div class="mode"><ui-component name="input" path="?.mode" config="dirsource:?.modes;required:false"></ui-component></div>
 					<ui-component name="input" path="?.autoaccept" config="type:checkbox">@(Auto-accept edits)</ui-component>

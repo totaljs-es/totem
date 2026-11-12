@@ -75,6 +75,8 @@ exports.recipes = function(text, max) {
 	var newapp = exports.apprequest(text);
 	var togglecard = /tarjeta|card|mensaje|message/.test(lower) && /ocult|mostrar|muestre|toggle|hide|show/.test(lower) && /component|jcomponent/.test(lower);
 	var fullhtml = /\bhtml\b/.test(lower) && /complet|standalone|entero|full|p[aá]gina/.test(lower);
+	// A component of Flow is not a jComponent: its recipe goes first and the one of jComponent does not go at all
+	var flowcomponent = /\bflow(stream)?\b/.test(lower) && /component|komponent/.test(lower);
 
 	return loadrecipes().map(function(recipe) {
 		var score = 0;
@@ -89,6 +91,10 @@ exports.recipes = function(text, max) {
 			score += 30;
 		if (fullhtml && recipe.id === 'html-page')
 			score += 20;
+		if (flowcomponent && recipe.id === 'flow-component')
+			score += 50;
+		if (flowcomponent && (recipe.id === 'component' || recipe.id === 'toggle-card'))
+			score = 0;
 		return { recipe: recipe, score: score };
 	}).filter(item => item.score >= 2).sort((a, b) => b.score - a.score).slice(0, max == null ? 2 : max).map(item => item.recipe);
 };

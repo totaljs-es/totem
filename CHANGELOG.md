@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+- A recipe for a component of Total.js Flow (`private/recipes/flow-component.md`): a request for one gets it, in English, Spanish or Slovak, and no longer the recipe of jComponent, which made the model write `COMPONENT()`.
+- Fixed: a request to make something in Slovak (`Vytvor…`, `Pridaj…`) was treated as a question, so the model answered with the code and wrote no file.
+- Fixed: a comma inside the description of a tool field cut it and added a field that does not exist (`grep`, `bash`, `fetch`, `todo`, `task`).
+- Fixed: in the form of a provider, choosing a model in the list of available models left the submit button disabled, and the chosen models showed no check mark.
+- Fixed: a tool call that the output limit cut (Ollama answers 500 *invalid tool call arguments*) was retried three times, minutes of silence each; now it is explained once and not retried.
+- The write tool leaves out a first line that is the whole path of the file in a comment, as the recipes show it (`// schemas/products.js`).
+- The model selector of the prompt is wider and its list shows the whole name of a model.
+- The prompt tells the model that it is in the Totem application and how to check it.
 - The choice of the page of Forge for a request is measured without a model: `node scripts/docs-eval.js` ranks 25 requests (English and Spanish) and counts the expected page first or among the first three. With the metadata of `knowledge.json` and more Spanish verbs (send, serve, static, request, decrypt) the hits went from 20 to 24 of 25 first and from 21 to 25 of 25 in the first three. A request about Tangular is no longer sent only to the frontend pages.
 
 ## 0.1.7

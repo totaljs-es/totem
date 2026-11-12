@@ -29,7 +29,7 @@
 				<div style="max-height:260px;overflow:auto;border:1px solid var(--t-border);border-radius:var(--radius,6px)">
 				{{ foreach m in value }}
 				<div class="exec" data-exec="?/toggle" data-id="{{ m.id }}" style="padding:4px 10px;cursor:pointer;display:flex;gap:8px;align-items:center;border-bottom:1px solid var(--t-border)">
-					<i class="ti ti-{{ if m.selected }}square-check green{{ else }}square{{ fi }}"></i>
+					<i class="ti ti-{{ if m.selected }}check-square green{{ else }}square{{ fi }}"></i>
 					<span class="hellip" style="flex:1">{{ m.id }}</span>
 					{{ if m.tools }}<span class="badge badge-small" title="@(Can call tools)">@(tools)</span>{{ fi }}
 					{{ if m.reasoning }}<span class="badge badge-small" title="@(Can think before answering)">@(thinks)</span>{{ fi }}
@@ -119,7 +119,8 @@
 				chosen.push(id);
 			else
 				chosen.splice(index, 1);
-			exports.set('models', chosen);
+			// A choice in the list is a change of the form, as typing the model is: without the flag the submit button stays disabled
+			exports.set('models @modified', chosen);
 			exports.filter();
 		};
 

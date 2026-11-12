@@ -83,7 +83,7 @@ NEWACTION('Tools|glob', {
 NEWACTION('Tools|grep', {
 	name: 'Search in files',
 	summary: 'Searches file contents with a regular expression. Returns path:line:text.',
-	input: '*pattern:String // Regular expression, path:String // Folder or file to search (default the project root), include:String // Glob filter for file paths, for example *.js',
+	input: '*pattern:String // Regular expression, path:String // Folder or file to search (default the project root), include:String // Glob filter for file paths such as *.js',
 	action: function($, model) {
 
 		var root = $.user.root;
@@ -164,7 +164,11 @@ NEWACTION('Tools|write', {
 		var allowed = { '.js': '//', '.mjs': '//', '.cjs': '//', '.html': '<!--' }[ext];
 		var breaks = style && ['.js', '.mjs', '.cjs', '.html', '.json', '.css'].indexOf(ext) !== -1 && style !== allowed;
 
-		if (breaks && named.test(first)) {
+		// The recipes show a file with its whole path in a comment above the code (// schemas/products.js). That line says where the code goes: it
+		// is not code either, in any style. A comment with only the name of the file (// ok.js) may be the author's and stays.
+		var marker = model.path.indexOf('/') !== -1 && first.replace(/^\s*(#|\/\/|<!--)\s*|\s*(-->)?\s*$/g, '') === model.path.replace(/^\.?\//, '');
+
+		if ((breaks || marker) && named.test(first)) {
 			content = content.split('\n').slice(1).join('\n');
 			dropped = '\nThe first line was the name of the file, not code: it was left out.';
 		}
@@ -220,7 +224,7 @@ NEWACTION('Tools|edit', {
 NEWACTION('Tools|bash', {
 	name: 'Run a command',
 	summary: 'Runs a shell command in the project root and returns its output. Has a timeout.',
-	input: '*command:String // The command line, timeout:Number // Timeout in milliseconds, background:Boolean // Start it and return at once (a development server, a watcher); read it later with the job tool',
+	input: '*command:String // The command line, timeout:Number // Timeout in milliseconds, background:Boolean // Start it and return at once (a development server or a watcher) and read it later with the job tool',
 	action: function($, model) {
 
 		if (model.background) {
@@ -346,7 +350,7 @@ NEWACTION('Tools|patch', {
 NEWACTION('Tools|fetch', {
 	name: 'Fetch a web page',
 	summary: 'Downloads an http(s) URL and returns its text (HTML is reduced to text). Limited to 1 MB.',
-	input: '*url:String // The address, for example https://totaljs.com',
+	input: '*url:String // The address such as https://totaljs.com',
 	action: function($, model) {
 		MODS.fetcher.get(model.url, function(err, text) {
 			if (err)
@@ -360,7 +364,7 @@ NEWACTION('Tools|fetch', {
 NEWACTION('Tools|todo', {
 	name: 'Update the task list',
 	summary: 'Replaces the visible task list of the session. Use it to plan multi-step work and to mark progress.',
-	input: '*todos:String // JSON array of { "text": "...", "status": "pending" | "in_progress" | "completed" }',
+	input: '*todos:String // JSON array of objects with text and status (pending or in_progress or completed)',
 	action: async function($, model) {
 
 		var items;
@@ -429,7 +433,7 @@ NEWACTION('Tools|skill', {
 NEWACTION('Tools|task', {
 	name: 'Run a sub-agent',
 	summary: 'Delegates a task to a sub-agent that has its own context and a limited set of tools. Only its final answer comes back. Use it for research or a self-contained job that would fill your own context.',
-	input: '*agent:String // The name of the agent, *prompt:String // The complete task. The agent does not see this conversation, so include what it needs to know',
+	input: '*agent:String // The name of the agent, *prompt:String // The complete task with all that the agent needs to know because it does not see this conversation',
 	action: function($, model) {
 
 		var run = MAIN.running[$.user.sessionid];

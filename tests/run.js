@@ -137,6 +137,12 @@ Test.push('tool definitions', function(next) {
 	check('every tool has a definition', defs.length === 13);
 	check('arguments are flattened', read && read.function.parameters.properties.path && read.function.parameters.required.indexOf('path') !== -1);
 	check('the descriptions of the fields reach the model', read && !!read.function.parameters.properties.path.description);
+	// A comma inside the comment of a field cut its description and added a field that does not exist
+	var fields = { read: 'path,offset,limit', glob: 'pattern', grep: 'pattern,path,include', write: 'path,content', edit: 'path,oldstring,newstring,all', bash: 'command,timeout,background', job: 'id,stop', patch: 'patch', fetch: 'url', todo: 'todos', ask: 'question,options', skill: 'name', task: 'agent,prompt' };
+	defs.forEach(function(def) {
+		var props = def.function.parameters.properties;
+		check('the tool ' + def.function.name + ' has its fields and no other, each with its description', Object.keys(props).join(',') === fields[def.function.name] && Object.keys(props).every(key => !!props[key].description));
+	});
 	next();
 });
 
@@ -426,6 +432,14 @@ Test.push('retry', async function(next) {
 	await api('sessions_prompt/' + id, { text: 'again' });
 	await until(() => events.some(e => e.type === 'session.status' && e.data.status === 'error'));
 	check('retries stop after the limit', events.filter(e => e.type === 'error' && e.data.retry === true).length === 3);
+
+	// A tool call that the output limit cut: Ollama answers 500, and asking again would only repeat it
+	events.length = 0;
+	script = [{ error: '500: llama-server returned invalid tool call arguments for "write": unexpected end of JSON input' }, { content: 'Not reached.' }];
+	await api('sessions_prompt/' + id, { text: 'again' });
+	await until(() => events.some(e => e.type === 'session.status' && e.data.status === 'error'));
+	check('a tool call cut by the output limit is explained and not retried', events.filter(e => e.type === 'error').length === 1 && events.find(e => e.type === 'error').data.retry === false && /did not finish the file/.test(events.find(e => e.type === 'error').data.message) && script.length === 1);
+	script = [];
 	next();
 });
 
@@ -2443,6 +2457,9 @@ Test.push('developer answer presentation and permission regressions', async func
 	check('complete HTML requests select the page recipe first', MODS.knowledge.recipes('dame un html completo con el componente que lo muestre')[0].id === 'html-page');
 	check('asking for an id in an application is not a request to scaffold one', !MODS.knowledge.apprequest('Create an id for my application') && !MODS.knowledge.apprequest('How do I create an application?'));
 	check('a clear application request prioritizes the complete starter over individual files', MODS.knowledge.recipes('Crea una aplicación mínima Total.js con config y controllers/default.js')[0].id === 'new-app');
+	var recipeids = text => MODS.knowledge.recipes(text).map(r => r.id);
+	check('a Flow component gets the recipe of Flow, in three languages, and never the one of jComponent', ['Create a Flow component named counter that counts the incoming messages', 'Crea un componente de Flow que cuente los mensajes', 'Vytvor komponent pre Flow, ktorý počíta správy'].every(text => recipeids(text)[0] === 'flow-component' && recipeids(text).indexOf('component') === -1));
+	check('a jComponent request keeps the recipe of jComponent', recipeids('Create a jComponent component named rating')[0] === 'component' && recipeids('Create a jComponent component named rating').indexOf('flow-component') === -1);
 	check('a message visibility request has a recipe that preserves the bound message', MODS.knowledge.recipes('un componente tarjeta con mensaje y boton para mostrar u ocultar')[0].id === 'toggle-card');
 	check('HTML with a component selects browser documentation', MODS.knowledge.route('dame un html completo con el componente que lo muestre').product === 'jcomponent');
 
@@ -2536,7 +2553,9 @@ Test.push('the write tool leaves out a first line that only names the file', asy
 			{ id: 'n1', name: 'write', arguments: { path: 'named/index.js', content: '# index.js\nvar a = 1;\n' } },
 			{ id: 'n2', name: 'write', arguments: { path: 'named/ok.js', content: '// ok.js\nvar b = 1;\n' } },
 			{ id: 'n3', name: 'write', arguments: { path: 'named/package.json', content: '// package.json\n{ "name": "x" }\n' } },
-			{ id: 'n4', name: 'write', arguments: { path: 'named/run.sh', content: '# run.sh\necho hi\n' } }
+			{ id: 'n4', name: 'write', arguments: { path: 'named/run.sh', content: '# run.sh\necho hi\n' } },
+			{ id: 'n5', name: 'write', arguments: { path: 'named/schemas/products.js', content: '// named/schemas/products.js\nvar c = 1;\n' } },
+			{ id: 'n6', name: 'write', arguments: { path: 'named/components/counter.html', content: '<!-- named/components/counter.html -->\n<script total>\n</script>\n' } }
 		] },
 		{ content: 'Done.' }
 	];
@@ -2544,6 +2563,7 @@ Test.push('the write tool leaves out a first line that only names the file', asy
 	await idle(id);
 	var read = name => Total.Fs.readFileSync(Total.Path.join(PROJECT, 'named', name), 'utf8');
 	check('a # name in a .js file and a // name in a .json file are left out', read('index.js') === 'var a = 1;\n' && read('package.json') === '{ "name": "x" }\n');
+	check('the whole path of the file in a comment, as the recipes show it, is left out', read('schemas/products.js') === 'var c = 1;\n' && read('components/counter.html') === '<script total>\n</script>\n');
 	check('a comment that the language allows stays, and so does one in a shell script', read('ok.js') === '// ok.js\nvar b = 1;\n' && read('run.sh') === '# run.sh\necho hi\n');
 	next();
 });

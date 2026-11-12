@@ -705,6 +705,13 @@ function request(run, finish, fail) {
 				return;
 			}
 
+			// The output limit cut a tool call in the middle (a small model that repeats a line until the limit): Ollama answers 500 with this text
+			// and no partial answer. It is not a transient error: asking again repeats the same minutes of silence, so it is said and not retried.
+			if (/invalid tool call arguments|unexpected end of JSON input/i.test(message)) {
+				fail('The model did not finish the file: its answer reached the output limit in the middle of a tool call. Ask for a smaller part of it.');
+				return;
+			}
+
 			// Transient errors are retried with backoff; the partial answer stays stored
 			if (retryable(message) && run.attempts < run.conf.retries) {
 				run.attempts++;
