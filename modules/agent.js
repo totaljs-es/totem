@@ -45,11 +45,16 @@ exports.definitions = function(names, mode) {
 	return output;
 };
 
+// Where the model is. It can check it by itself: a text can be copied into any conversation, the tools of the request cannot. The read tool is
+// in every mode; a request that goes without tools (a question, a model without them) fails the check, and the model answers with the code.
+var HOME = '\nHome: this is the Totem application. Check it: the tools of this request include read.\n';
+
 function system(run) {
 
 	var text = MAIN.base;
 	if (run.mode === 'plan')
 		text += '\n' + MAIN.plan + '\n';
+	text += HOME;
 	text += '\nWorking directory: {0}\nPlatform: {1}\nDate: {2}\n'.format(run.root, Total.Os.platform(), new Date().format('yyyy-MM-dd'));
 
 	// Total.js is the default: the rules, a few examples and where to look things up
