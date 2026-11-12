@@ -54,7 +54,7 @@ That is a short prompt, which matters on a computer without a GPU, where reading
 
 ## The checks
 
-After each task Totem checks the file before it goes on: the actions that the routes call exist, the input has every field of the card with its type, the file is valid JavaScript, the screen and the form use the endpoints of their plugin and none of the example. A file that fails is asked once more with the problem in a sentence. If it fails again the build stops there and says why; the next `/build` starts at that task.
+After each task Totem checks the file before it goes on: the actions that the routes call exist, the input has every field of the card with its type, the file is valid JavaScript, the screen and the form use the endpoints of their plugin and none of the example. One line is not asked again: the input of the action that saves is the card word for word (`id:UID` and the fields), so when the model misplaces a star Totem sets that line from the card, as it does with the names. A file that fails is asked once more with the problem in a sentence. If it fails again the build stops there and says why; the next `/build` starts at that task.
 
 A file that is already there is not written over: when it passes the check its task is done, and when it does not, you decide. A build that was stopped goes on where it was. A plugin added to the card adds its tasks and keeps the ones that are done.
 

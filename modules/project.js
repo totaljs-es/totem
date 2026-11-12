@@ -346,7 +346,7 @@ exports.markdown = function(plan) {
 	lines.push('', '## Tasks', '');
 
 	plan.tasks.forEach(function(task) {
-		lines.push('- [' + (task.status === 'done' ? 'x' : ' ') + '] ' + task.id + '. ' + task.title + (task.path ? ' (`' + task.path + '`)' : '') + (task.status === 'failed' ? ' — not done: ' + (task.problem || 'the file was not written') : ''));
+		lines.push('- [' + (task.status === 'done' ? 'x' : ' ') + '] ' + task.id + '. ' + task.title + (task.path ? ' (`' + task.path + '`)' : '') + (task.status === 'failed' ? ' — not done: ' + (task.problem || 'the file was not written') : '') + (task.repaired && task.status === 'done' ? ' — ' + task.repaired : ''));
 	});
 
 	return lines.join('\n') + '\n';
@@ -479,6 +479,44 @@ exports.start = function(session, project, message, command, callback) {
 	}
 
 	exports.build(session, project, callback);
+};
+
+// The input of the action that saves is the card, word for word: 'id:UID' and the fields of the plugin. A small model writes the fields and
+// misplaces a star (a required id refuses every new row). It is not asked again for that: the line is set from the card, as the names are.
+// true when the file was changed.
+exports.repair = function(root, plan, task) {
+
+	if (task.part !== 'schemas')
+		return false;
+
+	var file = Total.Path.join(root, task.path);
+	var content;
+
+	try {
+		content = Total.Fs.readFileSync(file, 'utf8');
+	} catch (e) {
+		return false;
+	}
+
+	var plugin = plan.card.plugins.findItem('id', task.plugin);
+	var start = content.indexOf('NEWACTION(\'' + contract(plugin).actions[2] + '\'');
+
+	if (start === -1)
+		return false;
+
+	// The input of that action: the first one after its name and before the next action
+	var end = content.indexOf('NEWACTION(', start + 10);
+	var block = content.substring(start, end === -1 ? content.length : end);
+	var expected = 'id:UID, ' + fieldsline(plugin);
+	var fixed = block.replace(/(\binput\s*:\s*)(['"])([^'"\n]*)\2/, function(all, key, quote, value) {
+		return value === expected ? all : (key + '\'' + expected + '\'');
+	});
+
+	if (fixed === block)
+		return false;
+
+	Total.Fs.writeFileSync(file, content.substring(0, start) + fixed + (end === -1 ? '' : content.substring(end)));
+	return true;
 };
 
 // A file of a task that is there and has what the other files expect: '' or the problem in a sentence
@@ -722,6 +760,8 @@ exports.build = function(session, project, callback) {
 					var left = fixedfiles(project.path, plan, task);
 					done(left.length ? ('the file ' + left[0].path + ' was not written.') : '');
 				} : function(done) {
+					if (exports.repair(project.path, plan, task))
+						task.repaired = 'the input of the action that saves was set from the card';
 					exports.check(project.path, plan, task, done);
 				};
 
