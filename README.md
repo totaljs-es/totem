@@ -123,7 +123,21 @@ In the conversation, `/project` and then `/build`:
   </picture>
 </p>
 
-Another agent can drive it and save its own tokens: `totem project`, `totem build` and `totem plan` from a terminal, or the address `/agent/` of a running Totem, which explains itself in plain text. See [projects](docs/projects.md).
+### With Claude Code, Codex or another agent
+
+A large model can use Totem as its hands and keep its tokens for what needs them:
+
+1. **It plans.** The agent reads your request and writes the card of the application: a couple of hundred tokens.
+2. **Totem writes.** The files are written and checked by the model of your computer, which costs nothing. They are most of the tokens of an application.
+3. **It reviews.** The agent gets a few lines back (`shop: 9 of 9 tasks done`, or the task that failed and why) and reads a file only when it wants to.
+
+To start, tell your agent where Totem is:
+
+```
+Build it with Totem: read http://127.0.0.1:8000/agent/
+```
+
+That address answers in plain text with everything the agent needs. From there it uses the commands `totem project`, `totem build` and `totem plan` when it has a shell on the same computer, the routes `POST /agent/project/`, `POST /agent/build/` and `GET /agent/status/` when it does not, or the MCP server of Totem from a chat application. See [projects](docs/projects.md#another-agent-does-the-thinking-totem-does-the-writing).
 
 ### Docker
 
