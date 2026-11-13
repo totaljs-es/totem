@@ -283,9 +283,18 @@ function session(options) {
 	return api('sessions_create', Object.assign({ projectid: projectid, model: 'fake' }, options || {})).then(r => r.response.id);
 }
 
+// The session is idle again after the prompt that was just sent: an "idle" that comes after the "running" of this prompt. An "idle" alone can be
+// the tail of the prompt before (what a run does after its answer), so without a "running" it counts only when nothing runs and a moment has passed.
 function idle(id) {
 	var mark = promptmark[id] || 0;
-	return until(() => events.filter(e => e.n > mark && e.sessionid === id && e.type === 'session.status' && e.data.status === 'idle').length > 0);
+	var started = Date.now();
+	return until(function() {
+		var mine = events.filter(e => e.n > mark && e.sessionid === id && e.type === 'session.status');
+		var running = mine.find(e => e.data.status === 'running');
+		if (running)
+			return mine.some(e => e.n > running.n && e.data.status === 'idle');
+		return mine.some(e => e.data.status === 'idle') && !MAIN.running[id] && Date.now() - started > 1500;
+	});
 }
 
 Test.push('diff', function(next) {
