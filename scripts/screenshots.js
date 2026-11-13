@@ -357,7 +357,7 @@ async function main() {
 		var meta = {};
 		wanted.forEach(item => meta[item.id] = item);
 		await totem.call('providers_save', { name: found.template.name, url: found.template.url, kind: found.template.kind, icon: found.template.icon, models: wanted.map(item => item.id), meta: meta });
-		await totem.call('providers_save', { name: 'Demo', url: 'http://127.0.0.1:' + mockport + '/v1', kind: 'openai', icon: '', models: ['demo-agent'], meta: { 'demo-agent': { id: 'demo-agent', tools: true } } });
+		await totem.call('providers_save', { name: 'Local', url: 'http://127.0.0.1:' + mockport + '/v1', kind: 'openai', icon: '', models: ['demo-agent'], meta: { 'demo-agent': { id: 'demo-agent', tools: true } } });
 
 		var models = await totem.call('providers_models');
 		var real = models.find(id => id === realmodel);
@@ -463,6 +463,8 @@ async function main() {
 			!url && await browser.eval("THEME.apply('" + theme + "'); 1");
 			prepare && await browser.eval(prepare);
 			await sleep(2200);
+			// The screenshots show the interface, not a model: the selector of the prompt reads "Local model"
+			!url && await browser.eval("(function() { var box = document.querySelector('.model'); if (!box) return 0; box.querySelectorAll('input').forEach(function(el) { el.value = 'Local model'; }); var walker = document.createTreeWalker(box, NodeFilter.SHOW_TEXT); var node; while ((node = walker.nextNode())) { if (/[a-z0-9]:[a-z0-9]/i.test(node.nodeValue)) node.nodeValue = 'Local model'; } return 1; })()");
 			var result = await browser.send('Page.captureScreenshot', { format: 'webp', quality: 88 });
 			var file = Path.join(out, name + '-' + theme + '.webp');
 			Fs.writeFileSync(file, Buffer.from(result.data, 'base64'));
