@@ -123,8 +123,16 @@ GET  /agent/status/</code><button type="button" class="tm-copy" aria-label="Copy
  <p class="tm-honest"><a href="{{root}}docs/projects.html#another-agent-does-the-thinking-totem-does-the-writing">How another agent uses Totem</a>, step by step.</p>
 </div></section>
 
+<section class="t-section" id="model"><div class="t-wrap">
+ <div class="t-section-heading"><p class="t-kicker">04 / Totem, the model</p><div><h2>One model,<br><span>two places.</span></h2><p>Totem is also a small language model trained for Total.js. It knows its application, and its application knows it.</p></div></div>
+ <div class="tm-three tm-two">
+  <div class="tm-card"><span class="tm-tag">In its application</span><h3>It builds whole applications</h3><p>Here it has the tools, the plan and the checks: it reads and writes the files of your project and builds a Total.js 5 application task by task, with its screens in jComponent 20.</p></div>
+  <div class="tm-card"><span class="tm-tag">Anywhere else</span><h3>An assistant that knows Total.js</h3><p>In Ollama, LM Studio or any chat it answers your questions about Total.js 5 and jComponent 20: where each thing goes, how an action, a route or a query is written, with short code. For a whole application it sends you to its application.</p></div>
+ </div>
+</div></section>
+
 <section class="t-section" id="knows"><div class="t-wrap">
- <div class="t-section-heading"><p class="t-kicker">04 / It knows Total.js</p><div><h2>The model does not have to<br><span>remember the framework.</span></h2><p>A small model has seen Express a thousand times and <code>NEWACTION</code> never. So Totem puts the knowledge in front of it, and checks what comes out.</p></div></div>
+ <div class="t-section-heading"><p class="t-kicker">05 / It knows Total.js</p><div><h2>The model does not have to<br><span>remember the framework.</span></h2><p>A small model has seen Express a thousand times and <code>NEWACTION</code> never. So Totem puts the knowledge in front of it, and checks what comes out.</p></div></div>
  <div class="tm-three">
   <div class="tm-card"><span class="tm-tag">Recipes</span><h3>Short, exact answers</h3><p>23 recipes for the common tasks: routes, actions, NoSQL, config, <code>RESTBuilder</code>, auth, CRON, WebSockets, views, system information, jComponent, plugins. They are chosen by the words of your request and work offline.</p></div>
   <div class="tm-card"><span class="tm-tag">Library · Forge</span><h3>The documentation, at hand</h3><p>The pages that match the request go to the model: the <a href="https://github.com/totaljs-es/knowledge">Total.js library</a> (conventions, questions and answers, tested applications, the catalogue of components and icons) and <a href="https://forge.totaljs.es">Forge</a>. Totem searches their indexes on your computer, so your prompt is not sent anywhere and there is nothing to allow.</p></div>
@@ -133,7 +141,7 @@ GET  /agent/status/</code><button type="button" class="tm-copy" aria-label="Copy
 </div></section>
 
 <section class="t-section" id="models"><div class="t-wrap">
- <div class="t-section-heading"><p class="t-kicker">05 / Any model</p><div><h2>Bring your own<br><span>model.</span></h2><p>Totem finds the servers on your computer and lists the models with what each one can do. A provider is any server with an OpenAI-compatible API.</p></div></div>
+ <div class="t-section-heading"><p class="t-kicker">06 / Any model</p><div><h2>Bring your own<br><span>model.</span></h2><p>Totem finds the servers on your computer and lists the models with what each one can do. A provider is any server with an OpenAI-compatible API.</p></div></div>
  <ul class="tm-chips" aria-label="Providers">
   <li class="local" style="--i:url({{root}}img/providers/ollama.svg)"><i aria-hidden="true"></i>Ollama</li><li class="local" style="--i:url({{root}}img/providers/lmstudio.svg)"><i aria-hidden="true"></i>LM Studio</li><li class="local" style="--i:url({{root}}img/providers/llamacpp.svg)"><i aria-hidden="true"></i>llama.cpp</li><li class="local" style="--i:url({{root}}img/providers/vllm.svg)"><i aria-hidden="true"></i>vLLM</li><li class="local" style="--i:url({{root}}img/providers/litellm.svg)"><i aria-hidden="true"></i>LiteLLM</li><li style="--i:url({{root}}img/providers/openrouter.svg)"><i aria-hidden="true"></i>OpenRouter</li><li style="--i:url({{root}}img/providers/openai.svg)"><i aria-hidden="true"></i>OpenAI</li><li style="--i:url({{root}}img/providers/anthropic.svg)"><i aria-hidden="true"></i>Anthropic</li><li style="--i:url({{root}}img/providers/gemini.svg)"><i aria-hidden="true"></i>Google Gemini</li><li style="--i:url({{root}}img/providers/groq.svg)"><i aria-hidden="true"></i>Groq</li><li style="--i:url({{root}}img/providers/mistral.svg)"><i aria-hidden="true"></i>Mistral</li><li style="--i:url({{root}}img/providers/deepseek.svg)"><i aria-hidden="true"></i>DeepSeek</li><li style="--i:url({{root}}img/providers/xai.svg)"><i aria-hidden="true"></i>xAI</li><li style="--i:url({{root}}img/providers/together.svg)"><i aria-hidden="true"></i>Together AI</li><li style="--i:url({{root}}img/providers/fireworks.svg)"><i aria-hidden="true"></i>Fireworks AI</li><li style="--i:url({{root}}img/providers/cerebras.svg)"><i aria-hidden="true"></i>Cerebras</li><li style="--i:url({{root}}img/providers/nvidia.svg)"><i aria-hidden="true"></i>NVIDIA NIM</li><li style="--i:url({{root}}img/providers/huggingface.svg)"><i aria-hidden="true"></i>Hugging Face</li><li style="--i:url({{root}}img/providers/moonshot.svg)"><i aria-hidden="true"></i>Moonshot AI</li><li style="--i:url({{root}}img/providers/cohere.svg)"><i aria-hidden="true"></i>Cohere</li>
  </ul>
@@ -141,7 +149,7 @@ GET  /agent/status/</code><button type="button" class="tm-copy" aria-label="Copy
 </div></section>
 
 <section class="t-section" id="install"><div class="t-wrap">
- <div class="t-section-heading"><p class="t-kicker">06 / Install</p><div><h2>Three ways,<br><span>one minute.</span></h2><p>The same application everywhere. Nothing to build.</p></div></div>
+ <div class="t-section-heading"><p class="t-kicker">07 / Install</p><div><h2>Three ways,<br><span>one minute.</span></h2><p>The same application everywhere. Nothing to build.</p></div></div>
  <div class="tm-three">
   <div class="tm-card"><span class="tm-tag">npm</span><h3>On your computer</h3><p>Needs Node.js 22 or newer. Your data goes to a folder of your user.</p><div class="tm-cmd"><code>npm install -g totaljs-totem
 totem</code><button type="button" class="tm-copy" aria-label="Copy the commands" title="Copy the commands"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg></button></div></div>
@@ -154,7 +162,7 @@ node index.js 8000</code><button type="button" class="tm-copy" aria-label="Copy 
 </div></section>
 
 <section class="t-section" id="safe"><div class="t-wrap">
- <div class="t-section-heading"><p class="t-kicker">07 / Safe by design</p><div><h2>Made to be trusted<br><span>with your code.</span></h2><p>The agent acts through tools only, and each one is checked before it runs.</p></div></div>
+ <div class="t-section-heading"><p class="t-kicker">08 / Safe by design</p><div><h2>Made to be trusted<br><span>with your code.</span></h2><p>The agent acts through tools only, and each one is checked before it runs.</p></div></div>
  <ul class="tm-list">
   <li><b>The project is a boundary.</b> Every path is resolved inside it, symbolic links included.</li>
   <li><b>Plan mode is code, not a prompt.</b> It refuses writes and commands, whatever the model says.</li>
