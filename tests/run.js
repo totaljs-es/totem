@@ -21,12 +21,24 @@ function check(message, ok) {
 }
 
 function api(schema, data) {
-	if (/^sessions_prompt\//.test(schema))
-		promptmark[schema.split('/')[1]] = eventcount;
-	return new Promise(function(resolve) {
-		RESTBuilder.POST(URL, { schema: schema, data: data }).exec(function(err, response) {
-			resolve({ err: err, response: response });
+
+	var send = function() {
+		return new Promise(function(resolve) {
+			RESTBuilder.POST(URL, { schema: schema, data: data }).exec(function(err, response) {
+				resolve({ err: err, response: response });
+			});
 		});
+	};
+
+	if (!/^sessions_prompt\//.test(schema))
+		return send();
+
+	// A prompt goes when the run before of its session has ended completely (its "idle" comes a little before the end of the run):
+	// a session that is still running refuses a new prompt
+	var id = schema.split('/')[1];
+	return until(() => !MAIN.running[id], 15000).then(function() {
+		promptmark[id] = eventcount;
+		return send();
 	});
 }
 
