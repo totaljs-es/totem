@@ -25,4 +25,4 @@ CRON('0,15,30,45 * * * *', function() {
 });
 ```
 
-Put the work in an action and let the schedule only call it: the same code can then run from the API and be tested without waiting. The step form (`*/5 * * * *`) works from Total.js 5 0.0.20; a project that still has 0.0.19 writes the minutes as a list (`0,15,30,45 * * * *`), because there a step runs every minute. Do not use `setInterval` or `node-cron`.
+Put the work in an action and let the schedule only call it: the same code can then run from the API and be tested without waiting. A step works too: `*/5 * * * *` is every five minutes. Do not use `setInterval` or `node-cron`.
