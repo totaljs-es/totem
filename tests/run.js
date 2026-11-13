@@ -1248,6 +1248,10 @@ Test.push('attachments', async function(next) {
 	await idle(refusing);
 	check('the next prompt does not send the images at all', mock.requests.length === 1 && typeof(mock.requests[0].messages[mock.requests[0].messages.length - 1].content) === 'string');
 
+	// The list of models is made again (a provider was saved, a new model was found): the model is still remembered as blind
+	await new Promise(resolve => FUNC.providers(resolve));
+	check('a model that refused the images is still blind when the list of models is made again', MAIN.modelmeta['refuses:noimg'].vision === false);
+
 	// Adding a provider that exists refreshes it
 	await api('providers_save', { name: 'Twice', url: base, kind: 'openai', models: ['one'] });
 	await api('providers_save', { name: 'Twice', url: base, kind: 'openai', models: ['one', 'two'] });

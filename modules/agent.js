@@ -733,6 +733,8 @@ function request(run, finish, fail) {
 			// A server that refuses the images of the prompt: the model cannot see. Try again without them and remember it.
 			if (!run.noimages && /multimodal|image|vision/i.test(message) && ai.payload.messages.some(m => Array.isArray(m.content))) {
 				run.noimages = true;
+				// Kept apart too: the list of models is made again whenever a provider changes or a new model is found
+				MAIN.blind[run.model] = true;
 				MAIN.modelmeta[run.model] = Object.assign({}, MAIN.modelmeta[run.model], { vision: false });
 				run.steps--;
 				closeparts(run);

@@ -19,6 +19,9 @@ FUNC.istotem = function(model, meta) {
 	return !!((meta && meta.totem) || /(^|[\/:_.-])totem([\/:_.-]|\d|$)/i.test(model || ''));
 };
 
+// The models that refused the images of a prompt (until Totem starts again)
+MAIN.blind = {};
+
 FUNC.providers = function(callback) {
 	NOSQL('providers').find().callback(function(err, response) {
 
@@ -40,6 +43,10 @@ FUNC.providers = function(callback) {
 				NEWAIMODEL(item.id + ':' + model, config, MODS.provider.byKind(item.kind));
 				MAIN.modelmeta[item.id + ':' + model] = Object.assign({}, meta);
 				MAIN.modelmeta[item.id + ':' + model].totem = FUNC.istotem(model, meta);
+
+				// A model that refused the images of a prompt stays remembered as one that cannot see
+				if (MAIN.blind[item.id + ':' + model])
+					MAIN.modelmeta[item.id + ':' + model].vision = false;
 
 				// The window that Totem really uses: Ollama is asked for a context that is as large as the config allows
 				if (item.kind === 'ollama')
