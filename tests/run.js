@@ -109,6 +109,9 @@ Test.push('boot', function(next) {
 		NEWAIMODEL('fake2', fake);
 		// The data is copied: a part keeps changing after the event, like on the wire
 		// The tests never go to the real Forge: the documents of Forge have their own test with a server of this computer
+		check('the library of Totem is the knowledge by default and Forge is an option that is off', CONF.library === true && CONF.forge === false && CONF.forgemcp === false);
+		// Forge is turned on here: what it does when a person turns it on is tested below
+		CONF.forge = true;
 		CONF.forgedocs = false;
 		CONF.library = false;
 		FUNC.onevent = (sessionid, type, data) => events.push({ n: ++eventcount, sessionid: sessionid, type: type, data: JSON.parse(JSON.stringify(data)) });

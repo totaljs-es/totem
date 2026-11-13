@@ -47,8 +47,11 @@ retrybase         (Number)  : 1000
 // Totem writes Total.js unless the project is clearly something else: auto, always or never
 totaljs                     : auto
 
-// The knowledge that Totem brings to Total.js 5 projects: the documentation of Forge (asks before it starts) and the check of the conventions
-forge                       : true
+// The knowledge that Totem brings to Total.js 5 projects: its recipes, its library and the check of the conventions.
+// The library of Totem: the Total.js knowledge repository (conventions, questions and answers, tested applications, the catalogue of components and icons),
+// read live from its llms.txt with a GET. The pages that match a request go in front of the model. false turns it off. libraryurl is where it is.
+library                     : true
+libraryurl                  : https://raw.githubusercontent.com/totaljs-es/knowledge/main
 // The recipes of Totem (private/recipes) that go in front of the model for a request about Total.js 5: how many at most, and false to turn them off
 recipes                     : true
 reciperesults     (Number)  : 2
@@ -57,16 +60,17 @@ reciperesults     (Number)  : 2
 selfcheck                   : true
 // The correction of the code is asked from a model of up to 4 billion parameters too (it fixed the indentation in 3 more cases of 29); false leaves it out.
 selfchecksmall              : true
-// How many pages of Forge are read for a prompt, and how many characters of each
+// How many pages of the knowledge are read for a prompt, and how many characters of each
 forgepages        (Number)  : 2
 forgechars        (Number)  : 3500
-// The documents of Forge (llms.txt and the pages in Markdown) are read directly, with no MCP server: false goes back to the MCP server only. forgeurl is where Forge is.
+
+// Forge (forge.totaljs.es), the documentation site of Total.js in Spanish, as one more source: off by default, because the library has what Totem needs.
+// true ranks its pages together with the ones of the library. Useful with other models, or for the products that the library does not cover yet.
+forge                       : false
+// With forge on, its documents (llms.txt and the pages in Markdown) are read directly, with no MCP server: false goes back to the MCP server only. forgeurl is where Forge is.
 forgedocs                   : true
 forgeurl                    : https://forge.totaljs.es
-// The library of Totem: the Total.js knowledge repository (conventions, answers, questions, tested applications), read live from its llms.txt with a GET, as the documents of Forge. false turns it off. libraryurl is where it is.
-library                     : true
-libraryurl                  : https://raw.githubusercontent.com/totaljs-es/knowledge/main
-// The MCP server of Forge (its tools search, read and verify names) is started only when this is true, and it asks permission once. The documents above are enough for most prompts.
+// The MCP server of Forge (its tools search, read and verify names) is started only when forge and this are true, and it asks permission once.
 forgemcp                    : false
 conventions                 : true
 

@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- The knowledge of Total.js is the library of Totem alone by default: its pages are the ones that go in front of the model, and the documentation of Forge is an option that is off (`forge : true` in `config` or in Settings ranks its pages together with the library, for example with other models). Nothing asks to start Forge any more. The instructions of the model, the skill of the conventions and the documentation say so.
+
 ## 0.1.8
 
 - Fixed: a model that refused the images of a prompt was forgotten as blind when the list of models was made again (a provider saved, a new model found), and the next prompt sent it the images again.

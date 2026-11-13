@@ -27,11 +27,10 @@ The usual problems, and what to do. If yours is not here, [open an issue](https:
 
 | Problem | What to do |
 |---|---|
-| The agent asks to start Forge | It is the connection to the documentation. Allow it once for every project, or set `forge : false` |
 | The agent mentions jComponent in server code | Totem's recipes and its reminder keep the interface out of server questions, but a small model may slip. Tell it; or use a bigger one |
 | LiteLLM in front of Ollama: the model answers with JSON, or forgets what I asked | In the config of LiteLLM write the model as `ollama_chat/<model>` (not `ollama/`). Totem sends the window (`num_ctx`) by itself |
 | I do not want the recipes or the code check | `recipes : false` and `selfcheck : false` in `config` |
-| I want Forge only through its MCP server, or not at all | `forgedocs : false` (MCP only, asks to start) or `forge : false`; `forgemcp : true` adds the MCP tools to the documents |
+| I want the documentation of Forge too | `forge : true` in `config` (or in Settings): its pages are ranked together with the library of Totem. `forgemcp : true` adds its MCP tools (it asks to start), and `forgedocs : false` leaves only the MCP server |
 | I do not want the pages of the knowledge repository | `library : false` |
 
 ## The interface

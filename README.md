@@ -37,7 +37,7 @@ Totem is one application with three ways to run: a command, a Docker container a
 - **A whole application in small tasks.** `/project` turns a request into a short plan, and `/build` walks its tasks one by one: each file is written with only what it needs in front of the model, and checked before the next. A model of 4B that could not hold the application in its head does not have to. See [projects](docs/projects.md).
 - **You stay in control.** Every file change and command asks first, unless you allow it. **Plan mode** only reads and describes; **Build mode** changes things. See the diff of each step, undo it, redo it.
 - **Any model.** Ollama, LM Studio and llama.cpp on your computer are detected for you; OpenRouter, OpenAI, Anthropic, Gemini, Groq, Mistral, DeepSeek and a dozen more (any OpenAI-compatible server) are in the list. Prompts go only to the providers you add.
-- **It knows Total.js.** In a project that depends on `total5` the agent gets the recipes of Totem, the pages of the [Total.js library](https://github.com/totaljs-es/knowledge) and of [Forge](https://forge.totaljs.es) for your request, the conventions as a skill, and a check of everything it writes: syntax, style, invented functions. Small local models get focused examples; the quality of an application still depends on the model and needs testing.
+- **It knows Total.js.** In a project that depends on `total5` the agent gets the recipes of Totem, the pages of its own [Total.js library](https://github.com/totaljs-es/knowledge) for your request, the conventions as a skill, and a check of everything it writes: syntax, style, invented functions. Small local models get focused examples; the quality of an application still depends on the model and needs testing.
 - **Sub-agents.** Helpers with their own context, tools and model that the main agent hands a task to; several work at the same time, and the *Agents* panel adds yours.
 - **Work in parallel.** Sessions can run in their own **git worktree**, and **scheduled prompts** run by themselves, unattended and read-only unless you say otherwise.
 - **A terminal that stays.** An interactive shell in the project folder that survives a page reload, and background commands the agent can start and read.
@@ -188,12 +188,11 @@ Totem works with a 1.5B model and with the biggest ones. A few tips:
 
 ## How it knows Total.js
 
-When the project depends on `total5` (or is a new folder), Totem puts four things in front of the model:
+When the project depends on `total5` (or is a new folder), Totem puts three things in front of the model:
 
 1. **Recipes** ([`private/recipes/`](private/recipes)): short, exact answers for the common tasks (routes, actions, NoSQL, config, `RESTBuilder`, auth, CRON, WebSockets, views, jComponent, plugins...), chosen by the words of your request. They work offline and follow the conventions to the letter.
-2. **The library** ([totaljs-es/knowledge](https://github.com/totaljs-es/knowledge)): conventions, questions and answers, tested applications and the catalogue of jComponent components and Total Icons, read live from its public index. The page that matches the request goes to the model.
-3. **Forge** ([forge.totaljs.es](https://forge.totaljs.es)): matching documentation fetched from its public index and Markdown pages, ranked together with the library. Small models use one focused recipe when it covers the task, and the pages when it does not. MCP is optional.
-4. **A check of the code**: what the agent writes is checked against the [Total.js conventions](https://github.com/totaljs-es/conventions) (syntax, ES5, tabs, names with `|`, texts as `@(English)`, no invented functions) and the model fixes what is wrong. The code in an answer is checked too, and corrected once.
+2. **The library** ([totaljs-es/knowledge](https://github.com/totaljs-es/knowledge)): conventions, questions and answers, tested applications and the catalogue of jComponent components and Total Icons, read live from its public index. The page that matches the request goes to the model, so a small model starts from the documentation and not from its memory. Small models use one focused recipe when it covers the task, and the pages when it does not.
+3. **A check of the code**: what the agent writes is checked against the [Total.js conventions](https://github.com/totaljs-es/conventions) (syntax, ES5, tabs, names with `|`, texts as `@(English)`, no invented functions) and the model fixes what is wrong. The code in an answer is checked too, and corrected once.
 
 To measure it with any model:
 
@@ -215,8 +214,8 @@ Settings live in the file [`config`](config) (never in environment variables). T
 | `ollamactx`, `ollamactxmax` | `16384`, `32768` | Context asked to Ollama |
 | `maxsteps`, `bashtimeout` | `50`, `120000` | Limits of the agent loop |
 | `totaljs` | `auto` | `always` or `never` to decide for every project |
-| `forge`, `forgedocs`, `library`, `recipes`, `selfcheck`, `conventions` | `true` | The parts of the Total.js knowledge (`forgedocs`: the documents of Forge, with no MCP server; `library`: the Total.js knowledge repository, read live) |
-| `forgemcp` | `false` | The MCP server of Forge as an extra (it asks to start) |
+| `library`, `recipes`, `selfcheck`, `conventions` | `true` | The parts of the Total.js knowledge (`library`: the library of Totem, read live) |
+| `forge` | `false` | The pages of [Forge](https://forge.totaljs.es) as one more source, ranked together with the library. `forgemcp : true` adds its MCP server (it asks to start) |
 | `selfchecksmall` | `true` | The correction of the code is asked from models up to 4B too |
 | `formatter`, `diagnostics` | `true` | Run the formatter and the checks that the project already has after a write |
 | `terminalshell` | empty | The shell of the Terminal (empty: your `SHELL`) |
@@ -243,7 +242,6 @@ The details, including the honest limits (one token, one user), are in [security
 | The container does not start | It needs a token: mount a file at `/run/secrets/totem_token` (or set `token` in `config`) |
 | "The terminal could not start" | The Shell needs Python 3 (macOS and Linux). It is in the Docker image |
 | Docker cannot see your folder (Colima, Docker Desktop) | Share the folder with the virtual machine: your home folder, not `/tmp` |
-| The agent asks to start Forge | It is the documentation connection. Allow it once for every project, or set `forge : false` |
 | A worktree could not be created | The project needs git with at least one commit |
 | Scheduled prompts do nothing | They run unattended: in Plan mode they only read, and anything that would ask is refused. Choose Build and auto-accept to let them edit |
 

@@ -26,23 +26,16 @@ Copy the pattern of the nearest existing file of the project: a new file looks l
 
 Totem checks the files that you write in a Total.js project and appends what it finds to the result of the tool. Fix every `error` and `warn` that belongs to your change.
 
-## Look things up in Forge
+## Look things up in the library
 
-Forge (https://forge.totaljs.es) has the documentation of Total.js 5 and jComponent 20 with versions and execution evidence. When the tools `forge__Forge_search`, `forge__Forge_page` and `forge__Forge_verify_api` are available:
+The library of Totem has what an application needs: the conventions, short answers, questions with their answers, tested applications, the catalogue of the components and the names of the icons. Use the fetch tool on its index and then on the page that the index names:
 
-The arguments of these tools go inside `input`, for example `{ "input": { "query": "NEWACTION input" } }`.
+- https://raw.githubusercontent.com/totaljs-es/knowledge/main/llms.txt (the index of the library)
+- https://raw.githubusercontent.com/totaljs-es/knowledge/main/conventions/general/project-structure.md
+- https://raw.githubusercontent.com/totaljs-es/knowledge/main/conventions/general/workflow.md
 
-1. `forge__Forge_search` finds the pages about a topic; `forge__Forge_page` returns the Markdown of one page.
-2. `forge__Forge_verify_api` checks the names that your code uses against the documented globals of Total.js 5: run it on code that you wrote before you answer.
+When the tools `forge__Forge_search`, `forge__Forge_page` and `forge__Forge_verify_api` are available (the documentation of Forge is an option of Totem), their arguments go inside `input`, for example `{ "input": { "query": "NEWACTION input" } }`: `forge__Forge_search` finds the pages about a topic, `forge__Forge_page` returns the Markdown of one page, and `forge__Forge_verify_api` checks the names that your code uses against the documented globals of Total.js 5.
 
-Without them, use the fetch tool on these pages:
-
-- https://forge.totaljs.es/en/docs/totaljs-agent-conventions.md
-- https://forge.totaljs.es/en/docs/code-style.md
-- https://forge.totaljs.es/en/docs/common-mistakes.md
-- https://forge.totaljs.es/en/docs/project-structure.md
-- https://raw.githubusercontent.com/totaljs-es/knowledge/main/llms.txt (the library of Totem: the conventions, short answers, questions, tested applications, the catalogue of the components and the names of the icons)
-- https://forge.totaljs.es/llms.txt (the documentation of Forge)
 - https://raw.githubusercontent.com/totaljs-es/conventions/main/llms-full.txt (all the conventions in one file)
 
 Do not use Total.js 4 APIs. If a page and the source disagree, the source is right.

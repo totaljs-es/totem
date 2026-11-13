@@ -14,7 +14,7 @@ These pages describe what Totem does and why. They are the contract for the code
 | [Permissions and security](security.md) | What the agent may do, what it asks for, how the server is protected |
 | [Interface](interface.md) | Screens and the jComponent components they use |
 | [Capabilities](capabilities.md) | The list of features, each with its phase |
-| [Knowledge](knowledge.md) | How the agent knows Total.js (recipes, Forge, checks) and how to measure it with any model |
+| [Knowledge](knowledge.md) | How the agent knows Total.js (recipes, its library, checks) and how to measure it with any model |
 | [Delivery](delivery.md) | Command line, Docker image and native windows |
 | [Roadmap](roadmap.md) | Phases, each with the condition that closes it |
 | [Decisions](decisions.md) | Decisions taken and the ones still open |

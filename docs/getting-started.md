@@ -49,7 +49,7 @@ Try this in Plan mode, in a Total.js project:
 
 ![Totem answering with an action, a route and the recipes it used](https://totaljs-es.github.io/totem/img/shots/chat-light.webp)
 
-The line "Knowledge used" says what Totem put in front of the model: its own recipes and the pages of [Forge](https://forge.totaljs.es). Every code box has a button to copy it. The first time, Totem asks to connect to Forge: **Allow once** or **Always allow**, as you prefer.
+The line "Knowledge used" says what Totem put in front of the model: its own recipes and the pages of its library. Every code box has a button to copy it.
 
 ## Let it change your code
 
