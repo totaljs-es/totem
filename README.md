@@ -46,6 +46,13 @@ Totem is one application with three ways to run: a command, a Docker container a
 - **Careful with your machine.** Configured keys are masked, `.env` reads ask first, a shared server needs a token, and the Docker image runs without root.
 - **Your language.** English, Spanish and Slovak, chosen in Settings.
 
+## Totem, the model
+
+Totem is also a small language model trained for Total.js. It knows its application, and its application knows it:
+
+- **In its application** it builds whole applications: it has the tools, the plan and the checks, reads and writes the files of your project and builds a Total.js 5 application task by task.
+- **Anywhere else** (Ollama, LM Studio, any chat) it is an assistant that knows Total.js: it answers your questions about Total.js 5 and jComponent 20 with short code, and for a whole application it sends you to its application.
+
 ## Quick start
 
 Three ways: **npm** (below), **Docker** (`docker pull ghcr.io/totaljs-es/totem:latest`, see [Docker](#docker)) or the **source**.
