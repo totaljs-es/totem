@@ -3,8 +3,8 @@
 
 // Takes the screenshots of the website (img/shots) from a real Totem in a temporary data folder, with a demo project that is made up (a small Total.js
 // tickets application). The answer about Total.js is a real model (Ollama with qwen2.5:1.5b, 986 MB); the edits, the permissions, the worktree and the
-// terminal come from a scripted demo model ("demo-agent"), because a model of that size does not edit files reliably and a screenshot must show the interface,
-// not a lucky run. The files of the application built in small tasks come from it too; its plan, its tasks, its checks and the application
+// terminal come from a scripted demo model ("demo-agent"), so that a screenshot comes out the same every time
+// it is taken. The files of the application built in small tasks come from it too; its plan, its tasks, its checks and the application
 // that starts are the real ones. Needs Google Chrome. A tooling script that runs with plain Node.js 22 or newer: it is not part of the application.
 //
 //   node scripts/screenshots.js --app ../totem [--model ollama:qwen2.5:1.5b] [--out img/shots]
