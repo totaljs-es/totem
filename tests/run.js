@@ -440,6 +440,9 @@ Test.push('retry', async function(next) {
 	await until(() => events.some(e => e.type === 'session.status' && e.data.status === 'error'));
 	check('an authentication error is not retried', events.filter(e => e.type === 'error').length === 1 && events.find(e => e.type === 'error').data.retry === false);
 
+	// The run before has ended completely (its last events are in) before the events are counted again
+	await until(() => !MAIN.running[id]);
+	await new Promise(resolve => setTimeout(resolve, 150));
 	events.length = 0;
 	script = [{ error: '503: a' }, { error: '503: b' }, { error: '503: c' }, { error: '503: d' }];
 	await api('sessions_prompt/' + id, { text: 'again' });
@@ -447,6 +450,8 @@ Test.push('retry', async function(next) {
 	check('retries stop after the limit', events.filter(e => e.type === 'error' && e.data.retry === true).length === 3);
 
 	// A tool call that the output limit cut: Ollama answers 500, and asking again would only repeat it
+	await until(() => !MAIN.running[id]);
+	await new Promise(resolve => setTimeout(resolve, 150));
 	events.length = 0;
 	script = [{ error: '500: llama-server returned invalid tool call arguments for "write": unexpected end of JSON input' }, { content: 'Not reached.' }];
 	await api('sessions_prompt/' + id, { text: 'again' });
