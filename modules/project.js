@@ -14,7 +14,7 @@ exports.id = 'project';
 var TYPES = ['String', 'Number', 'Boolean', 'Date', 'Email', 'Phone', 'URL'];
 
 // The names a model writes for the same types (the ones of SQL and of other languages)
-var ALIASES = { int: 'Number', integer: 'Number', float: 'Number', decimal: 'Number', double: 'Number', numeric: 'Number', text: 'String', varchar: 'String', bool: 'Boolean', datetime: 'Date', timestamp: 'Date', mail: 'Email', tel: 'Phone', link: 'URL' };
+var ALIASES = { int: 'Number', integer: 'Number', float: 'Number', decimal: 'Number', double: 'Number', numeric: 'Number', text: 'String', varchar: 'String', bool: 'Boolean', datetime: 'Date', timestamp: 'Date', mail: 'Email', tel: 'Phone', link: 'URL', color: 'String', icon: 'String', json: 'String', time: 'String' };
 var RESERVED = ['id', 'dtcreated', 'dtupdated'];
 var MAXPLUGINS = 8;
 var MAXFIELDS = 16;
