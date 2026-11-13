@@ -52,6 +52,8 @@ Totem makes the tasks from the card. The model does not decide them:
 
 That is a short prompt, which matters on a computer without a GPU, where reading the prompt is the slow part.
 
+A task has one tool, the one that writes, and it may write one file, its own, once. Any other call is refused, and the run ends when the file is written: a model that goes on by itself cannot touch the files of the other tasks, and each task is one call to the model.
+
 ## The checks
 
 After each task Totem checks the file before it goes on: the actions that the routes call exist, the input has every field of the card with its type, the file is valid JavaScript, the screen and the form use the endpoints of their plugin and none of the example. One line is not asked again: the input of the action that saves is the card word for word (`id:UID` and the fields), so when the model misplaces a star Totem sets that line from the card, as it does with the names. The same for the names of the example plugin that a model leaves in a screen or a form where the endpoints and the path of the form go: they are the card's, and Totem puts them. The texts and the fields are the model's, and they are checked. A file that fails is asked once more with the problem in a sentence. If it fails again the build stops there and says why; the next `/build` starts at that task.

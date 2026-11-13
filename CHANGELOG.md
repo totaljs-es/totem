@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- A task of a project writes one file and ends: the model gets only the tool that writes, every call but the one that writes the file of the task is refused, and the run ends when that file is written. A model that went on by itself after its file wrote over the files of the other tasks and repeated itself until the step limit; now it cannot, and each task is one call to the model.
 - The actions of an application go in `actions/`: the recipes, the instructions of the model, the skill and the files of a project (`plugins/<name>/actions/<name>.js`) say so. An application that already has `schemas/` keeps its actions there; Total.js 5 loads both folders in the same way.
 - A model of a local Ollama whose name was typed by hand in the form of the provider gets what the server says of it (tools, thinking, context), as a detected one does. Without that the thinking of a small model was not switched off, and its whole answer stayed in the thinking. The plan of a project is read from the thinking when the answer is there.
 - In a build, the input of the action that saves is set from the card when the model misplaces the star of a required field (a required `id` refused every new row and stopped the build after two tries): that line is the card word for word, as the names of the actions are. The names of the example plugin that a model leaves in a screen or a form (the endpoints, the path of the form) are changed to the ones of the card too.

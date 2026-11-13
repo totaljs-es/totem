@@ -2757,8 +2757,18 @@ Test.push('new models of a local Ollama are added by themselves', function(next)
 		res.setHeader('content-type', 'application/json');
 		if (req.url === '/api/tags')
 			res.end(JSON.stringify({ models: installed.map(name => ({ name: name })) }));
-		else if (req.url === '/api/show')
-			res.end(JSON.stringify({ capabilities: ['completion', 'tools'], model_info: { 'x.context_length': 8192 }, system: installed.length > 1 ? 'You are Totem, the programming assistant of Total.js.' : '' }));
+		else if (req.url === '/api/show') {
+			// What the server says of the model that is asked for: only two:4b says inside that it is Totem
+			var body = '';
+			req.on('data', chunk => body += chunk);
+			req.on('end', function() {
+				var asked = '';
+				try {
+					asked = JSON.parse(body).model;
+				} catch (e) {}
+				res.end(JSON.stringify({ capabilities: ['completion', 'tools'], model_info: { 'x.context_length': 8192 }, system: asked === 'two:4b' ? 'You are Totem, the programming assistant of Total.js.' : '' }));
+			});
+		}
 		else {
 			res.statusCode = 404;
 			res.end('{}');
@@ -2969,10 +2979,10 @@ Test.push('a project in small tasks: the card, the plan and the build task by ta
 	// The build: the first try of the actions forgets one of them and is asked again with the problem
 	var bad = schemas.replace("NEWACTION('Products|remove'", "NEWACTION('Products|delete'");
 	script = [
-		{ tools: [{ id: 'p1', name: 'write', arguments: { path: 'plugins/products/actions/products.js', content: bad } }] }, { content: 'Done.' },
-		{ tools: [{ id: 'p2', name: 'write', arguments: { path: 'plugins/products/actions/products.js', content: schemas } }] }, { content: 'Done.' },
-		{ tools: [{ id: 'p3', name: 'write', arguments: { path: 'plugins/products/public/index.html', content: screen } }] }, { content: 'Done.' },
-		{ tools: [{ id: 'p4', name: 'write', arguments: { path: 'plugins/products/public/form.html', content: form } }] }, { content: 'Done.' }
+		{ tools: [{ id: 'p1', name: 'write', arguments: { path: 'plugins/products/actions/products.js', content: bad } }] },
+		{ tools: [{ id: 'p2', name: 'write', arguments: { path: 'plugins/products/actions/products.js', content: schemas } }] },
+		{ tools: [{ id: 'p3', name: 'write', arguments: { path: 'plugins/products/public/index.html', content: screen } }] },
+		{ tools: [{ id: 'p4', name: 'write', arguments: { path: 'plugins/products/public/form.html', content: form } }] }
 	];
 	before = requests.length;
 	await api('sessions_prompt/' + id, { text: '/build' });
@@ -2988,6 +2998,7 @@ Test.push('a project in small tasks: the card, the plan and the build task by ta
 	check('the three files of the model are there, the actions from the second try', Total.Fs.readFileSync(Total.Path.join(dir, 'plugins/products/actions/products.js'), 'utf8') === schemas && exists('plugins/products/public/index.html') && exists('plugins/products/public/form.html'));
 	var asked = requests.slice(before);
 	var texts = asked.map(q => q.messages.filter(m => m.role === 'user').map(m => typeof(m.content) === 'string' ? m.content : JSON.stringify(m.content)).join('\n'));
+	check('a task of the model has one tool, the one that writes, and the model is not asked again after its file is written', asked.every(q => (q.tools || []).length === 1 && q.tools[0].function.name === 'write') && asked.length === 4);
 	check('each task is a run with no history: only its own instruction', asked.every(q => q.messages.filter(m => m.role === 'user').length === 1) && texts.some(x => /Task 3 of 5/.test(x)) && texts.some(x => /Task 5 of 5/.test(x)));
 	check('the second try gets the problem of the first', texts.some(x => /The file you wrote has a problem: it must define the actions Products\|remove/.test(x)));
 	check('the plan for people has every task ticked', (Total.Fs.readFileSync(Total.Path.join(dir, '.totem/project.md'), 'utf8').match(/- \[x\]/g) || []).length === 5);
@@ -3002,10 +3013,36 @@ Test.push('a project in small tasks: the card, the plan and the build task by ta
 	saved = P.load(dir);
 	check('a plugin added to the card adds its tasks and keeps the ones that are done', saved.tasks.length === 9 && saved.tasks.filter(t => t.status === 'done').length === 5 && saved.tasks.filter(t => t.plugin === 'customers').every(t => t.status === 'pending'));
 
+	// A model that goes on by itself: the calls that are not the file of the task are refused, and the file of another task is not touched
+	var dir4 = Total.Path.join(TMP, 'runaway');
+	Total.Fs.mkdirSync(dir4, { recursive: true });
+	var project4 = (await api('projects_open', { path: dir4 })).response;
+	var id4 = (await api('sessions_create', { projectid: project4.id, model: 'fake' })).response.id;
+	await api('sessions_prompt/' + id4, { text: '/project APP: shop\n\nPLUGIN: products\nFIELDS: *name:String, price:Number' });
+	await until(() => Total.Fs.existsSync(Total.Path.join(dir4, '.totem/project.json')), 5000);
+	script = [
+		{ tools: [
+			{ id: 'r1', name: 'write', arguments: { path: 'plugins/products/index.js', content: 'broken' } },
+			{ id: 'r2', name: 'bash', arguments: { command: 'echo hi' } },
+			{ id: 'r3', name: 'write', arguments: { path: 'plugins/products/actions/products.js', content: schemas } },
+			{ id: 'r4', name: 'write', arguments: { path: 'plugins/products/actions/products.js', content: 'again' } }
+		] },
+		{ tools: [{ id: 'r5', name: 'write', arguments: { path: 'plugins/products/public/index.html', content: screen } }] },
+		{ tools: [{ id: 'r6', name: 'write', arguments: { path: 'plugins/products/public/form.html', content: form } }] }
+	];
+	events.length = 0;
+	await api('sessions_prompt/' + id4, { text: '/build' });
+	await until(() => MAIN.building[id4], 2000);
+	await until(() => !MAIN.building[id4] && !MAIN.running[id4], 20000);
+	var plan4 = P.load(dir4);
+	var denied = events.filter(e => e.sessionid === id4 && e.type === 'part.updated' && e.data.part.type === 'tool' && e.data.part.data.status === 'denied').map(e => e.data.part.data.call);
+	check('a task writes only its own file, once: the other calls of the model are refused', plan4.tasks.every(t => t.status === 'done') && denied.indexOf('r1') !== -1 && denied.indexOf('r2') !== -1 && denied.indexOf('r4') !== -1 && denied.indexOf('r3') === -1);
+	check('the file of another task and the file of the task itself are as they were written', /Products\|save/.test(Total.Fs.readFileSync(Total.Path.join(dir4, 'plugins/products/index.js'), 'utf8')) && Total.Fs.readFileSync(Total.Path.join(dir4, 'plugins/products/actions/products.js'), 'utf8') === schemas);
+
 	// A file of the model that fails twice stops the build there
 	script = [
-		{ tools: [{ id: 'c1', name: 'write', arguments: { path: 'plugins/customers/actions/customers.js', content: 'var x = 1;\n' } }] }, { content: 'Done.' },
-		{ tools: [{ id: 'c2', name: 'write', arguments: { path: 'plugins/customers/actions/customers.js', content: 'var x = 2;\n' } }] }, { content: 'Done.' }
+		{ tools: [{ id: 'c1', name: 'write', arguments: { path: 'plugins/customers/actions/customers.js', content: 'var x = 1;\n' } }] },
+		{ tools: [{ id: 'c2', name: 'write', arguments: { path: 'plugins/customers/actions/customers.js', content: 'var x = 2;\n' } }] }
 	];
 	await api('sessions_prompt/' + id, { text: '/build' });
 	await until(() => MAIN.building[id], 2000);
@@ -3078,9 +3115,9 @@ Test.push('a project in small tasks: the card, the plan and the build task by ta
 	check('the status says what is done and what is next', /^notes: 0 of 5 tasks done\npending: 1, 2, 3, 4, 5 \(send "build"\)$/.test(r.text));
 
 	script = [
-		{ tools: [{ id: 'a1', name: 'write', arguments: { path: 'plugins/products/actions/products.js', content: schemas } }] }, { content: 'Done.' },
-		{ tools: [{ id: 'a2', name: 'write', arguments: { path: 'plugins/products/public/index.html', content: screen } }] }, { content: 'Done.' },
-		{ tools: [{ id: 'a3', name: 'write', arguments: { path: 'plugins/products/public/form.html', content: form } }] }, { content: 'Done.' }
+		{ tools: [{ id: 'a1', name: 'write', arguments: { path: 'plugins/products/actions/products.js', content: schemas } }] },
+		{ tools: [{ id: 'a2', name: 'write', arguments: { path: 'plugins/products/public/index.html', content: screen } }] },
+		{ tools: [{ id: 'a3', name: 'write', arguments: { path: 'plugins/products/public/form.html', content: form } }] }
 	];
 	r = await text('POST', '/agent/build/', { path: dir3, wait: 30 });
 	check('a build answers when it ends, with the whole result in two lines', r.status === 200 && r.text === 'notes: 5 of 5 tasks done\nrun it: npm install && node index.js 8000' && Total.Fs.existsSync(Total.Path.join(dir3, 'plugins/products/public/form.html')));

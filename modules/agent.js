@@ -691,7 +691,9 @@ function request(run, finish, fail) {
 	if (meta.vision === false)
 		ai.payload.messages = withoutimages(ai.payload.messages);
 
-	ai.payload.tools = (meta.tools === false || run.notools || run.question || run.complaining) ? [] : exports.definitions(null, run.mode).concat(run.mode === 'plan' ? [] : ((run.mcp && run.mcp.defs) || []));
+	// A task of a project has one tool: the one that writes its file
+	var onlywrite = run.task && !run.task.files;
+	ai.payload.tools = (meta.tools === false || run.notools || run.question || run.complaining) ? [] : exports.definitions(onlywrite ? ['write'] : null, run.mode).concat(run.mode === 'plan' || onlywrite ? [] : ((run.mcp && run.mcp.defs) || []));
 	// A model of up to 4B that can think spends its short answer on the thinking, and loops in it: thinking is off for it unless the user
 	// chose a level in the session (Default in the selector is this, Off and the levels are what they say)
 	ai.payload.reasoning = run.reasoning || (smallmodel(run.model) ? 'none' : '');
@@ -837,10 +839,14 @@ function request(run, finish, fail) {
 			// that do not exist yet are written through the same tool (with its permission, its diff and its undo): the answer says it did.
 			var made = (!cut && !remaining.length && run.make && run.mode === 'build' && smallmodel(run.model)) ? newfiles(run, output.content || '') : [];
 
+			// In a task of a project only its own file counts
+			if (run.task && !run.task.files)
+				made = made.filter(file => file.path === run.task.path);
+
 			if (made.length) {
 				var calls = made.map(file => ({ id: 'w' + UID(), name: 'write', arguments: { path: file.path, content: file.content } }));
 				msg.tool_calls = calls.map(t => ({ id: t.id, type: 'function', function: { name: t.name, arguments: JSON.stringify(t.arguments) } }));
-				runtools(run, calls, () => step(run, finish, fail));
+				runtools(run, calls, () => aftertools(run, finish, fail));
 				return;
 			}
 
@@ -852,9 +858,26 @@ function request(run, finish, fail) {
 			addpart(run, 'text', { text: FUNC.scrub(output.content) }, true);
 
 		runtools(run, tools, function() {
-			step(run, finish, fail);
+			aftertools(run, finish, fail);
 		});
 	});
+}
+
+// A task of a project (modules/project.js) is one file. The call that writes it is the only one that runs, and the run ends when the file
+// is written: a model that goes on by itself after its file cannot touch the files of the other tasks, and is not asked again.
+function owntask(run, tool) {
+	if (!run.task || run.task.files)
+		return false;
+	var path = Total.Path.normalize(((tool.arguments || {}).path || '') + '').replace(/^\.\//, '');
+	return tool.name === 'write' && path === run.task.path;
+}
+
+function aftertools(run, finish, fail) {
+	if (run.task && !run.task.files && run.taskwritten) {
+		closeparts(run);
+		finish('idle');
+	} else
+		step(run, finish, fail);
 }
 
 // Opens a part, or appends to the open part of the same type
@@ -1001,10 +1024,26 @@ function runtools(run, tools, callback) {
 
 		part.data.input = tool.arguments || {};
 
+		// A task of a project: every call but the one that writes its file is refused, and the file is written once
+		if (run.task && !run.task.files && (!owntask(run, tool) || run.taskwritten)) {
+			var refused = 'This task writes only the file ' + run.task.path + ', once, with the write tool.';
+			run.denials++;
+			part.data.status = 'denied';
+			part.data.output = '';
+			part.data.error = refused;
+			FUNC.emit(run.sessionid, 'part.updated', { part: part });
+			storepart(run, part);
+			run.messages.push({ role: 'tool', tool_call_id: tool.id, content: 'Error: ' + refused });
+			next();
+			return;
+		}
+
 		function result(status, output, error) {
 			output = FUNC.scrub(output);
 			error = FUNC.plain(FUNC.scrub(error));
 			run.denials = status === 'denied' ? run.denials + 1 : 0;
+			if (status === 'done' && owntask(run, tool))
+				run.taskwritten = true;
 			part.data.status = status;
 			part.data.output = output || '';
 			part.data.error = error || '';
