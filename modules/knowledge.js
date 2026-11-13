@@ -321,6 +321,224 @@ function addlibrarymeta(items, text, base) {
 
 exports.addlibrarymeta = addlibrarymeta;
 
+// The questions and answers of the library one by one. A small model answers right with the one answer that matches the question in front of it,
+// and is lost with a whole page of answers to similar questions: the search finds the answer, not the page. The questions are in English,
+// Spanish and Slovak in the same order, so the same answer in each language has the same key.
+var ANSWERSECTIONS = /^(Questions|Questions in [A-Za-z]+|Answers)$/i;
+
+// Words that say nothing about the topic, in English, Spanish and Slovak, without accents
+var QSTOP = ('the a an and or to of in on for with how do does did i my me is are am it its this that these what which can could should would will when where who why be by from as at your you we our us use using want need get make write give show tell there here then than so not no yes just about into one some any all ' +
+	'el la los las un una unos unas de del en con para por como que y o a al lo es mi mis tu tus su sus se no si hay cual donde cuando quien hola buenas oye duda pregunta quiero quisiera puedo puedes hago hacer tengo debo uso usar ese esa este esta esto eso me te le nos les ya muy mas pero tambien sobre entre algo alguna alguno todo toda ' +
+	'v na sa ako je to s z do pre co ktory ktora ktore mam mozem chcem som aj alebo ale').split(' ').reduce((map, word) => (map[word] = 1, map), {});
+
+function terms(text) {
+
+	var out = [];
+
+	(text || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9$_.|]+/g, ' ').split(' ').forEach(function(word) {
+
+		word = word.replace(/^[.|]+|[.|]+$/g, '');
+
+		if (!word)
+			return;
+
+		// An API name counts whole and by its parts: DATA.modify finds a question that says "modify"
+		var parts = /[.|]/.test(word) ? [word].concat(word.split(/[.|]/)) : [word];
+
+		parts.forEach(function(part) {
+			if (part.length < 2 || QSTOP[part])
+				return;
+			// The plural is the singular: routes, records, acciones
+			if (part.length > 5 && /ones$/.test(part))
+				part = part.substring(0, part.length - 2);
+			else if (part.length > 3 && /[^s]s$/.test(part))
+				part = part.substring(0, part.length - 1);
+			out.push(part);
+		});
+	});
+
+	return out;
+}
+
+exports.terms = terms;
+
+// The answers of one page of the library: every "## question" of a page of questions, or the whole page of an answer
+exports.units = function(markdown, page) {
+
+	var text = (markdown || '').replace(/\r/g, '');
+	var meta = '';
+	var head = text.match(/^---\n([^]*?)\n---\n/);
+
+	if (head) {
+		meta = head[1];
+		text = text.substring(head[0].length);
+	}
+
+	var file = page.url.replace(/^.*\/(questions|answers)\/(?:[a-z]{2}\/)?/, '$1/');
+	var units = [];
+
+	if (/^answers\//.test(file)) {
+		var title = (text.match(/^# (.+)$/m) || [])[1] || page.title;
+		var also = (meta.match(/^question_[a-z]{2}:\s*(.+)$/gm) || []).map(line => line.replace(/^question_[a-z]{2}:\s*/, '')).join(' ');
+		units.push({ key: file, title: title.trim(), also: also, body: text.replace(/^# .+\n+/m, '').trim(), url: page.url });
+		return units;
+	}
+
+	var parts = text.split(/^## (.+)$/m);
+
+	for (var i = 1; i < parts.length; i += 2)
+		units.push({ key: file + '#' + ((i - 1) / 2), title: parts[i].trim(), also: '', body: parts[i + 1].trim(), url: page.url });
+
+	return units;
+};
+
+// callback(units): the answers of the library, kept for a day like its index (an empty list when it is not available)
+function loadquestions(callback) {
+
+	var cache = MAIN.libraryquestions;
+
+	if (cache && cache.until > Date.now()) {
+		callback(cache.units);
+		return;
+	}
+
+	get(libraryurl() + '/llms.txt', function(text) {
+
+		var pages = (text ? parseindex(text) : []).filter(item => ANSWERSECTIONS.test(item.section));
+		var units = [];
+
+		pages.wait(function(page, next) {
+			get(page.url, function(markdown) {
+				markdown && units.push.apply(units, exports.units(markdown, page));
+				next();
+			});
+		}, function() {
+			// Other ways of asking each question (questions/asked.json of the library): the words that people use and the question does not
+			get(libraryurl() + '/questions/asked.json', function(text) {
+				exports.asked(units, text ? parse(text) : null);
+				exports.index(units);
+				MAIN.libraryquestions = { units: units, until: Date.now() + (units.length ? INDEXTTL : INDEXRETRY) };
+				callback(units);
+			});
+		}, 6);
+	});
+}
+
+// { "<question in English>": ["another way of asking", ...] } joined to the answer of that question in every language
+exports.asked = function(units, map) {
+
+	if (!map || typeof(map) !== 'object')
+		return;
+
+	var keys = {};
+
+	units.forEach(function(unit) {
+		if (!/\/(es|sk)\//.test(unit.url))
+			keys[unit.title] = unit.key;
+	});
+
+	var byKey = {};
+
+	Object.keys(map).forEach(function(question) {
+		var key = keys[question];
+		if (key && Array.isArray(map[question]))
+			byKey[key] = map[question].join(' ');
+	});
+
+	units.forEach(function(unit) {
+		if (byKey[unit.key])
+			unit.also = (unit.also + ' ' + byKey[unit.key]).trim();
+	});
+};
+
+exports.loadquestions = loadquestions;
+
+// The words of each answer, with the words of its question three times: what someone asks is in the question more than in the answer
+exports.index = function(units) {
+
+	var df = {};
+	var total = 0;
+
+	units.forEach(function(unit) {
+		var tf = {};
+		var count = 0;
+		var add = function(words, weight) {
+			words.forEach(function(word) {
+				tf[word] = (tf[word] || 0) + weight;
+				count += weight;
+			});
+		};
+		add(terms(unit.title + ' ' + unit.also), 3);
+		add(terms(unit.body), 1);
+		unit.tf = tf;
+		unit.length = count;
+		total += count;
+		Object.keys(tf).forEach(word => df[word] = (df[word] || 0) + 1);
+	});
+
+	units.stats = { df: df, n: units.length, avg: units.length ? total / units.length : 1 };
+	return units;
+};
+
+// The answers that share words with a question, the best first (BM25), each with its score and the part of the question it covers (0 to 1). The
+// same answer in another language is the same answer: only the best of them stays.
+function scored(units, text) {
+
+	var stats = units.stats;
+
+	if (!stats || !units.length)
+		return [];
+
+	var asked = terms(text).filter((word, index, arr) => arr.indexOf(word) === index);
+	var known = asked.filter(word => stats.df[word]);
+
+	if (!known.length)
+		return [];
+
+	var idf = {};
+	var top = 0;
+
+	known.forEach(function(word) {
+		idf[word] = Math.log(1 + (stats.n - stats.df[word] + 0.5) / (stats.df[word] + 0.5));
+		top += idf[word];
+	});
+
+	var K = 1.2;
+	var B = 0.75;
+	var best = {};
+
+	units.forEach(function(unit) {
+		var score = 0;
+		var matched = 0;
+		known.forEach(function(word) {
+			var tf = unit.tf[word];
+			if (!tf)
+				return;
+			matched += idf[word];
+			score += idf[word] * (tf * (K + 1)) / (tf + K * (1 - B + B * unit.length / stats.avg));
+		});
+		if (!score)
+			return;
+		var key = unit.key;
+		if (!best[key] || best[key].score < score)
+			best[key] = { unit: unit, score: score, covered: matched / top };
+	});
+
+	return Object.keys(best).map(key => best[key]).sort((a, b) => b.score - a.score);
+}
+
+// The answers for a question by its words alone. A second answer comes only when it scores almost as the first; nothing comes when the best answer
+// shares too little with the question.
+exports.answers = function(units, text, max) {
+	var list = scored(units, text).filter(entry => entry.covered >= 0.5);
+	return list.filter((entry, index) => index === 0 || entry.score >= list[0].score * 0.85).slice(0, max || 2).map(entry => entry.unit);
+};
+
+// The answers that may be the right one, for the model to choose among them by their questions
+exports.candidates = function(units, text, max) {
+	return scored(units, text).slice(0, max || 20).map(entry => entry.unit);
+};
+
 // The sections of the index that are not documentation of a product
 var NOTDOCS = /^(Start here|Recorded performance benchmarks|Products and versions|Optional|Agent navigation and usage)$/i;
 
@@ -590,6 +808,67 @@ function fromdocs(run, asked, pages, recipetext, callback, empty, use) {
 	});
 }
 
+// The model chooses, among the questions of the library that share words with the question of the user, the one that answers it: the words
+// find the candidates, the meaning finds the answer ("fetch a single row" is "read one record"). callback(unit or null)
+function choose(run, text, list, callback) {
+
+	if (!list.length || !run.model || !F.aimodels[run.model] || (run.conf || CONF).librarychoose === false) {
+		callback(null);
+		return;
+	}
+
+	var ai = AIMODEL(run.model);
+	var done = false;
+	var finish = function(unit) {
+		if (!done) {
+			done = true;
+			clearTimeout(timer);
+			callback(unit);
+		}
+	};
+	var timer = setTimeout(() => finish(null), 30000);
+
+	ai.conf = run.conf;
+	ai.payload.reasoning = 'none';
+	ai.payload.messages = [
+		{ role: 'system', content: 'You choose the right page of the Total.js documentation. Reply with a number only.' },
+		{ role: 'user', content: 'Question of a user:\n' + text.substring(0, 1500) + '\n\nQuestions of the Total.js library:\n' + list.map((unit, index) => (index + 1) + '. ' + unit.title).join('\n') + '\n\nWhich question of the library has the answer to the question of the user? Reply with its number only, or 0 when none of them has it.' }
+	];
+
+	ai.callback(function(err, output) {
+		var number = err || !output ? 0 : parseInt(((output.content || '').match(/\d+/) || ['0'])[0]);
+		finish(number > 0 && number <= list.length ? list[number - 1] : null);
+	});
+}
+
+// The answers of the library for a question: the one that the model chose and the first one by words, when they differ
+function fromanswers(run, text, recipetext, callback, empty) {
+	loadquestions(function(units) {
+
+		var list = exports.candidates(units, text, 12);
+		var direct = exports.answers(units, text, 1)[0];
+
+		if (!list.length) {
+			empty();
+			return;
+		}
+
+		choose(run, text, list, function(chosen) {
+
+			var given = [chosen, direct].filter((unit, index, arr) => unit && arr.findIndex(other => other && other.key === unit.key) === index);
+
+			if (!given.length) {
+				empty();
+				return;
+			}
+
+			var max = (run.conf || CONF).forgechars || 3500;
+			run.knowledge = (recipetext ? (recipetext + '\n\n') : '') + 'Answers of the library of Totem (' + libraryurl() + ') to the question of the user. Answer with them: they are the documentation of Total.js 5 and jComponent 20.\n\n' + given.map(unit => '### ' + unit.title + '\n' + conventions(exports.fit(unit.body, text, max))).join('\n\n');
+			callback(given.map(unit => ({ title: unit.title, url: unit.url.replace(/\.md$/, '/') })));
+		});
+	});
+}
+
 // callback([{ title, url }]) with the pages that were added to run.knowledge (an empty list when there is nothing to add)
 exports.prefetch = function(run, text, callback_) {
 
@@ -655,9 +934,20 @@ exports.prefetch = function(run, text, callback_) {
 	var use = { library: conf.library !== false, forge: conf.forge !== false && conf.forgedocs !== false };
 
 	if ((use.library || use.forge) && MODS.instructions.istotaljs(run.root, conf)) {
-		fromdocs(run, asked, pages, recipetext, callback, function() {
-			canmcp ? viamcp() : callback([]);
-		}, use);
+
+		var docs = function() {
+			fromdocs(run, asked, pages, recipetext, callback, function() {
+				canmcp ? viamcp() : callback([]);
+			}, use);
+		};
+
+		// With libraryanswers, a question gets the one answer of the library that matches it: the pages come only when no answer does
+		if (!use.library || !pages || !conf.libraryanswers) {
+			docs();
+			return;
+		}
+
+		fromanswers(run, text, recipetext, callback, docs);
 		return;
 	}
 

@@ -52,6 +52,10 @@ totaljs                     : auto
 // read live from its llms.txt with a GET. The pages that match a request go in front of the model. false turns it off. libraryurl is where it is.
 library                     : true
 libraryurl                  : https://raw.githubusercontent.com/totaljs-es/knowledge/main
+// libraryanswers: a question gets the one answer of the library that matches it instead of the pages: the words of the question find a few candidates
+// and the model of the session chooses the right one by its question (librarychoose). Off by default until it answers better than the pages.
+libraryanswers              : false
+librarychoose               : true
 // The recipes of Totem (private/recipes) that go in front of the model for a request about Total.js 5: how many at most, and false to turn them off
 recipes                     : true
 reciperesults     (Number)  : 2
@@ -72,6 +76,12 @@ forgedocs                   : true
 forgeurl                    : https://forge.totaljs.es
 // The MCP server of Forge (its tools search, read and verify names) is started only when forge and this are true, and it asks permission once.
 forgemcp                    : false
+
+// Totem 4B on this computer (Settings > Totem 4B): Totem downloads the model and llama.cpp, checks both and starts llama-server on 127.0.0.1 at this
+// port. llamaserver is a llama-server of your own instead of the one installed on this computer or downloaded. false does not start it with Totem.
+localmodel                  : true
+localmodelport    (Number)  : 8091
+llamaserver                 :
 conventions                 : true
 
 // Run the formatter of the project (a local prettier, gofmt, rustfmt, ruff or .totem/formatters.json) after a file is written

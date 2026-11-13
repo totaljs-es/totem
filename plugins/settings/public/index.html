@@ -19,6 +19,29 @@
 				</div>
 			</script>
 		</ui-bind>
+		<div class="caption mb10"><label><i class="ti ti-microchip"></i>Totem 4B</label></div>
+		<div class="help mb10">@(The model of Totem, trained on Total.js, on this computer: Totem downloads it with llama.cpp and starts it. Nothing leaves this computer.)</div>
+		<ui-bind path="?.local" config="template" class="block mb10">
+			<script type="text/html">
+				{{ if value }}
+				<div style="border:1px solid var(--t-border);border-radius:var(--radius,6px);padding:10px;display:flex;gap:10px;align-items:center">
+					{{ 'totem' | provicon('Totem 4B', true) }}
+					<div style="flex:1;min-width:0">
+						<b>{{ value.name }} {{ value.version }}</b>
+						<div class="fs12" style="color:var(--t-muted)">
+							{{ if value.status === 'downloading' }}{{ if value.step === 'engine' }}@(Downloading llama.cpp){{ else }}@(Downloading the model){{ fi }}: {{ value.progress }} %{{ fi }}
+							{{ if value.status === 'starting' }}@(Starting...){{ fi }}
+							{{ if value.running }}@(Running on this computer){{ fi }}
+							{{ if value.status === 'error' }}<span class="red">{{ value.error }}</span>{{ fi }}
+							{{ if value.status !== 'downloading' && value.status !== 'starting' && !value.running && value.status !== 'error' }}{{ if value.installed }}@(Installed, stopped){{ else }}{{ if value.supported }}@(Download:) {{ value.size | filesize }}{{ else }}@(Install llama-server to run it on this computer.){{ fi }}{{ fi }}{{ fi }}
+						</div>
+					</div>
+					{{ if value.running }}<button class="tbtn tbtn-small exec" data-exec="?/localstop"><i class="ti ti-stop-alt"></i>@(Stop)</button>{{ fi }}
+					{{ if !value.running && value.status !== 'downloading' && value.status !== 'starting' && value.supported }}<button class="tbtn tbtn-small tbtn-primary exec" data-exec="?/localinstall"><i class="ti ti-{{ if value.installed }}play{{ else }}download{{ fi }}"></i>{{ if value.installed }}@(Start){{ else }}@(Download){{ fi }}</button>{{ fi }}
+				</div>
+				{{ fi }}
+			</script>
+		</ui-bind>
 		<div class="caption mb10"><label><i class="ti ti-sliders-h"></i>@(Model and agent)</label></div>
 		<div class="help mb10">@(The values of the file config for every project: temperature, steps, size of the context, the knowledge of Total.js... A project or a session can change them for itself.)</div>
 		<div class="mb10">
@@ -90,6 +113,39 @@
 		exports.refresh = function() {
 			exports.tapi('providers', function(response) {
 				exports.set('items', response);
+			});
+			exports.local();
+		};
+
+		// Totem 4B on this computer: followed every second while it downloads or starts
+		var localtimer = null;
+
+		exports.local = function() {
+			clearTimeout(localtimer);
+			exports.tapi('localmodel', function(response) {
+				var was = (exports.model || {}).local;
+				exports.set('local', response);
+				if (response.status === 'downloading' || response.status === 'starting') {
+					localtimer = setTimeout(exports.local, 1000);
+				} else if (was && !was.running && response.running) {
+					SETTER('notify/success', '@(Totem 4B is ready.)');
+					exports.tapi('providers', items => exports.set('items', items));
+					PLUGINS.chat && PLUGINS.chat.models();
+				}
+			});
+		};
+
+		exports.localinstall = function() {
+			exports.tapi('localmodel_install ERROR', function() {
+				exports.local();
+			});
+		};
+
+		exports.localstop = function() {
+			exports.tapi('localmodel_stop ERROR', function() {
+				exports.local();
+				exports.tapi('providers', items => exports.set('items', items));
+				PLUGINS.chat && PLUGINS.chat.models();
 			});
 		};
 

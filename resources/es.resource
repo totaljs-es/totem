@@ -1,4 +1,5 @@
 T10e87d3 : Worktree de esta sesión. Rama base:
+T10g4e19 : El modelo de Totem, entrenado en Total.js, en tu ordenador: Totem lo descarga con llama.cpp y lo arranca. Nada sale de tu ordenador.
 T10i3rwu : Entre {0} y {1}
 T11fsngt : Elige al menos una herramienta
 T11pd1u9 : Totem no ha cambiado ningún archivo en esta sesión.
@@ -61,18 +62,21 @@ T1bkuj5y : archivos sin commitear
 T1blijdw : Buscar servidores en este ordenador
 T1bnptdu : Demasiadas redirecciones
 T1boqgq : Dividido
+T1br2gy : Iniciar
 T1br5dz : Pasos
 T1c7gi : Alto
 T1c7v89 : Token
 T1c7yd7 : Herramientas
 T1ckg6lg : La ruta no es una carpeta
 T1dnznbx : Código revisado antes de mostrar la respuesta final:
+T1dpnzt0 : Descargando llama.cpp
 T1ebyews : Prompts programados
 T1egq28u : Nombre de la primera sesión (opcional)
 T1ehk8yd : Ruta del archivo dentro del proyecto, por ejemplo public/demo.html
 T1ek2755 : Escribe el id de un modelo y pulsa intro
 T1eo1 : Añadir
 T1eu5pwf : Comandos que ha ejecutado Totem
+T1exsz6e : El archivo descargado no es el que se esperaba
 T1f73iv5 : Borrar sesión
 T1f7o0wl : Una programación necesita un nombre y un prompt
 T1firn : Modo
@@ -92,6 +96,7 @@ T1ib3u54 : Esta programación sigue en marcha
 T1iiam : Rehacer
 T1iry2b6 : Tarea no encontrada
 T1iueg : Se ejecuta
+T1iunt02 : Descarga:
 T1j2ql : Guardar
 T1j3tclq : Añadir solos los modelos que instale después
 T1j5ig : Enviar
@@ -127,6 +132,7 @@ T1qokrk4 : Apariencia
 T1qw7jns : Actualizar proveedor
 T1r0wli7 : Totem comprobó el código de la respuesta y pidió una corrección:
 T1r1ntsb : Otro, compatible con OpenAI
+T1r4de53 : Instala llama-server para usarlo en este ordenador.
 T1r87y6a : Los turnos anteriores se resumieron para mantener la conversación corta.
 T1r8zt37 : Abrir una carpeta
 T1rko4bz : No hay nada que mostrar. Carga la lista o cambia los filtros.
@@ -144,6 +150,7 @@ T1vfvtzd : Totem necesita tu respuesta
 T1vid7g8 : Escribe un comando y pulsa Enter
 T1vjos : gratis
 T1vkxphz : Ajustes de esta sesión, de este proyecto y de todos los proyectos
+T1vlff8 : Descargando el modelo
 T1wcdox2 : Un proveedor es cualquier servidor con una API compatible con OpenAI: OpenRouter, OpenAI, Ollama, LM Studio... Tus mensajes solo van a los proveedores que añadas aquí.
 T1xnp73t : Clave de API
 T1xvlny2 : Abrir esta carpeta
@@ -171,6 +178,7 @@ T6pomva : Se guarda cifrada en este ordenador y no se vuelve a mostrar.
 T6qs9a7 : Usa true o false
 T6v3crq : Plan, solo lee
 T6v6poe : Opciones
+T71eosu : Iniciando...
 T7h6hj1 : El nombre está vacío
 T7u1b6o : Déjalo vacío para el nombre por defecto: la sesión toma el nombre de tu primer mensaje.
 T80sg1 : El texto aparece varias veces: añade más contexto o activa all
@@ -183,7 +191,9 @@ T9jn8zg : Esta sesión no tiene worktree
 T9lvtgh : Puede pensar antes de responder
 T9tb4m0 : Permitir una vez
 T9ukspz : Copiar el código
+T9v49xm : Totem 4B no está instalado
 Taanudk : Elige uno de: {0}
+Taguavc : llama-server se ha parado
 Tajdv69 : Totem ha terminado
 Tbsl01y : URL no válida
 Tbsmk47 : Sin sesión
@@ -206,6 +216,7 @@ Tgbsmcl : Modelo y agente
 Tgchh32 : Ayudantes a los que el agente puede pasar una tarea
 Tgqxhtt : Aún no hay proyectos. Abre una carpeta para empezar.
 Th3pgr4 : El modelo de esta programación no está disponible
+Th42qcb : llama-server no ha cargado el modelo a tiempo
 Thm0jj3 : minutos
 Thwdl0y : El worktree de esta sesión se descartó: empieza una sesión nueva
 Ti90lzh : Archivos restaurados:
@@ -237,26 +248,32 @@ Tnwzya8 : Cada, minutos
 To17eqc : Adjuntar imágenes o archivos de texto
 To33mo2 : Proveedores
 To3gx5q : Totem quiere usar
+To56sw4 : No se ha podido descomprimir llama.cpp
 Tob1a65 : Sesiones
 Tob7cil : Totem se detuvo con un error
+Tooknmw : Descargar
 Tosmo8z : Ajustes
 Tp6sjhp : El intervalo es de al menos {0} minutos
 Tp81kq9 : trabajando
 Tpnaojj : en marcha
 Tpnjlc2 : Agentes para todos los proyectos
+Tpudcmu : La versión de llama.cpp no trae llama-server
 Tqtg2co : Bifurcar desde aquí
+Tqy36di : La descarga ha fallado
 Trfcwd7 : Conocimiento usado:
 Tsgot1b : Este modelo no está disponible
 Tsioqms : El proyecto tiene cambios sin commitear: haz commit o stash primero
 Tsmkvh9 : este ordenador
 Tsnldwr : ¿Borrar esta sesión y sus mensajes? Los archivos del proyecto no se tocan.
 Tsti7ge : El nombre usa minúsculas, números y guiones
+Tsxw4hr : Instalado, parado
 Tt398xu : ¿Quitar esta programación?
 Tty16h2 : Demasiados archivos: el límite es
 Tujymnx : La fusión tiene conflictos y se deshizo. Fusiona la rama tú mismo:
 Tuse4v4 : ¿Quitar este agente?
 Tuvdde1 : Puede usar herramientas
 Tv3r6gd : Quitar la carpeta de la lista
+Tvpo8jh : Funcionando en este ordenador
 Tw01jbu : Totem está trabajando
 Twcquze : Añadidos:
 Twef2um : Agentes
@@ -265,6 +282,8 @@ Twiir4u : Responder
 Tx9d2fu : Cancelar
 Txe90bg : cada día a las
 Txskn2j : Borrar
+Txzj7vy : Totem 4B está listo.
+Ty6h6eo : No hay una versión de llama.cpp para este sistema. Instala llama-server y vuelve a abrir Totem.
 Tyg8jb : Nueva programación
 Tyw9oul : Quitar
 Tz4gdhl : Qué debe hacer Totem cada vez

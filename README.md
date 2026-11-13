@@ -53,6 +53,8 @@ Totem is also a small language model trained for Total.js. It knows its applicat
 - **In its application** it builds whole applications: it has the tools, the plan and the checks, reads and writes the files of your project and builds a Total.js 5 application task by task.
 - **Anywhere else** (Ollama, LM Studio, any chat) it is an assistant that knows Total.js: it answers your questions about Total.js 5 and jComponent 20 with short code, and for a whole application it sends you to its application.
 
+In Totem, **Settings > Totem 4B > Download** gets it and runs it on your computer with llama.cpp: Totem downloads the model and llama.cpp, checks both and starts them, and `totem:4b` appears in the model selector. Nothing leaves your computer. It is also on [Ollama](https://ollama.com/totaljs-es/totem) (`ollama run totaljs-es/totem`), [LM Studio](https://lmstudio.ai/totaljs-es/totem) and [Hugging Face](https://huggingface.co/es-totaljs/totem-4b-gguf), for any program you prefer.
+
 ## Quick start
 
 Three ways: **npm** (below), **Docker** (`docker pull ghcr.io/totaljs-es/totem:latest`, see [Docker](#docker)) or the **source**.
@@ -191,7 +193,7 @@ Totem works with a 1.5B model and with the biggest ones. A few tips:
 When the project depends on `total5` (or is a new folder), Totem puts three things in front of the model:
 
 1. **Recipes** ([`private/recipes/`](private/recipes)): short, exact answers for the common tasks (routes, actions, NoSQL, config, `RESTBuilder`, auth, CRON, WebSockets, views, jComponent, plugins...), chosen by the words of your request. They work offline and follow the conventions to the letter.
-2. **The library** ([totaljs-es/knowledge](https://github.com/totaljs-es/knowledge)): conventions, questions and answers, tested applications and the catalogue of jComponent components and Total Icons, read live from its public index. The page that matches the request goes to the model, so a small model starts from the documentation and not from its memory. Small models use one focused recipe when it covers the task, and the pages when it does not.
+2. **The library** ([totaljs-es/knowledge](https://github.com/totaljs-es/knowledge)): conventions, questions and answers, tested applications and the catalogue of jComponent components and Total Icons, read live from its public index. The page that matches the request goes to the model, so a small model starts from the documentation and not from its memory. Small models use one focused recipe when it covers the task, and the pages when it does not. With `libraryanswers : true` a question gets instead the one answer of the library that matches it, chosen by the model among a few candidates.
 3. **A check of the code**: what the agent writes is checked against the [Total.js conventions](https://github.com/totaljs-es/conventions) (syntax, ES5, tabs, names with `|`, texts as `@(English)`, no invented functions) and the model fixes what is wrong. The code in an answer is checked too, and corrected once.
 
 To measure it with any model:

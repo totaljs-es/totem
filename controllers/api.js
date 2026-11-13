@@ -66,6 +66,9 @@ exports.install = function() {
 	ROUTE('+API    ?    -providers_templates        --> Providers|templates');
 	ROUTE('+API    ?    -providers_detect           --> Providers|detect');
 	ROUTE('+API    ?    +providers_available        --> Providers|available');
+	ROUTE('+API    ?    -localmodel                 --> Localmodel|status');
+	ROUTE('+API    ?    -localmodel_install         --> Localmodel|install');
+	ROUTE('+API    ?    -localmodel_stop            --> Localmodel|stop');
 
 	// Events
 	ROUTE('+SOCKET ?', socket);

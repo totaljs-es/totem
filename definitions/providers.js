@@ -29,6 +29,11 @@ FUNC.providers = function(callback) {
 		MAIN.modelmeta = {};
 		MAIN.modelprov = {};
 
+		// The models of a provider that was disabled or removed since the last load (Totem 4B stopped) leave the selector: only the ones that
+		// this function registered, never the ones of the tests
+		(MAIN.providermodels || []).forEach(name => delete F.aimodels[name]);
+		MAIN.providermodels = [];
+
 		for (var item of (response || [])) {
 
 			var key = FUNC.decryptkey(item.key);
@@ -41,6 +46,7 @@ FUNC.providers = function(callback) {
 				var meta = (item.meta && item.meta[model]) || {};
 				var config = { url: item.url, key: key, model: model, context: meta.context || null, reasoning: meta.reasoning === undefined ? null : meta.reasoning };
 				NEWAIMODEL(item.id + ':' + model, config, MODS.provider.byKind(item.kind));
+				MAIN.providermodels.push(item.id + ':' + model);
 				MAIN.modelmeta[item.id + ':' + model] = Object.assign({}, meta);
 				MAIN.modelmeta[item.id + ':' + model].totem = FUNC.istotem(model, meta);
 

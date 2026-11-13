@@ -2851,6 +2851,165 @@ Test.push('new models of a local Ollama are added by themselves', function(next)
 	});
 });
 
+Test.push('the answers of the library one by one, and the model that chooses one', function(next) {
+
+	var Http = require('http');
+	var hits = [];
+	var index = [
+		'# Total.js knowledge', '', '## Answers', '',
+		'- [How do I start a new Total.js 5 application?](http://127.0.0.1:{port}/answers/new-application.md): A short answer',
+		'', '## Questions', '',
+		'- [Data with DATA: questions and answers](http://127.0.0.1:{port}/questions/data.md): DATA',
+		'', '## Questions in Spanish', '',
+		'- [Datos con DATA: preguntas y respuestas](http://127.0.0.1:{port}/questions/es/data.md): DATA'
+	].join('\n');
+	var en = '# Data with DATA: questions and answers\n\n## How do I read one record?\n\n```js\nvar item = await DATA.read(\'nosql/tbl_contact\').id($.params.id).error(404).promise($);\n```\n\n## How do I update a record?\n\n```js\nawait DATA.modify(\'nosql/tbl_contact\', model).id($.params.id).error(404).promise($);\n```\n\n## How do I remove a record?\n\n```js\nawait DATA.remove(\'nosql/tbl_contact\').id($.params.id).error(404).promise($);\n```\n';
+	var es = '# Datos con DATA: preguntas y respuestas\n\n## ¿Cómo leo un registro?\n\n```js\nvar item = await DATA.read(\'nosql/tbl_contact\').id($.params.id).error(404).promise($);\n```\n\n## ¿Cómo actualizo un registro?\n\n```js\nawait DATA.modify(\'nosql/tbl_contact\', model).id($.params.id).error(404).promise($);\n```\n\n## ¿Cómo borro un registro?\n\n```js\nawait DATA.remove(\'nosql/tbl_contact\').id($.params.id).error(404).promise($);\n```\n';
+	var answer = '---\nquestion: How do I start a new Total.js 5 application?\nquestion_es: ¿Cómo empiezo una aplicación nueva con Total.js 5?\n---\n\n# How do I start a new Total.js 5 application?\n\nA folder with index.js and config.\n';
+	var asked = { 'How do I read one record?': ['How do I fetch a single row by its id?'] };
+
+	var server = Http.createServer(function(req, res) {
+		hits.push(req.url);
+		res.setHeader('content-type', 'text/plain; charset=utf-8');
+		var files = { '/llms.txt': index.split('{port}').join(server.address().port), '/questions/data.md': en, '/questions/es/data.md': es, '/answers/new-application.md': answer, '/questions/asked.json': JSON.stringify(asked) };
+		if (files[req.url])
+			res.end(files[req.url]);
+		else {
+			res.statusCode = 404;
+			res.end('no');
+		}
+	});
+
+	server.listen(0, '127.0.0.1', function() {
+
+		CONF.library = true;
+		CONF.libraryurl = 'http://127.0.0.1:' + server.address().port;
+		MAIN.libraryquestions = null;
+
+		MODS.knowledge.loadquestions(function(units) {
+
+			check('every question of a page is one answer, and an answer page is one', units.length === 7 && units.filter(u => u.key === 'questions/data.md#1').length === 2);
+			check('the same question in another language has the same key', units.find(u => u.title === '¿Cómo actualizo un registro?').key === units.find(u => u.title === 'How do I update a record?').key);
+			check('the other way of asking reaches the answer in every language', units.filter(u => /fetch a single row/.test(u.also)).length === 2);
+			check('an answer page keeps the question in its other languages', /empiezo una aplicación/.test(units.find(u => u.key === 'answers/new-application.md').also));
+
+			check('the words of a question find its answer', MODS.knowledge.answers(units, 'How do I remove a record?', 2)[0].key === 'questions/data.md#2');
+			check('a Spanish question finds the same answer', MODS.knowledge.answers(units, '¿Cómo borro un registro?', 2)[0].key === 'questions/data.md#2');
+			check('another way of asking finds the answer it belongs to', MODS.knowledge.answers(units, 'fetch a single row by id', 1)[0].key === 'questions/data.md#0');
+			check('an API name counts by its parts', MODS.knowledge.answers(units, 'DATA.modify', 1)[0].key === 'questions/data.md#1');
+			check('a question that shares nothing with the library finds no answer', MODS.knowledge.answers(units, 'kubernetes helm chart', 2).length === 0);
+
+			// The model chooses among the candidates by their questions
+			var asked2 = [];
+			NEWAIMODEL('picker', function(ai, callback) {
+				asked2.push(ai.payload.messages[1].content);
+				var list = ai.payload.messages[1].content.split('\n').filter(line => /^\d+\. /.test(line));
+				var n = list.findIndex(line => /update a record|actualizo/.test(line)) + 1;
+				callback(null, { content: '' + n, tools: [] });
+			});
+
+			var run = { root: ROOT, mcp: null, shown: [], command: false, model: 'picker', conf: Object.assign({}, CONF, { totaljs: 'always', recipes: false, libraryanswers: true }) };
+
+			MODS.knowledge.prefetch(run, 'how do i change a record that already exists?', function(found) {
+
+				check('the model is asked to choose among the questions of the library', asked2.length === 1 && /Questions of the Total\.js library/.test(asked2[0]));
+				check('the answer that the model chose goes into the prompt, whole' + (/Answers of the library of Totem/.test(run.knowledge) ? '' : ' (' + run.knowledge.substring(0, 200) + ')'), /Answers of the library of Totem/.test(run.knowledge) && /### How do I update a record\?\n/.test(run.knowledge) && /DATA\.modify/.test(run.knowledge) && !/Pages of the library/.test(run.knowledge) && found.length >= 1);
+
+				var off = { root: ROOT, mcp: null, shown: [], command: false, model: 'picker', conf: Object.assign({}, CONF, { totaljs: 'always', recipes: false, libraryanswers: true, librarychoose: false }) };
+
+				MODS.knowledge.prefetch(off, 'How do I remove a record?', function(found2) {
+
+					check('without the choice of the model the words alone give the answer', asked2.length === 1 && /DATA\.remove/.test(off.knowledge) && found2.length === 1);
+					check('the library is read once and kept', hits.filter(h => h === '/questions/data.md').length === 1);
+
+					delete F.aimodels.picker;
+					server.close();
+					CONF.library = false;
+					CONF.libraryurl = '';
+					MAIN.libraryquestions = null;
+					next();
+				});
+			});
+		});
+	});
+});
+
+Test.push('Totem 4B on this computer: download, checksum, start and stop', function(next) {
+
+	var Http = require('http');
+	var body = Buffer.from('gguf of a test');
+	var sha = Total.Crypto.createHash('sha256').update(body).digest('hex');
+
+	var server = Http.createServer(function(req, res) {
+		if (req.url === '/redirect')
+			return res.writeHead(302, { location: '/model.gguf' }), res.end();
+		if (req.url === '/model.gguf')
+			return res.end(body);
+		res.statusCode = 404;
+		res.end();
+	});
+
+	server.listen(0, '127.0.0.1', function() {
+
+		var base = 'http://127.0.0.1:' + server.address().port;
+		var file = Total.Path.join(TMP, 'localmodel-test', 'model.gguf');
+		var progress = 0;
+
+		MODS.localmodel.download(base + '/redirect', file, sha, received => progress = received, function(err) {
+
+			check('a download follows the redirect and keeps the file whose SHA-256 is the expected one', !err && Total.Fs.readFileSync(file, 'utf8') === 'gguf of a test' && progress === body.length);
+
+			MODS.localmodel.download(base + '/model.gguf', file + '2', 'bad', null, function(err) {
+
+				check('a file with another SHA-256 is refused and not kept', /not the expected one/.test(err) && !Total.Fs.existsSync(file + '2') && !Total.Fs.existsSync(file + '2.part'));
+
+				MODS.localmodel.download(base + '/missing', file + '3', sha, null, function(err) {
+
+					check('a failed download says so', /HTTP 404/.test(err));
+
+					var status = MODS.localmodel.status();
+					check('nothing is downloaded or started when Totem starts, and the status says what is installed', status.name === 'Totem 4B' && status.installed === false && status.running === false && status.status === '' && !Total.Fs.existsSync(PATH.databases('localmodel')) && typeof(status.supported) === 'boolean');
+
+					// A llama-server of a test: answers /health, and the model is a file with the pinned checksum
+					var fakeserver = Total.Path.join(TMP, 'localmodel-test', 'llama-server');
+					Total.Fs.writeFileSync(fakeserver, '#!' + process.execPath + '\nvar port = +process.argv[process.argv.indexOf("--port") + 1];\nrequire("http").createServer(function(req, res) { res.end(req.url === "/health" ? "{\\"status\\":\\"ok\\"}" : "{}"); }).listen(port, "127.0.0.1");\n', { mode: 493 });
+
+					var dir = PATH.databases('localmodel');
+					var modelfile = MODS.localmodel.modelfile();
+					var pinned = Total.Fs.readFileSync(PATH.private('localmodel.json'), 'utf8').parseJSON().model.sha256;
+					Total.Fs.mkdirSync(Total.Path.dirname(modelfile), { recursive: true });
+					Total.Fs.writeFileSync(modelfile, 'model');
+					Total.Fs.writeFileSync(Total.Path.join(dir, 'state.json'), JSON.stringify({ model: pinned }));
+
+					CONF.llamaserver = fakeserver;
+					CONF.localmodelport = 18000 + Math.floor(Math.random() * 1000);
+
+					check('a model with the pinned checksum and a llama-server is installed', MODS.localmodel.installed() && MODS.localmodel.engine().source === 'config');
+
+					MODS.localmodel.start(function(err) {
+
+						var item = F.aimodels['totem:4b'];
+						check('started, it is the provider totem with the model 4b, on 127.0.0.1', !err && MODS.localmodel.status().running && !!item && item.config.url === 'http://127.0.0.1:' + CONF.localmodelport + '/v1' && MAIN.modelmeta['totem:4b'].totem === true);
+
+						MODS.localmodel.stop(true, function() {
+
+							check('stopped, its model leaves the selector and it does not start again with Totem', !F.aimodels['totem:4b'] && !MODS.localmodel.status().running && Total.Fs.readFileSync(Total.Path.join(dir, 'state.json'), 'utf8').parseJSON().enabled === false);
+
+							NOSQL('providers').remove().where('id', 'totem').callback(function() {
+								delete CONF.llamaserver;
+								delete CONF.localmodelport;
+								Total.Fs.rmSync(dir, { recursive: true, force: true });
+								server.close();
+								FUNC.providers(next);
+							});
+						});
+					});
+				});
+			});
+		});
+	});
+});
+
 Test.push('the library of Totem read live: its llms.txt and its pages', function(next) {
 
 	var Http = require('http');
@@ -2889,6 +3048,8 @@ Test.push('the library of Totem read live: its llms.txt and its pages', function
 
 		CONF.library = true;
 		CONF.libraryurl = base + '/library';
+		// The pages of the library: the answers one by one have their own test below
+		CONF.libraryanswers = false;
 		MAIN.libraryindex = null;
 
 		var run = { root: ROOT, mcp: null, shown: [], command: false };
@@ -2948,6 +3109,7 @@ Test.push('the library of Totem read live: its llms.txt and its pages', function
 						CONF.library = false;
 						CONF.libraryurl = '';
 						CONF.forgeurl = '';
+						delete CONF.libraryanswers;
 						MAIN.libraryindex = null;
 						MAIN.forgeindex = null;
 						next();

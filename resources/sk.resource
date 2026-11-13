@@ -1,4 +1,5 @@
 T10e87d3 : Worktree tejto relácie. Základná vetva:
+T10g4e19 : Model Totemu, natrénovaný na Total.js, na tvojom počítači: Totem ho stiahne s llama.cpp a spustí. Nič neopustí tvoj počítač.
 T10i3rwu : Medzi {0} a {1}
 T11fsngt : Vyber aspoň jeden nástroj
 T11pd1u9 : Totem v tejto relácii nezmenil žiadny súbor.
@@ -61,18 +62,21 @@ T1bkuj5y : necommitnutých súborov
 T1blijdw : Hľadať servery v tomto počítači
 T1bnptdu : Príliš veľa presmerovaní
 T1boqgq : Rozdelené
+T1br2gy : Spustiť
 T1br5dz : Kroky
 T1c7gi : Vysoká
 T1c7v89 : Token
 T1c7yd7 : Nástroje
 T1ckg6lg : Cesta nie je priečinok
 T1dnznbx : Kód skontrolovaný pred zobrazením konečnej odpovede:
+T1dpnzt0 : Sťahuje sa llama.cpp
 T1ebyews : Plánované prompty
 T1egq28u : Názov prvej relácie (nepovinné)
 T1ehk8yd : Cesta k súboru v tomto projekte, napríklad public/demo.html
 T1ek2755 : Napíš id modelu a stlač enter
 T1eo1 : Pridať
 T1eu5pwf : Príkazy, ktoré Totem spustil
+T1exsz6e : Stiahnutý súbor nie je ten očakávaný
 T1f73iv5 : Odstrániť reláciu
 T1f7o0wl : Plán potrebuje názov a prompt
 T1firn : Režim
@@ -92,6 +96,7 @@ T1ib3u54 : Tento plán stále beží
 T1iiam : Opakovať
 T1iry2b6 : Úloha sa nenašla
 T1iueg : Spúšťa sa
+T1iunt02 : Na stiahnutie:
 T1j2ql : Uložiť
 T1j3tclq : Automaticky pridať modely, ktoré nainštalujem neskôr
 T1j5ig : Odoslať
@@ -127,6 +132,7 @@ T1qokrk4 : Vzhľad
 T1qw7jns : Aktualizovať poskytovateľa
 T1r0wli7 : Totem skontroloval kód odpovede a požiadal o opravu:
 T1r1ntsb : Iný, kompatibilný s OpenAI
+T1r4de53 : Nainštaluj llama-server, aby si ho mohol spustiť na tomto počítači.
 T1r87y6a : Predchádzajúce kolá boli zhrnuté, aby bola konverzácia krátka.
 T1r8zt37 : Otvoriť priečinok
 T1rko4bz : Nie je čo zobraziť. Načítaj zoznam alebo zmeň filtre.
@@ -144,6 +150,7 @@ T1vfvtzd : Totem potrebuje tvoju odpoveď
 T1vid7g8 : Napíš príkaz a stlač Enter
 T1vjos : zadarmo
 T1vkxphz : Nastavenia tejto relácie, tohto projektu a všetkých projektov
+T1vlff8 : Sťahuje sa model
 T1wcdox2 : Poskytovateľ je každý server s API kompatibilným s OpenAI: OpenRouter, OpenAI, Ollama, LM Studio... Tvoje správy idú iba k poskytovateľom, ktorých tu pridáš.
 T1xnp73t : API kľúč
 T1xvlny2 : Otvoriť tento priečinok
@@ -171,6 +178,7 @@ T6pomva : Ukladá sa zašifrovaný v tomto počítači a už sa nezobrazí.
 T6qs9a7 : Použi true alebo false
 T6v3crq : Plan, len číta
 T6v6poe : Možnosti
+T71eosu : Spúšťa sa...
 T7h6hj1 : Názov je prázdny
 T7u1b6o : Nechaj prázdne pre predvolený názov: relácia sa pomenuje podľa tvojej prvej správy.
 T80sg1 : Text sa vyskytuje viackrát: pridaj viac kontextu alebo nastav all
@@ -183,7 +191,9 @@ T9jn8zg : Táto relácia nemá worktree
 T9lvtgh : Vie premýšľať pred odpoveďou
 T9tb4m0 : Povoliť raz
 T9ukspz : Kopírovať kód
+T9v49xm : Totem 4B nie je nainštalovaný
 Taanudk : Vyber jednu z: {0}
+Taguavc : llama-server sa zastavil
 Tajdv69 : Totem skončil
 Tbsl01y : Neplatná URL
 Tbsmk47 : Žiadna relácia
@@ -206,6 +216,7 @@ Tgbsmcl : Model a agent
 Tgchh32 : Pomocníci, ktorým môže agent odovzdať úlohu
 Tgqxhtt : Zatiaľ žiadne projekty. Otvor priečinok a začni.
 Th3pgr4 : Model tohto plánu nie je dostupný
+Th42qcb : llama-server nenačítal model včas
 Thm0jj3 : minút
 Thwdl0y : Worktree tejto relácie bol zahodený: začni novú reláciu
 Ti90lzh : Obnovené súbory:
@@ -237,26 +248,32 @@ Tnwzya8 : Každých, minút
 To17eqc : Priložiť obrázky alebo textové súbory
 To33mo2 : Poskytovatelia
 To3gx5q : Totem chce použiť
+To56sw4 : llama.cpp sa nepodarilo rozbaliť
 Tob1a65 : Relácie
 Tob7cil : Totem sa zastavil s chybou
+Tooknmw : Stiahnuť
 Tosmo8z : Nastavenia
 Tp6sjhp : Interval je aspoň {0} minút
 Tp81kq9 : pracuje
 Tpnaojj : beží
 Tpnjlc2 : Agenti pre všetky projekty
+Tpudcmu : Táto verzia llama.cpp neobsahuje llama-server
 Tqtg2co : Rozvetviť odtiaľto
+Tqy36di : Sťahovanie zlyhalo
 Trfcwd7 : Použité znalosti:
 Tsgot1b : Tento model nie je dostupný
 Tsioqms : Projekt má necommitnuté zmeny: najprv ich commitni alebo daj do stash
 Tsmkvh9 : tento počítač
 Tsnldwr : Odstrániť túto reláciu a jej správy? Súbory projektu sa nezmenia.
 Tsti7ge : Názov používa malé písmená, čísla a spojovníky
+Tsxw4hr : Nainštalovaný, zastavený
 Tt398xu : Odstrániť tento plán?
 Tty16h2 : Príliš veľa súborov: limit je
 Tujymnx : Zlúčenie má konflikty a bolo vrátené. Zlúč vetvu sám:
 Tuse4v4 : Odstrániť tohto agenta?
 Tuvdde1 : Vie používať nástroje
 Tv3r6gd : Odstrániť priečinok zo zoznamu
+Tvpo8jh : Beží na tomto počítači
 Tw01jbu : Totem pracuje
 Twcquze : Pridané:
 Twef2um : Agenti
@@ -265,6 +282,8 @@ Twiir4u : Odpovedať
 Tx9d2fu : Zrušiť
 Txe90bg : každý deň o
 Txskn2j : Odstrániť
+Txzj7vy : Totem 4B je pripravený.
+Ty6h6eo : Pre tento systém neexistuje verzia llama.cpp. Nainštaluj llama-server a spusti Totem znova.
 Tyg8jb : Nový plán
 Tyw9oul : Odstrániť
 Tz4gdhl : Čo má Totem urobiť zakaždým

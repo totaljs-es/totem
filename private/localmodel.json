@@ -1,0 +1,23 @@
+{
+	"model": {
+		"name": "Totem 4B",
+		"version": "0.1",
+		"id": "4b",
+		"file": "totem-4b-0.1-q4_k_m.gguf",
+		"url": "https://huggingface.co/es-totaljs/totem-4b-gguf/resolve/v0.1/totem-4b-0.1-q4_k_m.gguf",
+		"sha256": "57699beb25e3777b53776743d688ed02a8f45972949936860f3cffad36301e25",
+		"size": 2708805216,
+		"context": 16384
+	},
+	"llamacpp": {
+		"build": "b12366",
+		"platforms": {
+			"darwin-arm64": { "url": "https://github.com/ggml-org/llama.cpp/releases/download/b12366/llama-b12366-bin-macos-arm64.tar.gz", "sha256": "6263965248c6c17b942eee1d91d9f810566d2ed1a7ec884130deb2339baee842", "size": 16914794 },
+			"darwin-x64": { "url": "https://github.com/ggml-org/llama.cpp/releases/download/b12366/llama-b12366-bin-macos-x64.tar.gz", "sha256": "3f4ef9c548902b23661f1b3c4e9f2db8d81e4755932dd58422a83c8eaabe90b7", "size": 12664866 },
+			"linux-x64": { "url": "https://github.com/ggml-org/llama.cpp/releases/download/b12366/llama-b12366-bin-ubuntu-x64.tar.gz", "sha256": "60c318605a52ad7b15640cae72d6cb6b84b9737d4322be84f4a8e4bde699c1d7", "size": 23332283 },
+			"linux-arm64": { "url": "https://github.com/ggml-org/llama.cpp/releases/download/b12366/llama-b12366-bin-ubuntu-arm64.tar.gz", "sha256": "5ee16075f1679e04fce6cef6622cbc1eea586add63cff3c512ba3ef0c981eba1", "size": 18963690 },
+			"win32-x64": { "url": "https://github.com/ggml-org/llama.cpp/releases/download/b12366/llama-b12366-bin-win-cpu-x64.zip", "sha256": "b6b83e46546c04af52a700ea09638201493448cf52de207b2efefc1cecab625e", "size": 25116739 },
+			"win32-arm64": { "url": "https://github.com/ggml-org/llama.cpp/releases/download/b12366/llama-b12366-bin-win-cpu-arm64.zip", "sha256": "faa9e96e84b3a7f5a04b1ce8c1dad4f169d9a9260f7cf2c75b7b8fe477954252", "size": 13460105 }
+		}
+	}
+}
