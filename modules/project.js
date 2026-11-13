@@ -486,9 +486,6 @@ exports.start = function(session, project, message, command, callback) {
 // true when the file was changed.
 exports.repair = function(root, plan, task) {
 
-	if (task.part !== 'schemas')
-		return false;
-
 	var file = Total.Path.join(root, task.path);
 	var content;
 
@@ -499,6 +496,27 @@ exports.repair = function(root, plan, task) {
 	}
 
 	var plugin = plan.card.plugins.findItem('id', task.plugin);
+
+	// The screen and the form: the names of the example plugin ("tasks") that the model left where the names of this plugin go. Only the
+	// names that come from the card (the endpoints, the path of the form, the plugin of the screen), never a text or a field.
+	if (task.part !== 'schemas') {
+
+		if (plugin.id === 'tasks')
+			return false;
+
+		var id = plugin.id;
+		var renamed = content
+			.replace(/\bformtasks\b/g, 'form' + id)
+			.replace(/\bPLUGINS\.tasks\b/g, 'PLUGINS.' + id)
+			.replace(/(tapi\(\s*['"])tasks(_read\/|_save\b|_remove\/|\s+ERROR\b|['"])/g, '$1' + id + '$2');
+
+		if (renamed === content)
+			return false;
+
+		Total.Fs.writeFileSync(file, renamed);
+		return true;
+	}
+
 	var start = content.indexOf('NEWACTION(\'' + contract(plugin).actions[2] + '\'');
 
 	if (start === -1)
@@ -761,7 +779,7 @@ exports.build = function(session, project, callback) {
 					done(left.length ? ('the file ' + left[0].path + ' was not written.') : '');
 				} : function(done) {
 					if (exports.repair(project.path, plan, task))
-						task.repaired = 'the input of the action that saves was set from the card';
+						task.repaired = task.part === 'schemas' ? 'the input of the action that saves was set from the card' : 'the names of the example plugin were changed to the ones of the card';
 					exports.check(project.path, plan, task, done);
 				};
 

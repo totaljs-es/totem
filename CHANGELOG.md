@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-- In a build, the input of the action that saves is set from the card when the model misplaces the star of a required field (a required `id` refused every new row and stopped the build after two tries): that line is the card word for word, as the names of the actions are.
+- In a build, the input of the action that saves is set from the card when the model misplaces the star of a required field (a required `id` refused every new row and stopped the build after two tries): that line is the card word for word, as the names of the actions are. The names of the example plugin that a model leaves in a screen or a form (the endpoints, the path of the form) are changed to the ones of the card too.
 - The search of the pages understands more Spanish words of the interface (chart, bar, calendar, dropdown, window, tab, map, upload, sort, drag, confirm...), so a request in Spanish for a component finds it in the catalogue: "un gráfico de barras" finds the bar chart. The measure of the choice among the pages of Forge went from 24 to 25 of 25 first.
 - Totem, the model trained for this application, is shown with its own icon in the model selector, whatever serves it (Ollama, llama.cpp, vLLM, a remote server): the other models keep the icon of their provider. It is recognized by what the model says inside (the identity that it was exported with, which Ollama reports), so it is Totem under any name, and by its name (`totem:4b`, `totem-v4:4b`) where the server says nothing.
 - The routes for another agent say why when the model itself fails (it is not installed, it does not answer) instead of a bare "not accepted".

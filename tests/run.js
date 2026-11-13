@@ -3029,6 +3029,11 @@ Test.push('a project in small tasks: the card, the plan and the build task by ta
 	var repaired = P.repair(dir, P.load(dir), P.load(dir).tasks[2]);
 	check('a misplaced star in the input of the action that saves is put right from the card, and nothing else changes', repaired === true && Total.Fs.readFileSync(file2, 'utf8') === schemas && P.repair(dir, P.load(dir), P.load(dir).tasks[2]) === false);
 
+	var file3 = Total.Path.join(dir, 'plugins/products/public/index.html');
+	var kept = Total.Fs.readFileSync(file3, 'utf8');
+	Total.Fs.writeFileSync(file3, kept.replace(/formproducts/g, 'formtasks').replace(/products_remove\//g, 'tasks_remove/').replace("tapi('products ERROR'", "tapi('tasks ERROR'"));
+	check('the names of the example plugin that the model left in a screen are changed to the ones of the card, and its texts are not touched', P.repair(dir, P.load(dir), P.load(dir).tasks[3]) === true && Total.Fs.readFileSync(file3, 'utf8') === kept);
+
 	check('a task that fails twice stops the build and says why', !!failed && failed.path === 'plugins/customers/schemas/customers.js' && /must define the actions/.test(failed.problem) && saved.tasks.filter(t => t.plugin === 'customers' && t.part !== 'index' && t.part !== 'schemas').every(t => t.status === 'pending'));
 
 	// The model fills the card from a request
