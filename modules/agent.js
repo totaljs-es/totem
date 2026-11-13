@@ -125,11 +125,11 @@ function textof(content) {
 // that always says "jComponent" makes a model put jComponent in a route).
 var STYLE = 'indent with TABS, ES5 first (var and function, no => and no template literals; const or let only where the code needs it, as a constant at the top of a file), texts for people marked for translation as the recipes show, the modules of Node.js through Total (Total.Fs, Total.Os, Total.Path...) and never require(). Follow the recipes and the pages above; when they do not have what you need, look for it in the documentation of Total.js before you answer, and ask the user for more information only if you find nothing. Do not invent a function. Reply in the language of the user.';
 var ANSWER = ' Put code in Markdown fences with the language (js, html or json) and its file path on the preceding line. Use tools only to read or change files of the project.';
-var CREATE = ' The user wants it made: create the files with the write tool (the path the user gave; for Total.js code, schemas/ for actions and controllers/ for routes), then say in one sentence what you created. Never make files with shell commands (echo, cat): show each file as a code block with its path on the line before it.';
+var CREATE = ' The user wants it made: create the files with the write tool (the path the user gave; for Total.js code, actions/ for actions and controllers/ for routes), then say in one sentence what you created. Never make files with shell commands (echo, cat): show each file as a code block with its path on the line before it.';
 var REMINDER = '\n\n(Total.js 5, in its style: ' + STYLE;
 var REMINDERUI = '\n\n(Total.js 5 and jComponent 20, the interface library of Total.js. Style: ' + STYLE;
 var MAKE = /\b(crea|crear|cr[eé]ame|haz|hazme|genera|generar|guarda|guardar|gu[aá]rdalo|save|a[ñn]ade|agrega|escribe|implementa|create|make|add|write|generate|build|implement|vytvor|vytvori[tť]|pridaj|prida[tť]|sprav|urob|vygeneruj|implementuj)\b|(?:^|\s)(?:ulo[zž]|nap[ií][sš])(?=\s|$)/i;
-// The first line of a code block that says where it goes: // schemas/system.js, <!-- plugins/x/index.html --> or # path
+// The first line of a code block that says where it goes: // actions/system.js, <!-- plugins/x/index.html --> or # path
 var PATHCOMMENT = /^\s*(?:\/\/|<!--|#)\s*([A-Za-z0-9_@\-.\/]+\.[A-Za-z0-9]+)\s*(?::.*|-->)?\s*$/;
 
 // The code blocks of an answer with a path that is inside the project and does not exist yet: [{ path, content }], at most twenty-four

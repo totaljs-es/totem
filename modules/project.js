@@ -12,6 +12,9 @@
 exports.id = 'project';
 
 var TYPES = ['String', 'Number', 'Boolean', 'Date', 'Email', 'Phone', 'URL'];
+
+// The names a model writes for the same types (the ones of SQL and of other languages)
+var ALIASES = { int: 'Number', integer: 'Number', float: 'Number', decimal: 'Number', double: 'Number', numeric: 'Number', text: 'String', varchar: 'String', bool: 'Boolean', datetime: 'Date', timestamp: 'Date', mail: 'Email', tel: 'Phone', link: 'URL' };
 var RESERVED = ['id', 'dtcreated', 'dtupdated'];
 var MAXPLUGINS = 8;
 var MAXFIELDS = 16;
@@ -92,7 +95,8 @@ exports.parse = function(text, fallback) {
 				// The id and the dates of a row are filled by the action: they are not fields of the form
 				if (RESERVED.indexOf(name) !== -1)
 					return;
-				var type = TYPES.find(t => t.toLowerCase() === (field[3] || 'String').toLowerCase());
+				var typename = (field[3] || 'String').toLowerCase();
+				var type = TYPES.find(t => t.toLowerCase() === typename) || ALIASES[typename];
 				if (!type) {
 					errors.push('The type of the field ' + field[2] + ' of the plugin ' + current.id + ' is "' + field[3] + '": use one of ' + TYPES.join(', ') + '.');
 					return;

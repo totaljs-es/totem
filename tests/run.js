@@ -2935,7 +2935,8 @@ Test.push('a project in small tasks: the card, the plan and the build task by ta
 	check('a card is read: the application, the plugins and their fields with the type and the required mark', !parsed.errors.length && card.app === 'my-shop' && card.plugins.length === 2 && card.plugins[0].id === 'products' && card.plugins[0].fields.map(f => f.name + ':' + f.type + (f.required ? '*' : '')).join() === 'name:String*,price:Number' && P.parse('PLUGIN: things\nFIELDS: *name:String, email:Email*, phone:Phone').card.plugins[0].fields.map(f => f.required).join() === 'true,true,false');
 	check('the table, the collection, the title and the icon are filled in', card.plugins[0].table === 'tbl_product' && card.plugins[0].collection === 'Products' && card.plugins[0].icon === 'ti ti-box' && card.plugins[1].table === 'tbl_category' && card.plugins[1].title === 'Categories' && card.plugins[1].icon === 'ti ti-folder' && card.plugins[1].fields[0].required === true);
 	check('an icon that does not exist becomes the folder, and one that exists stays', P.parse('PLUGIN: pets\nICON: ti ti-paw\nFIELDS: name').card.plugins[0].icon === 'ti ti-folder' && P.parse('PLUGIN: pets\nICON: calendar\nFIELDS: name').card.plugins[0].icon === 'ti ti-calendar' && P.isicon('check-circle') && !P.isicon('kokot'));
-	check('a card without plugins, with an unknown type or with a plugin without fields says what is wrong', P.parse('APP: x').errors.length === 1 && /type of the field/.test(P.parse('PLUGIN: a1\nFIELDS: name:Text').errors.join()) && /has no fields/.test(P.parse('PLUGIN: things').errors.join()));
+	check('a card without plugins, with an unknown type or with a plugin without fields says what is wrong', P.parse('APP: x').errors.length === 1 && /type of the field/.test(P.parse('PLUGIN: a1\nFIELDS: name:Thing').errors.join()) && /has no fields/.test(P.parse('PLUGIN: things').errors.join()));
+	check('a card accepts the usual other names of a type', P.parse('PLUGIN: classes\nFIELDS: *name:String, max:int, starts:datetime, note:text').errors.length === 0 && P.parse('PLUGIN: classes\nFIELDS: *name:String, max:int').card.plugins[0].fields[1].type === 'Number');
 	check('a text with a plugin and its fields is a card, a request is not', P.iscard('PLUGIN: a\nFIELDS: b') && !P.iscard('An application to keep my products'));
 
 	var tasks = P.tasks(card);
@@ -3108,7 +3109,7 @@ Test.push('a project in small tasks: the card, the plan and the build task by ta
 	r = await text('POST', '/agent/project/', { path: dir3, text: 'APP: notes\n\nPLUGIN: products\nFIELDS: *name:String, price:Number', model: 'fake' });
 	check('a card sent by another agent makes the folder and the plan, and the answer is one line', r.status === 200 && /^notes: plan saved, 1 plugin, 5 tasks\. Next: build$/.test(r.text) && Total.Fs.existsSync(Total.Path.join(dir3, '.totem/project.json')));
 
-	r = await text('POST', '/agent/project/', { path: dir3, text: 'PLUGIN: things\nFIELDS: name:Text', model: 'fake' });
+	r = await text('POST', '/agent/project/', { path: dir3, text: 'PLUGIN: things\nFIELDS: name:Thing', model: 'fake' });
 	check('a card that is not right is answered with what is wrong, in a line', r.status === 200 && /^not accepted\. .*type of the field name/.test(r.text) && r.text.indexOf('\n') === -1);
 
 	r = await text('GET', '/agent/status/?path=' + encodeURIComponent(dir3));
