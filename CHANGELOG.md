@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.1.8
 
 - Fixed: a model that refused the images of a prompt was forgotten as blind when the list of models was made again (a provider saved, a new model found), and the next prompt sent it the images again.
 - A project card accepts the usual other names of a field type (`int`, `text`, `bool`, `datetime`...) instead of refusing the whole plan.
