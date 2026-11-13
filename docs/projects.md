@@ -39,7 +39,7 @@ Totem makes the tasks from the card. The model does not decide them:
 |---|---|
 | The shell: `package.json`, the official start script, `config`, the menu and the layout | Totem. They are the files of an application that was checked in a browser |
 | `plugins/<name>/index.js`: the menu entry and the routes | Totem. It is the same for every plugin but for the names |
-| `plugins/<name>/schemas/<name>.js`: the actions | The model |
+| `plugins/<name>/actions/<name>.js`: the actions | The model |
 | `plugins/<name>/public/index.html`: the screen | The model |
 | `plugins/<name>/public/form.html`: the form | The model |
 

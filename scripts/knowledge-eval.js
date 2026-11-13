@@ -138,7 +138,7 @@ function codecheck(text, dir, lenient, serial) {
 		if (/^\s*(\.\.\.|…|\/\/\s*\.\.\.)\s*$/m.test(block.code))
 			return;
 
-		var folder = html ? 'plugins/eval/public' : 'schemas';
+		var folder = html ? 'plugins/eval/public' : 'actions';
 		var file = Path.join(dir, folder, 'answer-' + serial + '-' + count + (html ? '.html' : '.js'));
 		Fs.mkdirSync(Path.dirname(file), { recursive: true });
 		Fs.writeFileSync(file, block.code);

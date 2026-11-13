@@ -15,7 +15,7 @@ exports.send = function(email, text) {
 ```
 
 ```js
-// schemas/users.js: in an action
+// actions/users.js: in an action
 NEWACTION('Users|invite', {
 	name: 'Invite a user',
 	input: '*email:String',

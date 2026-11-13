@@ -468,7 +468,7 @@
 					$('.CLASS .markdown-code').each(function() {
 						if (this.querySelector('.copycode'))
 							return;
-						// A block that starts with its path as a comment (// schemas/system.js) can be saved as that file
+						// A block that starts with its path as a comment (// actions/system.js) can be saved as that file
 						var first = codeof($(this)).split('\n')[0];
 						var match = first.match(/^\s*(?:\/\/|<!--|#)\s*([A-Za-z0-9_@\-.\/]+\.[A-Za-z0-9]+)\s*(?::.*|-->)?\s*$/);
 						if (!this.closest('.msg').querySelector('.validation')) {

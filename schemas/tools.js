@@ -164,7 +164,7 @@ NEWACTION('Tools|write', {
 		var allowed = { '.js': '//', '.mjs': '//', '.cjs': '//', '.html': '<!--' }[ext];
 		var breaks = style && ['.js', '.mjs', '.cjs', '.html', '.json', '.css'].indexOf(ext) !== -1 && style !== allowed;
 
-		// The recipes show a file with its whole path in a comment above the code (// schemas/products.js). That line says where the code goes: it
+		// The recipes show a file with its whole path in a comment above the code (// actions/products.js). That line says where the code goes: it
 		// is not code either, in any style. A comment with only the name of the file (// ok.js) may be the author's and stays.
 		var marker = model.path.indexOf('/') !== -1 && first.replace(/^\s*(#|\/\/|<!--)\s*|\s*(-->)?\s*$/g, '') === model.path.replace(/^\.?\//, '');
 

@@ -312,7 +312,7 @@ NEWACTION('Sessions|undo', {
 	}
 });
 
-// A code block of an answer that starts with its path as a comment (// schemas/system.js) can be saved by the user with one click. A small model
+// A code block of an answer that starts with its path as a comment (// actions/system.js) can be saved by the user with one click. A small model
 // does not always call the write tool: this is the same write, with its snapshot (so it can be undone) and the same protections, and the click of the
 // user is the permission.
 NEWACTION('Sessions|saveblock', {

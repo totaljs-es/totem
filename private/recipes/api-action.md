@@ -3,10 +3,10 @@ title: An API route and its action
 keywords: api, action, actions, newaction, schema, schemas, crud, list, create, input, validation, accion, acciones, esquema, rest, resource
 strong: newaction, action, actions, accion, acción, acciones
 ---
-For an API, the logic is an action (`NEWACTION` in `schemas/`) and the route points to it. The name of an action has a pipe: `Collection|verb`.
+For an API, the logic is an action (`NEWACTION` in `actions/`) and the route points to it. The name of an action has a pipe: `Collection|verb`.
 
 ```js
-// schemas/tickets.js
+// actions/tickets.js
 NEWACTION('Tickets|list', {
 	name: 'List tickets',
 	action: async function($) {

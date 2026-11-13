@@ -5,7 +5,7 @@ strong: empiez*, empezar, scratch, begin, starting, desde cero
 ---
 For a clear request to create an application in Build mode, create the files with the write tool. Do not stop at a plan, and do not ask which file to write first. For Plan mode show the files without writing them. Keep every file in its own fenced block with its path on the line before it, exactly as below; never put package.json, index.js and a controller into the same JavaScript block.
 
-These four files make a working minimal Total.js 5 application. Adapt the route and response to the request. The framework loads controllers/ automatically: do not require the controller from index.js. Only index.js requires total5; the rest uses the initialized framework. Add actions in schemas/ when the requested features need them. Leave out authentication unless requested, so the first route can be used.
+These four files make a working minimal Total.js 5 application. Adapt the route and response to the request. The framework loads controllers/ automatically: do not require the controller from index.js. Only index.js requires total5; the rest uses the initialized framework. Add actions in actions/ when the requested features need them. Leave out authentication unless requested, so the first route can be used.
 
 `package.json`
 

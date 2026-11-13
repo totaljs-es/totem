@@ -54,7 +54,8 @@ NEWACTION('Providers|save', {
 			await NOSQL('providers').insert(data).promise($);
 		}
 
-		FUNC.providers();
+		// A model whose name was typed by hand: the server is asked what it can do
+		FUNC.providers(() => FUNC.newmodels());
 		$.success(data.id || item.id);
 	}
 });

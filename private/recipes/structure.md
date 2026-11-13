@@ -3,7 +3,7 @@ title: Project structure, FUNC, MAIN and MODS
 keywords: structure, folders, folder, project, new, create, estructura, carpetas, proyecto, func, main, mods, module, modules, modulo, helper, helpers, shared, state, definitions, index.js, package.json
 strong: func, mods, definitions, structure, estructura, index.js
 ---
-A Total.js 5 project: `index.js`, `config`, `package.json` (dependency `total5`) and the folders `controllers/` (routes), `schemas/` (actions), `definitions/` (startup code, `AUTH`), `modules/` (shared code), `plugins/`, `views/`, `public/`, `resources/`.
+A Total.js 5 project: `index.js`, `config`, `package.json` (dependency `total5`) and the folders `controllers/` (routes), `actions/` (actions), `definitions/` (startup code, `AUTH`), `modules/` (shared code), `plugins/`, `views/`, `public/`, `resources/`.
 
 The start script is always the official one of Total.js 5, whole and unchanged:
 

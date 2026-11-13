@@ -9,7 +9,7 @@ Copy the pattern of the nearest existing file of the project: a new file looks l
 
 ## Server
 
-- Actions are `NEWACTION` in `schemas/`; routes are `ROUTE()` in `controllers/` (or the plugin `index.js`); shared helpers go in `FUNC`, shared state in `MAIN`; loaded modules are used through `MODS`.
+- Actions are `NEWACTION` in `actions/` (in an application that already has `schemas/`, there: both folders are loaded in the same way); routes are `ROUTE()` in `controllers/` (or the plugin `index.js`); shared helpers go in `FUNC`, shared state in `MAIN`; loaded modules are used through `MODS`.
 - Action names use a pipe: `Tickets|list`, `Reports|Categories|list`. Never `/` or `\`. When a name changes, change its registration, its route target and its callers together.
 - Declare `input`, `params` or `query` once. Check ownership, permissions and business rules inside the action. Answer once: `$.callback(data)`, `$.success(id)`, `$.invalid(404)`, `$.invalid('@(Text)')`.
 - ES5 in new code: `var`, `function`, classic loops, `'{0}'.format()`. Tabs, semicolons, short names (`id`, `name`, `dtcreated`).

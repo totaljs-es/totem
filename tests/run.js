@@ -2785,6 +2785,7 @@ Test.push('new models of a local Ollama are added by themselves', function(next)
 			check('a model installed later is added to the provider that asks for it, with what it can do', added === 1 && auto.models.join() === 'one:1b,two:4b' && auto.meta['two:4b'].tools === true && auto.meta['two:4b'].context === 8192 && !!F.aimodels['auto-llama:two:4b']);
 			check('a model that says inside that it is Totem is Totem under any name, with its icon', auto.meta['two:4b'].totem === true && MAIN.modelmeta['auto-llama:two:4b'].totem === true && !MAIN.modelmeta['auto-llama:one:1b'].totem);
 			check('a provider without the option keeps its models', fixed.models.join() === 'one:1b' && !F.aimodels['fixed-llama:two:4b']);
+			check('a model whose name was typed by hand gets what the server says of it: tools, thinking and context', !!fixed.meta && !!fixed.meta['one:1b'] && fixed.meta['one:1b'].tools === true && fixed.meta['one:1b'].context === 8192 && MAIN.modelmeta['fixed-llama:one:1b'].tools === true);
 			check('only Ollama: a remote provider never gets models by itself', remote.models.join() === 'one:1b' && !remote.newmodels);
 
 			installed.shift();
@@ -2928,19 +2929,19 @@ Test.push('a project in small tasks: the card, the plan and the build task by ta
 	check('a text with a plugin and its fields is a card, a request is not', P.iscard('PLUGIN: a\nFIELDS: b') && !P.iscard('An application to keep my products'));
 
 	var tasks = P.tasks(card);
-	check('the tasks: the shell, then four files for each plugin, two of them fixed', tasks.length === 9 && tasks[0].part === 'shell' && tasks[1].kind === 'fixed' && tasks[1].path === 'plugins/products/index.js' && tasks.filter(t => t.kind === 'model').map(t => t.path).slice(0, 3).join() === 'plugins/products/schemas/products.js,plugins/products/public/index.html,plugins/products/public/form.html');
+	check('the tasks: the shell, then four files for each plugin, two of them fixed', tasks.length === 9 && tasks[0].part === 'shell' && tasks[1].kind === 'fixed' && tasks[1].path === 'plugins/products/index.js' && tasks.filter(t => t.kind === 'model').map(t => t.path).slice(0, 3).join() === 'plugins/products/actions/products.js,plugins/products/public/index.html,plugins/products/public/form.html');
 	var index = P.pluginindex(card.plugins[0], 1);
 	check('the server part of a plugin has the routes of the four actions with the names of the card', /exports\.name = '@\(Products\)'/.test(index) && /-products\s+--> Products\|list/.test(index) && /-products_read\/\{id\}\s+--> Products\|read/.test(index) && /\+products_save\s+--> Products\|save/.test(index) && /-products_remove\/\{id\}\s+--> Products\|remove/.test(index));
 
 	var plan = { card: card, tasks: tasks };
 	var prompt = P.prompt(plan, tasks[2]);
-	check('the instruction of a task has one file, the card of its plugin, the names and a file that works', /Task 3 of 9/.test(prompt) && /`plugins\/products\/schemas\/products\.js`/.test(prompt) && /FIELDS: \*name:String, price:Number/.test(prompt) && /is exactly: 'id:UID, \*name:String, price:Number'/.test(prompt) && /Products\|list, Products\|read, Products\|save, Products\|remove/.test(prompt) && /NEWACTION\('Tasks\|list'/.test(prompt) && !/categories/.test(prompt));
+	check('the instruction of a task has one file, the card of its plugin, the names and a file that works', /Task 3 of 9/.test(prompt) && /`plugins\/products\/actions\/products\.js`/.test(prompt) && /FIELDS: \*name:String, price:Number/.test(prompt) && /is exactly: 'id:UID, \*name:String, price:Number'/.test(prompt) && /Products\|list, Products\|read, Products\|save, Products\|remove/.test(prompt) && /NEWACTION\('Tasks\|list'/.test(prompt) && !/categories/.test(prompt));
 	check('the instruction to plan asks for the card and nothing else', /Do not write code and do not use a tool/.test(P.planprompt('a shop')) && /Request: a shop/.test(P.planprompt('a shop')));
 
 	// The files of a plugin, made from the reference with the names changed: what a model that follows the instruction writes
 	var ref = name => Total.Fs.readFileSync(PATH.private('project/reference/' + name), 'utf8');
 	var rename = text => text.replace(/Tasks/g, 'Products').replace(/tasks/g, 'products').replace(/tbl_task/g, 'tbl_product').replace(/Task\b/g, 'Product').replace(/task\b/g, 'product');
-	var schemas = rename(ref('schemas.js')).replace('note:String', 'price:Number');
+	var schemas = rename(ref('actions.js')).replace('note:String', 'price:Number');
 	var screen = rename(ref('index.html')).replace('{{ if m.note }}<div class="note">{{ m.note }}</div>{{ fi }}', '<div class="note">{{ m.price }}</div>');
 	var form = rename(ref('form.html')).replace(/\?\.note/g, '?.price').replace('note: model.note', 'price: model.price');
 
@@ -2968,8 +2969,8 @@ Test.push('a project in small tasks: the card, the plan and the build task by ta
 	// The build: the first try of the actions forgets one of them and is asked again with the problem
 	var bad = schemas.replace("NEWACTION('Products|remove'", "NEWACTION('Products|delete'");
 	script = [
-		{ tools: [{ id: 'p1', name: 'write', arguments: { path: 'plugins/products/schemas/products.js', content: bad } }] }, { content: 'Done.' },
-		{ tools: [{ id: 'p2', name: 'write', arguments: { path: 'plugins/products/schemas/products.js', content: schemas } }] }, { content: 'Done.' },
+		{ tools: [{ id: 'p1', name: 'write', arguments: { path: 'plugins/products/actions/products.js', content: bad } }] }, { content: 'Done.' },
+		{ tools: [{ id: 'p2', name: 'write', arguments: { path: 'plugins/products/actions/products.js', content: schemas } }] }, { content: 'Done.' },
 		{ tools: [{ id: 'p3', name: 'write', arguments: { path: 'plugins/products/public/index.html', content: screen } }] }, { content: 'Done.' },
 		{ tools: [{ id: 'p4', name: 'write', arguments: { path: 'plugins/products/public/form.html', content: form } }] }, { content: 'Done.' }
 	];
@@ -2984,7 +2985,7 @@ Test.push('a project in small tasks: the card, the plan and the build task by ta
 	check('every task is done', saved.tasks.every(t => t.status === 'done'));
 	check('the shell is written without the model: the start script, the menu and the layout', ['package.json', 'index.js', 'config', 'controllers/default.js', 'definitions/auth.js', 'definitions/init.js', 'views/index.html', 'public/css/default.css'].every(exists) && JSON.parse(Total.Fs.readFileSync(Total.Path.join(dir, 'package.json'), 'utf8')).dependencies.total5 === '>=0.0.20-2');
 	check('the server part of the plugin is written without the model, with its routes', /Products\|save/.test(Total.Fs.readFileSync(Total.Path.join(dir, 'plugins/products/index.js'), 'utf8')));
-	check('the three files of the model are there, the actions from the second try', Total.Fs.readFileSync(Total.Path.join(dir, 'plugins/products/schemas/products.js'), 'utf8') === schemas && exists('plugins/products/public/index.html') && exists('plugins/products/public/form.html'));
+	check('the three files of the model are there, the actions from the second try', Total.Fs.readFileSync(Total.Path.join(dir, 'plugins/products/actions/products.js'), 'utf8') === schemas && exists('plugins/products/public/index.html') && exists('plugins/products/public/form.html'));
 	var asked = requests.slice(before);
 	var texts = asked.map(q => q.messages.filter(m => m.role === 'user').map(m => typeof(m.content) === 'string' ? m.content : JSON.stringify(m.content)).join('\n'));
 	check('each task is a run with no history: only its own instruction', asked.every(q => q.messages.filter(m => m.role === 'user').length === 1) && texts.some(x => /Task 3 of 5/.test(x)) && texts.some(x => /Task 5 of 5/.test(x)));
@@ -3003,8 +3004,8 @@ Test.push('a project in small tasks: the card, the plan and the build task by ta
 
 	// A file of the model that fails twice stops the build there
 	script = [
-		{ tools: [{ id: 'c1', name: 'write', arguments: { path: 'plugins/customers/schemas/customers.js', content: 'var x = 1;\n' } }] }, { content: 'Done.' },
-		{ tools: [{ id: 'c2', name: 'write', arguments: { path: 'plugins/customers/schemas/customers.js', content: 'var x = 2;\n' } }] }, { content: 'Done.' }
+		{ tools: [{ id: 'c1', name: 'write', arguments: { path: 'plugins/customers/actions/customers.js', content: 'var x = 1;\n' } }] }, { content: 'Done.' },
+		{ tools: [{ id: 'c2', name: 'write', arguments: { path: 'plugins/customers/actions/customers.js', content: 'var x = 2;\n' } }] }, { content: 'Done.' }
 	];
 	await api('sessions_prompt/' + id, { text: '/build' });
 	await until(() => MAIN.building[id], 2000);
@@ -3012,7 +3013,7 @@ Test.push('a project in small tasks: the card, the plan and the build task by ta
 	saved = P.load(dir);
 	var failed = saved.tasks.find(t => t.status === 'failed');
 	check('the check of the actions wants the input as the card says it: the star before the name and the type of each field', await new Promise(resolve => P.check(dir, P.load(dir), P.load(dir).tasks[2], found => resolve(found === ''))) && await new Promise(async function(resolve) {
-		var file = Total.Path.join(dir, 'plugins/products/schemas/products.js');
+		var file = Total.Path.join(dir, 'plugins/products/actions/products.js');
 		Total.Fs.writeFileSync(file, schemas.replace("'id:UID, *name:String, price:Number'", "'*id:UID, *name:String, price:Number'"));
 		var required = await new Promise(done => P.check(dir, P.load(dir), P.load(dir).tasks[2], found => done(/must be exactly 'id:UID/.test(found))));
 		if (!required)
@@ -3024,7 +3025,7 @@ Test.push('a project in small tasks: the card, the plan and the build task by ta
 		});
 	}));
 	// The input of the action that saves is set from the card when the model misplaces a star
-	var file2 = Total.Path.join(dir, 'plugins/products/schemas/products.js');
+	var file2 = Total.Path.join(dir, 'plugins/products/actions/products.js');
 	Total.Fs.writeFileSync(file2, schemas.replace("'id:UID, *name:String, price:Number'", "'*id:UID, name:String, price:Number'"));
 	var repaired = P.repair(dir, P.load(dir), P.load(dir).tasks[2]);
 	check('a misplaced star in the input of the action that saves is put right from the card, and nothing else changes', repaired === true && Total.Fs.readFileSync(file2, 'utf8') === schemas && P.repair(dir, P.load(dir), P.load(dir).tasks[2]) === false);
@@ -3034,7 +3035,7 @@ Test.push('a project in small tasks: the card, the plan and the build task by ta
 	Total.Fs.writeFileSync(file3, kept.replace(/formproducts/g, 'formtasks').replace(/products_remove\//g, 'tasks_remove/').replace("tapi('products ERROR'", "tapi('tasks ERROR'"));
 	check('the names of the example plugin that the model left in a screen are changed to the ones of the card, and its texts are not touched', P.repair(dir, P.load(dir), P.load(dir).tasks[3]) === true && Total.Fs.readFileSync(file3, 'utf8') === kept);
 
-	check('a task that fails twice stops the build and says why', !!failed && failed.path === 'plugins/customers/schemas/customers.js' && /must define the actions/.test(failed.problem) && saved.tasks.filter(t => t.plugin === 'customers' && t.part !== 'index' && t.part !== 'schemas').every(t => t.status === 'pending'));
+	check('a task that fails twice stops the build and says why', !!failed && failed.path === 'plugins/customers/actions/customers.js' && /must define the actions/.test(failed.problem) && saved.tasks.filter(t => t.plugin === 'customers' && t.part !== 'index' && t.part !== 'actions').every(t => t.status === 'pending'));
 
 	// The model fills the card from a request
 	var dir2 = Total.Path.join(TMP, 'planned');
@@ -3077,7 +3078,7 @@ Test.push('a project in small tasks: the card, the plan and the build task by ta
 	check('the status says what is done and what is next', /^notes: 0 of 5 tasks done\npending: 1, 2, 3, 4, 5 \(send "build"\)$/.test(r.text));
 
 	script = [
-		{ tools: [{ id: 'a1', name: 'write', arguments: { path: 'plugins/products/schemas/products.js', content: schemas } }] }, { content: 'Done.' },
+		{ tools: [{ id: 'a1', name: 'write', arguments: { path: 'plugins/products/actions/products.js', content: schemas } }] }, { content: 'Done.' },
 		{ tools: [{ id: 'a2', name: 'write', arguments: { path: 'plugins/products/public/index.html', content: screen } }] }, { content: 'Done.' },
 		{ tools: [{ id: 'a3', name: 'write', arguments: { path: 'plugins/products/public/form.html', content: form } }] }, { content: 'Done.' }
 	];

@@ -232,7 +232,7 @@ exports.tasks = function(card) {
 	card.plugins.forEach(function(plugin) {
 		var base = 'plugins/' + plugin.id + '/';
 		tasks.push({ plugin: plugin.id, path: base + 'index.js', kind: 'fixed', part: 'index', title: 'The menu entry and the routes of ' + plugin.title });
-		tasks.push({ plugin: plugin.id, path: base + 'schemas/' + plugin.id + '.js', kind: 'model', part: 'schemas', title: 'The actions of ' + plugin.title });
+		tasks.push({ plugin: plugin.id, path: base + 'actions/' + plugin.id + '.js', kind: 'model', part: 'actions', title: 'The actions of ' + plugin.title });
 		tasks.push({ plugin: plugin.id, path: base + 'public/index.html', kind: 'model', part: 'screen', title: 'The screen of ' + plugin.title });
 		tasks.push({ plugin: plugin.id, path: base + 'public/form.html', kind: 'model', part: 'form', title: 'The form of ' + plugin.title });
 	});
@@ -245,7 +245,7 @@ exports.tasks = function(card) {
 	return tasks;
 };
 
-var REFERENCE = { schemas: ['schemas.js', 'js'], screen: ['index.html', 'html'], form: ['form.html', 'html'] };
+var REFERENCE = { actions: ['actions.js', 'js'], screen: ['index.html', 'html'], form: ['form.html', 'html'] };
 
 // What the model gets for one task: one file to write, the card of its plugin, the names the other files use and a file that works
 exports.prompt = function(plan, task, problem) {
@@ -267,7 +267,7 @@ exports.prompt = function(plan, task, problem) {
 	lines.push('- the screen is PLUGINS.' + plugin.id + ': the form calls PLUGINS.' + plugin.id + '.refresh() after it saves');
 	lines.push('');
 
-	if (task.part === 'schemas')
+	if (task.part === 'actions')
 		lines.push('Write the four actions ' + c.actions.join(', ') + ' on the table \'nosql/' + plugin.table + '\'. The input of ' + c.actions[2] + ' is exactly: \'id:UID, ' + fieldsline(plugin) + '\'');
 	else if (task.part === 'screen')
 		lines.push('Write the screen: the list of the items with the main field, a button to create one, a click on an item to edit it and a way to remove it.');
@@ -429,7 +429,9 @@ function lastanswer(sessionid, callback) {
 			return;
 		}
 		NOSQL('parts').find().where('messageid', last.id).sort('dtcreated').callback(function(err, parts) {
-			callback((parts || []).filter(p => p.type === 'text' && p.data && p.data.text).map(p => p.data.text).join('\n'));
+			var text = (parts || []).filter(p => p.type === 'text' && p.data && p.data.text).map(p => p.data.text).join('\n');
+			// A model whose thinking was not switched off can leave its whole answer there: the card is read from it
+			callback(text.trim() ? text : (parts || []).filter(p => p.type === 'reasoning' && p.data && p.data.text).map(p => p.data.text).join('\n'));
 		});
 	});
 }
@@ -499,7 +501,7 @@ exports.repair = function(root, plan, task) {
 
 	// The screen and the form: the names of the example plugin ("tasks") that the model left where the names of this plugin go. Only the
 	// names that come from the card (the endpoints, the path of the form, the plugin of the screen), never a text or a field.
-	if (task.part !== 'schemas') {
+	if (task.part !== 'actions') {
 
 		if (plugin.id === 'tasks')
 			return false;
@@ -554,7 +556,7 @@ exports.check = function(root, plan, task, callback) {
 	var c = contract(plugin);
 	var missing;
 
-	if (task.part === 'schemas') {
+	if (task.part === 'actions') {
 
 		missing = c.actions.filter(name => content.indexOf('NEWACTION(\'' + name + '\'') === -1);
 
@@ -779,7 +781,7 @@ exports.build = function(session, project, callback) {
 					done(left.length ? ('the file ' + left[0].path + ' was not written.') : '');
 				} : function(done) {
 					if (exports.repair(project.path, plan, task))
-						task.repaired = task.part === 'schemas' ? 'the input of the action that saves was set from the card' : 'the names of the example plugin were changed to the ones of the card';
+						task.repaired = task.part === 'actions' ? 'the input of the action that saves was set from the card' : 'the names of the example plugin were changed to the ones of the card';
 					exports.check(project.path, plan, task, done);
 				};
 

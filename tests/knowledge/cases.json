@@ -249,7 +249,7 @@
 		"prompt": "What folders and files does a new Total.js 5 project have?",
 		"must": [
 			"controllers",
-			"schemas",
+			"actions",
 			"definitions",
 			"config",
 			"index\\.js"

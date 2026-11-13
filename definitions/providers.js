@@ -51,40 +51,62 @@ FUNC.providers = function(callback) {
 	});
 };
 
-// A local Ollama with the option "newmodels": the models installed after the provider was saved are added to it, with what each one can do.
-// Only Ollama (the models of this computer, which the person installed); a model that is gone is not removed. callback(added)
+// A local Ollama, asked what it has:
+// - with the option "newmodels", the models installed after the provider was saved are added to it, with what each one can do. A model that
+//   is gone is not removed.
+// - a model of the provider that Totem knows nothing about (its name was typed by hand in the form) gets what the server says of it: whether
+//   it calls tools, whether it thinks, its context. Without that, the thinking of a small model is not switched off and its answer stays there.
+// Only Ollama (the models of this computer, which the person installed). callback(added)
 FUNC.newmodels = function(callback) {
 
 	var added = 0;
+	var changed = false;
 
 	NOSQL('providers').find().callback(function(err, response) {
 
-		var items = (response || []).filter(item => item.newmodels && item.kind === 'ollama' && !item.disabled);
+		var items = (response || []).filter(item => item.kind === 'ollama' && !item.disabled);
 
 		items.wait(function(item, next) {
 
+			var meta = item.meta || {};
+			var unknown = item.models.filter(model => !meta[model]);
+
+			if (!item.newmodels && !unknown.length) {
+				next();
+				return;
+			}
+
 			MODS.discovery.available({ url: item.url, kind: item.kind, key: '' }, function(err, models) {
 
-				var fresh = err ? [] : models.filter(model => item.models.indexOf(model.id) === -1);
-
-				if (!fresh.length) {
+				if (err) {
 					next();
 					return;
 				}
 
-				var meta = item.meta || {};
+				var fresh = item.newmodels ? models.filter(model => item.models.indexOf(model.id) === -1) : [];
+				var known = models.filter(model => unknown.indexOf(model.id) !== -1);
+
+				if (!fresh.length && !known.length) {
+					next();
+					return;
+				}
 
 				fresh.forEach(function(model) {
 					item.models.push(model.id);
 					meta[model.id] = model;
 				});
 
+				known.forEach(function(model) {
+					meta[model.id] = model;
+				});
+
 				added += fresh.length;
+				changed = true;
 				NOSQL('providers').modify({ models: item.models, meta: meta, dtupdated: NOW }).where('id', item.id).callback(next);
 			});
 
 		}, function() {
-			if (added)
+			if (changed)
 				FUNC.providers(() => callback && callback(added));
 			else
 				callback && callback(added);
