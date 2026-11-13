@@ -26,7 +26,7 @@ python3 -m http.server -d dist 8000           # to look at it
 
 The build stops on a link, an image or a section that leads nowhere, on an icon that the font of the websites does not have, and on a placeholder that was not filled.
 
-The screenshots (`node scripts/screenshots.js --app ../totem`) need Chrome and Ollama with a small model: a temporary Totem with a made-up project, a real model for the answer about Total.js and a scripted demo model for the rest. `node scripts/og.js` makes the social card.
+The screenshots (`node scripts/screenshots.js --app ../totem`) need Chrome and Ollama with a small model: a temporary Totem with a made-up project, a real model for the answer about Total.js and a scripted demo model for the rest. The application of the screenshots `project` and `built` is planned, built task by task, checked and started for real; only the text of its files comes from the demo model. `node scripts/og.js` makes the social card.
 
 ## How it is published
 

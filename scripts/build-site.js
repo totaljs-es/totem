@@ -454,7 +454,7 @@ function fill(template, values) {
 // What a page must not have, checked on the result: a placeholder that was not filled, a link to a section that does not exist, an icon that the font of the websites
 // does not have, a screenshot that is missing. Every problem is added to `errors`.
 const ICONS = 'arrow-down arrow-left arrow-right arrow-up balance-scale bars bluesky book-open building caret-down caret-up check check-circle chevron-down code code-branch comment cookie database desktop devto envelope eye eye-slash facebook github graduation-cap grid info-circle instagram linkedin lock magic-alt mastodon minus play plus robot rss-square search send server spin spinner star star-alt stars telegram threads tiktok times times-circle totaljs twitter-x user warning youtube st-diagonal'.split(' ');
-const SHOTS = ['chat', 'changes', 'permission', 'worktree', 'terminal', 'schedules', 'settings'];
+const SHOTS = ['chat', 'project', 'built', 'changes', 'permission', 'worktree', 'terminal', 'schedules', 'agents', 'settings'];
 
 function validate(dist, errors) {
 

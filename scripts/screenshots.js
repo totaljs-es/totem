@@ -4,7 +4,8 @@
 // Takes the screenshots of the website (img/shots) from a real Totem in a temporary data folder, with a demo project that is made up (a small Total.js
 // tickets application). The answer about Total.js is a real model (Ollama with qwen2.5:1.5b, 986 MB); the edits, the permissions, the worktree and the
 // terminal come from a scripted demo model ("demo-agent"), because a model of that size does not edit files reliably and a screenshot must show the interface,
-// not a lucky run. Needs Google Chrome. A tooling script that runs with plain Node.js 22 or newer: it is not part of the application.
+// not a lucky run. The files of the application built in small tasks come from it too; its plan, its tasks, its checks and the application
+// that starts are the real ones. Needs Google Chrome. A tooling script that runs with plain Node.js 22 or newer: it is not part of the application.
 //
 //   node scripts/screenshots.js --app ../totem [--model ollama:qwen2.5:1.5b] [--out img/shots]
 //
@@ -62,11 +63,11 @@ async function until(fn, ms) {
 function demo(dir) {
 
 	var files = {
-		'package.json': JSON.stringify({ name: 'tickets', version: '1.0.0', description: 'A small tickets application', dependencies: { total5: '*' } }, null, '\t') + '\n',
+		'package.json': JSON.stringify({ name: 'tickets', version: '1.0.0', description: 'A small tickets application', dependencies: { total5: '>=0.0.20-2' } }, null, '\t') + '\n',
 		'index.js': "require('total5');\n\nvar options = {};\nF.run(options);\n",
 		'config': 'name                : Tickets\nversion             : 1.0.0\n',
 		'controllers/api.js': "exports.install = function() {\n\tROUTE('+API ? -tickets --> Tickets|list');\n\tROUTE('+API ? +tickets_create --> Tickets|create');\n};\n",
-		'schemas/tickets.js': "NEWACTION('Tickets|list', {\n\tname: 'List tickets',\n\taction: async function($) {\n\t\tvar items = await NOSQL('tickets').find().promise($);\n\t\t$.callback(items);\n\t}\n});\n\nNEWACTION('Tickets|create', {\n\tname: 'Create a ticket',\n\tinput: '*name:String, note:String',\n\taction: async function($, model) {\n\t\tmodel.id = UID();\n\t\tmodel.dtcreated = NOW;\n\t\tawait NOSQL('tickets').insert(model).promise($);\n\t\t$.success(model.id);\n\t}\n});\n",
+		'actions/tickets.js': "NEWACTION('Tickets|list', {\n\tname: 'List tickets',\n\taction: async function($) {\n\t\tvar items = await NOSQL('tickets').find().promise($);\n\t\t$.callback(items);\n\t}\n});\n\nNEWACTION('Tickets|create', {\n\tname: 'Create a ticket',\n\tinput: '*name:String, note:String',\n\taction: async function($, model) {\n\t\tmodel.id = UID();\n\t\tmodel.dtcreated = NOW;\n\t\tawait NOSQL('tickets').insert(model).promise($);\n\t\t$.success(model.id);\n\t}\n});\n",
 		'views/index.html': '<!DOCTYPE html>\n<html>\n<head>\n\t<meta charset="utf-8" />\n\t<title>@{config.name}</title>\n</head>\n<body>\n\t<h1>@{config.name}</h1>\n</body>\n</html>\n',
 		'README.md': '# Tickets\n\nA small tickets application made with Total.js 5.\n'
 	};
@@ -265,6 +266,17 @@ function scripted(port) {
 				var done = messages.slice(last + 1).filter(m => m.role === 'tool').length;
 				var step = script && script.steps[Math.min(done, script.steps.length - 1)];
 
+				// A task of a project: the file of the plugin "tasks" that comes in the prompt, with the names of this plugin
+				var task = prompt.match(/Write ONE file with the write tool: `(plugins\/([a-z]+)\/[^`]+)`/);
+				if (task) {
+					var reference = prompt.match(/```(?:js|html)\n([^]*?)\n```/);
+					var plural = task[2];
+					var single = plural.replace(/s$/, '');
+					var cap = text => text.charAt(0).toUpperCase() + text.substring(1);
+					var content = reference[1].replace(/Tasks/g, cap(plural)).replace(/tasks/g, plural).replace(/Task/g, cap(single)).replace(/task/g, single) + '\n';
+					step = done ? { text: 'Done.' } : { tool: 'write', input: { path: task[1], content: content } };
+				}
+
 				res.writeHead(200, { 'content-type': 'text/event-stream' });
 
 				if (!step)
@@ -374,6 +386,7 @@ async function main() {
 			!/ROUTE\(/.test(text) && missing.push('a route');
 			/^ {2,}\S/m.test(text.replace(/[^]*?```js/, '')) && missing.push('tabs (it used spaces)');
 			/COMPONENT\(|ui-component/.test(text) && missing.push('no interface');
+			/npm (run|test)|yarn |express|schemas\/|\.json`/i.test(text) && missing.push('no invented command, file or other framework');
 
 			if (!missing.length)
 				chat = session;
@@ -404,6 +417,37 @@ async function main() {
 		// Forge may start; the change of the file is left waiting for the person
 		await totem.ask(waiting.id, 'Add a route GET /health.', { mode: 'build' }, 20, event => event.tool === 'mcp-start' ? 'once' : null);
 
+		// 6. A whole application in small tasks: the card, the plan and the build, in an empty folder
+		console.log('An application in small tasks...');
+		var helpdesk = Path.join(base, 'projects', 'helpdesk');
+		Fs.mkdirSync(helpdesk);
+		var proj2 = await totem.call('projects_open', { path: helpdesk });
+		var build = await totem.call('sessions_create', { projectid: proj2.id, model: demomodel, name: 'A helpdesk in small tasks', autoaccept: true });
+		await totem.ask(build.id, '/project APP: Helpdesk\nPLUGIN: tickets\nTITLE: Tickets\nICON: ti ti-check-circle\nFIELDS: *name:String, note:String\nPLUGIN: customers\nTITLE: Customers\nICON: ti ti-building\nFIELDS: *name:String, note:String', { mode: 'build' }, 60, allow);
+		await totem.ask(build.id, '/build', { mode: 'build' }, 240, allow);
+
+		var plan = JSON.parse(Fs.readFileSync(Path.join(helpdesk, '.totem', 'project.json'), 'utf8'));
+		var notdone = plan.tasks.filter(item => item.status !== 'done');
+		if (notdone.length)
+			throw new Error('The application was not built: ' + notdone.map(item => item.path + ' ' + (item.problem || item.status)).join('; '));
+
+		// The application that was built, started as a person would (with the Total.js of Totem instead of npm install)
+		Fs.symlinkSync(Path.join(ROOT, 'node_modules'), Path.join(helpdesk, 'node_modules'));
+		var appport = await freeport();
+		var app = Child.spawn(process.execPath, ['index.js', String(appport)], { cwd: helpdesk, stdio: 'ignore', detached: true });
+		started.push(() => { try { process.kill(-app.pid); } catch (e) {} });
+		var appurl = 'http://127.0.0.1:' + appport;
+		var save = (schema, data) => fetch(appurl + '/api/', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ schema: schema, data: data }) }).then(res => res.json());
+
+		if (!await until(async () => { try { return (await fetch(appurl + '/')).status === 200; } catch (e) { return false; } }, 30000))
+			throw new Error('The application that was built did not start');
+
+		for (var ticket of [['The invoice of October has the wrong address', 'Asked by phone'], ['Cannot sign in from the new laptop', ''], ['Export of the orders as CSV', 'For the accounting team'], ['A second user for the warehouse', '']]) {
+			var saved = await save('tickets_save', { name: ticket[0], note: ticket[1] });
+			if (!saved || saved.success !== true)
+				throw new Error('The application that was built did not save a ticket: ' + JSON.stringify(saved));
+		}
+
 		// Two scheduled prompts
 		await totem.call('schedules_save', { projectid: proj.id, name: 'Morning review', text: 'Review the project and list what is wrong.', model: real, kind: 'daily', time: '07:30', mode: 'plan' });
 		await totem.call('schedules_save', { projectid: proj.id, name: 'Look for old dependencies', text: 'List the dependencies that are out of date.', model: real, kind: 'interval', interval: 1440, mode: 'plan' });
@@ -412,11 +456,12 @@ async function main() {
 		browser = await chrome(profile, await freeport());
 		started.push(() => browser.close());
 
-		async function shot(name, theme, prepare) {
-			await browser.send('Page.navigate', { url: totem.url + '/' });
+		async function shot(name, theme, prepare, url) {
+			await browser.send('Emulation.setEmulatedMedia', { features: [{ name: 'prefers-color-scheme', value: theme }] });
+			await browser.send('Page.navigate', { url: url || (totem.url + '/') });
 			await sleep(2500);
-			await browser.eval("THEME.apply('" + theme + "'); 1");
-			await browser.eval(prepare);
+			!url && await browser.eval("THEME.apply('" + theme + "'); 1");
+			prepare && await browser.eval(prepare);
 			await sleep(2200);
 			var result = await browser.send('Page.captureScreenshot', { format: 'webp', quality: 88 });
 			var file = Path.join(out, name + '-' + theme + '.webp');
@@ -441,6 +486,9 @@ async function main() {
 			await shot('worktree', theme, open(tree.id) + '; PLUGINS.chat.changes(); 1');
 			await shot('schedules', theme, open(chat.id) + '; PLUGINS.projects.schedules(); 1');
 			await shot('settings', theme, open(chat.id) + '; PLUGINS.projects.settings(); 1');
+			await shot('agents', theme, open(chat.id) + '; PLUGINS.chat.agents(); 1');
+			await shot('project', theme, "PLUGINS.projects.session('" + build.id + "', '" + proj2.id + "'); 1");
+			await shot('built', theme, '', appurl + '/');
 		}
 
 		console.log('Done.');
