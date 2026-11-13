@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Fixed: the conversation went up while the model answered and the answer had to be looked for below. The chat stays at its end whenever the conversation grows (a new part, a button under an answer, highlighted code), only a scroll that the reader makes stops it from following, and a redraw leaves the reader where they were.
 - The knowledge of Total.js is the library of Totem alone by default: its pages are the ones that go in front of the model, and the documentation of Forge is an option that is off (`forge : true` in `config` or in Settings ranks its pages together with the library, for example with other models). Nothing asks to start Forge any more. The instructions of the model, the skill of the conventions and the documentation say so.
 
 ## 0.1.8

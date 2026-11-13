@@ -402,8 +402,26 @@
 				wired = true;
 				var box = document.getElementById('chatscroll');
 
-				// Where the reader is, and which parts they opened: a redraw keeps both
-				box.addEventListener('scroll', () => stick = nearbottom());
+				// Where the reader is, and which parts they opened: a redraw keeps both. Only a scroll that the reader makes (wheel, touch, keys,
+				// the scroll bar) decides whether the chat follows the answer: a redraw moves the scroll too, and that one must not stop it.
+				var touched = function() { userat = Date.now(); };
+				['wheel', 'touchstart', 'touchmove', 'pointerdown', 'keydown'].forEach(name => box.addEventListener(name, touched, { passive: true }));
+				box.addEventListener('scroll', function() {
+					if (Date.now() - userat < 1200)
+						stick = nearbottom();
+				});
+
+				// Whatever makes the conversation taller (a new part, a button under an answer, highlighted code, an image that loads) keeps the
+				// chat at its end while it follows the answer
+				var follow = function() {
+					if (stick)
+						box.scrollTop = box.scrollHeight;
+				};
+				var inner = box.firstElementChild;
+				if (inner) {
+					new MutationObserver(follow).observe(inner, { childList: true, subtree: true, characterData: true });
+					window.ResizeObserver && new ResizeObserver(follow).observe(inner);
+				}
 				box.addEventListener('toggle', function(e) {
 					var id = e.target.tagName === 'DETAILS' && e.target.getAttribute('data-part');
 					if (id && parts[id])
@@ -677,6 +695,7 @@
 
 		// The chat follows the answer only while the reader is at the bottom: scrolling up stops it, going back down starts it again
 		var stick = true;
+		var userat = 0;
 		var dirty = {};
 		var streamtimer = null;
 		var fulltimer = null;
@@ -694,10 +713,23 @@
 			if (!stick)
 				return;
 
-			requestAnimationFrame(function() {
+			var down = function() {
 				var el = $('#chatscroll')[0];
 				el && (el.scrollTop = el.scrollHeight);
-			});
+			};
+
+			// Now, and again when the browser has laid out what was just drawn (an answer with code grows after it is drawn)
+			down();
+			requestAnimationFrame(down);
+		}
+
+		// Draws the list again where the reader is: at the end when the chat follows the answer, and at the same place when they went up to read
+		function drawitems() {
+			var el = $('#chatscroll')[0];
+			var top = el ? el.scrollTop : 0;
+			exports.update('items', true);
+			if (el && !stick)
+				el.scrollTop = top;
 		}
 
 		// The text that arrives while the model answers goes into the element of its part, a few times a second. The whole list is not drawn
@@ -723,7 +755,7 @@
 			});
 
 			dirty = {};
-			again && exports.update('items', true);
+			again && drawitems();
 			scroll();
 		}
 
@@ -743,7 +775,7 @@
 				fulltimer = setTimeout(function() {
 					fulltimer = null;
 					flush();
-					exports.update('items', true);
+					drawitems();
 					scroll();
 				}, 120);
 			}
