@@ -3481,4 +3481,54 @@ Test.push('cleanup', async function(next) {
 	next();
 });
 
+Test.push('project: forms and lists from the card', async function(next) {
+
+	var P = MODS.project;
+	var dir = Total.Path.join(TMP, 'clinicforms');
+	Total.Fs.mkdirSync(Total.Path.join(dir, 'plugins/appointments/public'), { recursive: true });
+	var parsed = P.parse('APP: clinic\nPLUGIN: appointments\nTITLE: Appointments\nICON: ti ti-check-circle\nFIELDS: *date:Date, reason:String, isdone:Boolean');
+	var plan = P.plan(dir, parsed.card, 'test');
+	var screen = plan.tasks.find(t => t.part === 'screen');
+	var formtask = plan.tasks.find(t => t.part === 'form');
+	var reference = name => Total.Fs.readFileSync(Total.Path.join(ROOT, 'private/project/reference', name), 'utf8');
+	var file = name => Total.Path.join(dir, 'plugins/appointments/public', name);
+	var checked = task => new Promise(resolve => P.check(dir, plan, task, resolve));
+
+	// The form task tells the model every input as the card says it
+	var prompt = P.prompt(plan, formtask);
+	check('the form task gives the title, the icon and every input with its type and its star', /title of the miniform is @\(Appointment\)/.test(prompt) && prompt.indexOf('path="?.date" config="required:1;type:date"') !== -1 && prompt.indexOf('path="?.reason">') !== -1 && prompt.indexOf('path="?.isdone" config="type:checkbox"') !== -1);
+
+	// A form as a small model wrote it: the title of the example, every field required, a type that does not exist, the buttons inside the inputs
+	var script = reference('form.html').substring(reference('form.html').indexOf('<script>')).replace(/tasks_save/g, 'appointments_save').replace(/PLUGINS\.tasks/g, 'PLUGINS.appointments').replace('name: model.name, note: model.note', 'date: model.date, reason: model.reason, isdone: model.isdone');
+	var inputs = '\t\t<ui-component name="input" path="?.date" config="required:1;type:date">@(Date)</ui-component>\n\t\t<ui-component name="input" path="?.reason" config="required:1;maxlength:200">@(Reason)</ui-component>\n\t\t<ui-component name="input" path="?.isdone" config="required:1;type:boolean">@(Is done)</ui-component>\n';
+	var nav = '<nav>\n\t\t<ui-component name="validate" path="?">\n\t\t\t<button name="submit" disabled>@(SUBMIT)</button>\n\t\t\t<button name="cancel">@(Cancel)</button>\n\t\t</ui-component>\n\t</nav>\n';
+	var open = '<ui-component name="miniform" path="common.form" config="if:~PATH~;icon:ti ti-check-circle;title:@(Task);autofocus:true;submit:?/submit;width:420" class="hidden" plugin="~PATH~">\n\t<div class="padding">\n';
+	Total.Fs.writeFileSync(file('form.html'), open + inputs + '\t' + nav + '\t</div>\n</ui-component>\n\n' + script);
+	var before = await checked(formtask);
+	check('a form with its buttons inside the block of the inputs is refused', /<nav> with the buttons goes after the <\/div>/.test(before));
+
+	var repaired = P.repair(dir, plan, formtask);
+	var text = Total.Fs.readFileSync(file('form.html'), 'utf8');
+	check('the repair sets the title of the form, the star of the card and the type of every input', repaired === true && /title:@\(Appointment\)/.test(text) && text.indexOf('path="?.date" config="required:1;type:date"') !== -1 && /path="\?\.reason"(>| config="(?!required)[^"]*">)/.test(text) && text.indexOf('path="?.isdone" config="type:checkbox"') !== -1);
+
+	// The buttons in their place: the form passes
+	Total.Fs.writeFileSync(file('form.html'), text.replace('\t' + nav + '\t</div>\n', '\t</div>\n\t' + nav));
+	check('a form with the inputs of the card and the buttons after them passes', await checked(formtask) === '');
+
+	// A list whose template writes a helper without its parentheses breaks the screen: refused, and repaired
+	var list = reference('index.html').replace(/formtasks/g, 'formappointments').replace(/PLUGINS\.tasks/g, 'PLUGINS.appointments').replace(/'tasks_remove\//g, "'appointments_remove/").replace(/'tasks_read\//g, "'appointments_read/").replace("'tasks ERROR'", "'appointments ERROR'").replace('{{ m.name }}', "{{ m.date | format 'yyyy-MM-dd' }}").replace(/\{\{ if m\.note \}\}[^]*?\{\{ fi \}\}/, '{{ if m.reason }}<div class="note">{{ m.reason }}</div>{{ fi }}');
+	Total.Fs.writeFileSync(file('index.html'), list);
+	check('a template that is not valid Tangular is refused with how to write it', /not valid Tangular/.test(await checked(screen)));
+	check('a helper written without parentheses is repaired, and the texts of the example take the name of the plugin', P.repair(dir, plan, screen) === true && /\{\{ m\.date \| format\('yyyy-MM-dd'\) \}\}/.test(Total.Fs.readFileSync(file('index.html'), 'utf8')) && /@\(New appointment\)/.test(Total.Fs.readFileSync(file('index.html'), 'utf8')) && await checked(screen) === '');
+
+	Total.Fs.writeFileSync(file('index.html'), Total.Fs.readFileSync(file('index.html'), 'utf8').replace("format('yyyy-MM-dd')", 'shiny'));
+	check('a helper that does not exist is refused by its name', /helper "shiny"/.test(await checked(screen)));
+
+	// The shell of a project loads the picker of dates that an input of type date opens
+	var shellinit = Total.Fs.readFileSync(Total.Path.join(ROOT, 'private/project/shell/definitions/init.js'), 'utf8');
+	var shellview = Total.Fs.readFileSync(Total.Path.join(ROOT, 'private/project/shell/views/index.html'), 'utf8');
+	check('the shell of a project loads the date picker', /datepicker/.test(shellinit) && /name="LAZY datepicker"/.test(shellview));
+	next();
+});
+
 Test.run();

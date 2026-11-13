@@ -19,6 +19,25 @@ var RESERVED = ['id', 'dtcreated', 'dtupdated'];
 var MAXPLUGINS = 8;
 var MAXFIELDS = 16;
 
+// The type of the input of a form for each type of a field (a String has none, or multiline)
+// The config of the input of a field in a form: required only with the star of the card, and the type of the field
+function inputconfig(field) {
+	var pairs = [];
+	field.required && pairs.push('required:1');
+	INPUTTYPES[field.type] && pairs.push('type:' + INPUTTYPES[field.type]);
+	return pairs.length ? (' config="' + pairs.join(';') + '"') : '';
+}
+
+// The text of the label of a field: dtborn -> Born, isdone -> Done, firstname -> Firstname
+function label(name) {
+	return capitalize(name.replace(/^(dt|is)(?=[a-z]{3})/, ''));
+}
+
+// The mark of a text for translation, written apart so that the check of the translations does not take this code for a text
+var AT = '@';
+
+var INPUTTYPES = { Number: 'number', Boolean: 'checkbox', Date: 'date', Email: 'email', Phone: 'phone', URL: 'url' };
+
 // The names of Total Icons (private/project/icons.txt, from the style sheet of the jComponent library): an icon that is not there draws nothing
 var ICONS = null;
 
@@ -275,8 +294,12 @@ exports.prompt = function(plan, task, problem) {
 		lines.push('Write the four actions ' + c.actions.join(', ') + ' on the table \'nosql/' + plugin.table + '\'. The input of ' + c.actions[2] + ' is exactly: \'id:UID, ' + fieldsline(plugin) + '\'');
 	else if (task.part === 'screen')
 		lines.push('Write the screen: the list of the items with the main field, a button to create one, a click on an item to edit it and a way to remove it.');
-	else
-		lines.push('Write the form: one input for each field of the plugin, the required ones with required:1, and the submit that calls the endpoint ' + c.endpoints[2] + ' with the id and every field.');
+	else {
+		lines.push('Write the form: the title of the miniform is ' + AT + '(' + singular(plugin.title) + ') and its icon ' + (plugin.icon || 'ti ti-check-circle') + ', and the submit calls the endpoint ' + c.endpoints[2] + ' with the id and every field. These are its inputs, inside <div class="padding">, and after that </div> the <nav> with the buttons:');
+		plugin.fields.forEach(function(field) {
+			lines.push('<ui-component name="input" path="?.' + field.name + '"' + inputconfig(field) + '>' + AT + '(' + label(field.name) + ')</ui-component>');
+		});
+	}
 
 	lines.push('');
 	lines.push('This is the same file of a plugin called "tasks" (fields name:String*, note:String) of an application that works. Keep its shape, and change the names, the texts and the fields to the ones of this plugin:');
@@ -503,23 +526,61 @@ exports.repair = function(root, plan, task) {
 
 	var plugin = plan.card.plugins.findItem('id', task.plugin);
 
-	// The screen and the form: the names of the example plugin ("tasks") that the model left where the names of this plugin go. Only the
-	// names that come from the card (the endpoints, the path of the form, the plugin of the screen), never a text or a field.
+	// The screen and the form: what comes from the card and not from the model. The names of the example plugin ("tasks") that were left
+	// where the names of this plugin go, the texts that still say "task", a helper of a template written without its parentheses, and in the
+	// form the title, the icon, and the type and the star of every input. Never a field that is missing, and never the logic.
 	if (task.part !== 'actions') {
 
-		if (plugin.id === 'tasks')
-			return false;
-
 		var id = plugin.id;
-		var renamed = content
-			.replace(/\bformtasks\b/g, 'form' + id)
-			.replace(/\bPLUGINS\.tasks\b/g, 'PLUGINS.' + id)
-			.replace(/(tapi\(\s*['"])tasks(_read\/|_save\b|_remove\/|\s+ERROR\b|['"])/g, '$1' + id + '$2');
+		var fixed = content;
 
-		if (renamed === content)
+		if (id !== 'tasks') {
+
+			fixed = fixed
+				.replace(/\bformtasks\b/g, 'form' + id)
+				.replace(/\bPLUGINS\.tasks\b/g, 'PLUGINS.' + id)
+				.replace(/(tapi\(\s*['"])tasks(_read\/|_save\b|_remove\/|\s+ERROR\b|['"])/g, '$1' + id + '$2');
+
+			// The texts for people of the reference ("New task", "There are no tasks yet") with the names of this plugin
+			var one = singular(plugin.title);
+			fixed = fixed.replace(/@\(([^)]*)\)/g, function(all, text) {
+				return AT + '(' + text.replace(/\bTasks\b/g, plugin.title).replace(/\btasks\b/g, plugin.title.toLowerCase()).replace(/\bTask\b/g, one).replace(/\btask\b/g, one.toLowerCase()) + ')';
+			});
+		}
+
+		// {{ m.date | format 'yyyy-MM-dd' }} is {{ m.date | format('yyyy-MM-dd') }}
+		fixed = fixed.replace(/(\{\{[^}]*\|\s*[a-z]+)\s+('[^']*'|\d+)(\s*\}\})/g, '$1($2)$3');
+
+		if (task.part === 'form') {
+
+			// The window of the form: its title is one item of the plugin, its icon the one of the plugin
+			fixed = fixed.replace(/(<ui-component\s+name="miniform"[^>]*\sconfig=")([^"]*)(")/, function(all, before, config, after) {
+				var pairs = config.split(';').filter(item => item.trim());
+				var title = AT + '(' + singular(plugin.title) + ')';
+				pairs = pairs.map(item => /^\s*title\s*:/.test(item) ? ('title:' + title) : (/^\s*icon\s*:/.test(item) && plugin.icon ? ('icon:' + plugin.icon) : item));
+				return before + pairs.join(';') + after;
+			});
+
+			// Every input: required only with the star of the card, and the type of the field
+			plugin.fields.forEach(function(field) {
+				fixed = fixed.replace(new RegExp('(<ui-component\\s+name="input"\\s+path="\\?\\.' + field.name + '")(\\s+config="([^"]*)")?'), function(all, before, attr, config) {
+					var pairs = (config || '').split(';').map(item => item.trim()).filter(item => item && !/^required\s*:/.test(item));
+					var type = INPUTTYPES[field.type];
+					if (type)
+						pairs = pairs.filter(item => !/^(type|maxlength|height)\s*:/.test(item));
+					else
+						pairs = pairs.filter(item => !/^type\s*:/.test(item) || /^type\s*:\s*multiline$/.test(item));
+					type && pairs.unshift('type:' + type);
+					field.required && pairs.unshift('required:1');
+					return before + (pairs.length ? (' config="' + pairs.join(';') + '"') : '');
+				});
+			});
+		}
+
+		if (fixed === content)
 			return false;
 
-		Total.Fs.writeFileSync(file, renamed);
+		Total.Fs.writeFileSync(file, fixed);
 		return true;
 	}
 
@@ -636,7 +697,7 @@ exports.check = function(root, plan, task, callback) {
 			return;
 		}
 
-		callback('');
+		callback(templates(content, plugin));
 		return;
 	}
 
@@ -662,8 +723,68 @@ exports.check = function(root, plan, task, callback) {
 		return;
 	}
 
+	// The buttons are the <nav> of the miniform, after the block of the inputs and not inside it: inside, they lose their place and their look
+	var padding = content.indexOf('<div class="padding">');
+	var nav = content.indexOf('<nav');
+
+	if (padding === -1 || nav === -1 || nav < padding) {
+		callback('the form must have <div class="padding"> with the inputs and, after it, <nav> with the buttons, as the reference.');
+		return;
+	}
+
+	var between = content.substring(padding, nav);
+
+	if ((between.match(/<div\b/g) || []).length !== (between.match(/<\/div>/g) || []).length) {
+		callback('the <nav> with the buttons goes after the </div> that closes <div class="padding">, not inside it: close every <div> of the inputs before <nav>.');
+		return;
+	}
+
+	// Every input with the type of its field and required only with the star of the card
+	var wrong = plugin.fields.find(function(field) {
+		var tag = content.match(new RegExp('<ui-component\\s+name="input"\\s+path="\\?\\.' + field.name + '"(\\s+config="([^"]*)")?'));
+		if (!tag)
+			return true;
+		var config = ';' + (tag[2] || '') + ';';
+		var type = (config.match(/;\s*type\s*:\s*([a-z0-9]+)/) || [])[1] || '';
+		var expected = INPUTTYPES[field.type] || '';
+		return (expected ? type !== expected : (type !== '' && type !== 'multiline')) || /;\s*required\s*:/.test(config) !== field.required;
+	});
+
+	if (wrong) {
+		callback('the input of the field ' + wrong.name + ' must be <ui-component name="input" path="?.' + wrong.name + '" config="' + (wrong.required ? 'required:1' : '') + (INPUTTYPES[wrong.type] ? ((wrong.required ? ';' : '') + 'type:' + INPUTTYPES[wrong.type]) : '') + '">: required only for a field with a star, and the type of the field (' + wrong.type + ').');
+		return;
+	}
+
 	callback('');
 };
+
+// The templates of a screen ({{ ... }} inside <script type="text/html">) drawn with one item of the plugin: '' or what is wrong with them
+function templates(content, plugin) {
+
+	var item = { id: 'x1' };
+	plugin.fields.forEach(function(field) {
+		item[field.name] = field.type === 'Number' ? 1 : field.type === 'Boolean' ? true : field.type === 'Date' ? new Date() : 'text';
+	});
+
+	var blocks = content.match(/<script type="text\/html">[^]*?<\/script>/g) || [];
+
+	for (var block of blocks) {
+
+		var text = block.replace(/^<script type="text\/html">|<\/script>$/g, '');
+		var helper = (text.match(/\{\{[^}]*\|\s*([A-Za-z_]+)/g) || []).map(found => found.match(/\|\s*([A-Za-z_]+)$/)[1]).find(name => !Thelpers[name]);
+
+		if (helper)
+			return 'the template of the list uses the helper "' + helper + '", which does not exist: use format, empty, def, raw or pluralize.';
+
+		try {
+			Tangular.render(text, { value: [item] });
+		} catch (e) {
+			return 'the template of the list is not valid Tangular (' + e.message + '): a helper is written {{ m.field | format(\'yyyy-MM-dd\') }}, a condition ends with {{ fi }} and a loop with {{ end }}.';
+		}
+	}
+
+	return '';
+}
 
 // The fixed files of a task: [{ path, content }], without the ones that are already there
 function fixedfiles(root, plan, task) {

@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- The forms and the lists of an application built in small tasks: the task of a form gets its title, its icon and every input written out (the star of the card is `required:1`, a Boolean is a check box, a Date opens the date picker, a Number is a number), the check refuses a form whose buttons are inside the block of the inputs, an input with the wrong type or star, and a list whose template is not valid Tangular or uses a helper that does not exist; the repair sets from the card what does not depend on the model (title, icon, type and star of each input, the texts of the example plugin, a helper written without its parentheses). The shell of a project loads the date picker.
 - A new application depends on `"total5": ">=0.0.20-4"`, the first version with the client of PostgreSQL of Total.js 5 (`DATA.init('postgresql', '', CONF.database)`, no package). Totem itself runs on 0.0.20-4.
 - Fixed: the look for the models installed later could run twice at the same time (a provider saved while it ran) and add nothing for one of them; now one look runs at a time and a call in between asks for one more.
 - Fixed: the conversation went up while the model answered and the answer had to be looked for below. The chat stays at its end whenever the conversation grows (a new part, a button under an answer, highlighted code), only a scroll that the reader makes stops it from following, and a redraw leaves the reader where they were.
