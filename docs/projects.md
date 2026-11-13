@@ -7,6 +7,12 @@ A model of a few billion parameters writes one file well and loses its way in th
 /build                                      the tasks of the plan, one by one
 ```
 
+![Totem building an application task by task, one file each](https://totaljs-es.github.io/totem/img/shots/project-light.webp)
+
+The application of that session, started with `node index.js`:
+
+![The application that was built: a menu with Tickets and Customers and the list of tickets](https://totaljs-es.github.io/totem/img/shots/built-light.webp)
+
 ## The card
 
 The plan of an application is a card, short enough to read in a minute and to correct by hand:

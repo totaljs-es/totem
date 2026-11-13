@@ -37,7 +37,8 @@ Totem is one application with three ways to run: a command, a Docker container a
 - **A whole application in small tasks.** `/project` turns a request into a short plan, and `/build` walks its tasks one by one: each file is written with only what it needs in front of the model, and checked before the next. A model of 4B that could not hold the application in its head does not have to. See [projects](docs/projects.md).
 - **You stay in control.** Every file change and command asks first, unless you allow it. **Plan mode** only reads and describes; **Build mode** changes things. See the diff of each step, undo it, redo it.
 - **Any model.** Ollama, LM Studio and llama.cpp on your computer are detected for you; OpenRouter, OpenAI, Anthropic, Gemini, Groq, Mistral, DeepSeek and a dozen more (any OpenAI-compatible server) are in the list. Prompts go only to the providers you add.
-- **It knows Total.js.** In a project that depends on `total5` the agent gets the recipes of Totem, the pages of [Forge](https://forge.totaljs.es) for your request, the conventions as a skill, and a check of everything it writes: syntax, style, invented functions. Small local models get focused examples; the quality of an application still depends on the model and needs testing.
+- **It knows Total.js.** In a project that depends on `total5` the agent gets the recipes of Totem, the pages of the [Total.js library](https://github.com/totaljs-es/knowledge) and of [Forge](https://forge.totaljs.es) for your request, the conventions as a skill, and a check of everything it writes: syntax, style, invented functions. Small local models get focused examples; the quality of an application still depends on the model and needs testing.
+- **Sub-agents.** Helpers with their own context, tools and model that the main agent hands a task to; several work at the same time, and the *Agents* panel adds yours.
 - **Work in parallel.** Sessions can run in their own **git worktree**, and **scheduled prompts** run by themselves, unattended and read-only unless you say otherwise.
 - **A terminal that stays.** An interactive shell in the project folder that survives a page reload, and background commands the agent can start and read.
 - **The hands of a larger model.** Claude Code, Codex or another agent writes the plan of an application and reviews the result, and Totem writes the files with the model of your computer: `totem project`, `totem build` and a few lines back, so the tokens that cost money are not spent on the files. Give the other agent the address `/agent/` and it reads how. See [projects](docs/projects.md).
@@ -97,9 +98,32 @@ totem run "explain this project" --project ~/code/app --model ollama:qwen2.5-cod
 | `totem restart` | Stops it and starts it again, on the same port |
 | `totem serve [port]` | Runs the server in this terminal until Ctrl+C (for a server, a script or when you develop Totem). `--verbose` shows its whole output |
 | `totem run "prompt" [options]` | One prompt without the interface: the answer goes to stdout, the tool calls to stderr, the exit code says if it finished |
+| `totem project "card or request"` | Keeps the plan of a whole application in the project (`--project <folder>`); the answer is a few lines |
+| `totem build` | Makes the tasks of the plan that are not done, one file each, and says what is done and what failed (`--wait` waits for the end) |
+| `totem plan` | Prints the plan and the state of its tasks |
 | `totem config` | Prints the folders that Totem uses |
 
 Options of `run`: `--project <folder>`, `--model <provider:model>`, `--url <server>`, `--token <token>`, `--auto-accept` (file edits run without asking), `--yes` (every other question is answered "allow once"). Without `--url` a temporary local server is started. `--data <folder>` chooses where the data goes.
+
+### A whole application
+
+In the conversation, `/project` and then `/build`:
+
+```
+/project a helpdesk with tickets and customers
+/build
+```
+
+`/project` keeps a short card (the plugins of the application and the fields of each one) and `/build` makes its tasks one by one: the files that every application has, and for every plugin its routes, its actions, its screen and its form. Each task writes one file with only what it needs in front of the model, and it is checked before the next. At the end, `npm install` and `node index.js 8000`.
+
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="https://totaljs-es.github.io/totem/img/shots/project-dark.webp">
+    <img src="https://totaljs-es.github.io/totem/img/shots/project-light.webp" alt="Totem building an application task by task, one file each" width="900">
+  </picture>
+</p>
+
+Another agent can drive it and save its own tokens: `totem project`, `totem build` and `totem plan` from a terminal, or the address `/agent/` of a running Totem, which explains itself in plain text. See [projects](docs/projects.md).
 
 ### Docker
 
@@ -129,8 +153,9 @@ The container listens on all interfaces, so it **refuses to start without an acc
 | **Chat** | Streaming answers, the thinking of the models that think, a copy button on every code box, attachments (images and text files), the `/commands` of the project and `/init` to write an `AGENTS.md`. |
 | **Changes** | The files the agent changed, unified or split diff, **Undo** and **Redo**, the git state of the folder, and for a worktree session **Merge into the project** or **Discard**. |
 | **Terminal** | The commands the agent ran, the ones in the background, and an interactive **Shell** (macOS and Linux). |
+| **Agents** | The sub-agents the main agent can hand a task to: the built-in ones, the ones you save (for one project or for all) and the files of the project. |
 | **Scheduled prompts** | The clock next to Settings: a prompt every N minutes or every day, in a new session, unattended. |
-| **Settings** | Theme (light, dark, auto), language, providers and models with their abilities. |
+| **Settings** | Theme (light, dark, auto), language, providers and models with their abilities, and the values of the agent (limits, temperature, the knowledge of Total.js, the checks) for all projects, one project or one session. |
 
 ## Choose the model
 
@@ -142,11 +167,12 @@ Totem works with a 1.5B model and with the biggest ones. A few tips:
 
 ## How it knows Total.js
 
-When the project depends on `total5` (or is a new folder), Totem puts three things in front of the model:
+When the project depends on `total5` (or is a new folder), Totem puts four things in front of the model:
 
 1. **Recipes** ([`private/recipes/`](private/recipes)): short, exact answers for the common tasks (routes, actions, NoSQL, config, `RESTBuilder`, auth, CRON, WebSockets, views, jComponent, plugins...), chosen by the words of your request. They work offline and follow the conventions to the letter.
-2. **Forge** ([forge.totaljs.es](https://forge.totaljs.es)): matching documentation fetched from its public index and Markdown pages. Small models use one focused recipe when it covers the task, and Forge when it does not. MCP is optional.
-3. **A check of the code**: what the agent writes is checked against the [Total.js conventions](https://github.com/totaljs-es/conventions) (syntax, ES5, tabs, names with `|`, texts as `@(English)`, no invented functions) and the model fixes what is wrong. The code in an answer is checked too, and corrected once.
+2. **The library** ([totaljs-es/knowledge](https://github.com/totaljs-es/knowledge)): conventions, questions and answers, tested applications and the catalogue of jComponent components and Total Icons, read live from its public index. The page that matches the request goes to the model.
+3. **Forge** ([forge.totaljs.es](https://forge.totaljs.es)): matching documentation fetched from its public index and Markdown pages, ranked together with the library. Small models use one focused recipe when it covers the task, and the pages when it does not. MCP is optional.
+4. **A check of the code**: what the agent writes is checked against the [Total.js conventions](https://github.com/totaljs-es/conventions) (syntax, ES5, tabs, names with `|`, texts as `@(English)`, no invented functions) and the model fixes what is wrong. The code in an answer is checked too, and corrected once.
 
 To measure it with any model:
 

@@ -67,6 +67,7 @@ Every file has its diff (unified or split). **Undo these changes** puts the file
 
 ## What next
 
-- The [user guide](guide.md) explains every part: projects, tools, permissions, models, the terminal, worktrees and scheduled prompts.
+- The [user guide](guide.md) explains every part: projects, tools, sub-agents, permissions, models, the terminal, worktrees and scheduled prompts.
+- [Projects](projects.md): a whole application from one request, built in small tasks with `/project` and `/build`.
 - [Help](help.md) has the answers to the usual problems.
 - If you write Total.js, read how [Totem knows it](knowledge.md).

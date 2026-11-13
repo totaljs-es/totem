@@ -24,6 +24,20 @@ The agent acts through tools, and only through them. Each call is checked before
 
 Every path is resolved inside the project, symbolic links included: the agent cannot read or write outside of it. After a write, Totem runs the formatter that your project already has (a local prettier, `gofmt`, `rustfmt`, `ruff`) and its checks (`node --check`, `tsc`, `go vet`...), and gives what they find to the model so it fixes it in the same step.
 
+## Sub-agents
+
+An agent is a helper with its own context and its own tools that the main agent hands a task to (the tool `task`): it works apart and only its answer comes back, so a long search does not fill the conversation. Several agents asked for together work at the same time, and the chat keeps what each one did above its answer.
+
+**Agents**, in the menu of the conversation and in Settings, lists them: the built-in ones (`explore` only reads; `general` reads, edits and runs commands), the ones you save for one project or for all of them, and the files in `.totem/agents/` of the project, which win over the saved ones. A saved agent has its description, its tools, its number of steps and, if you want, its own model.
+
+![The Agents dialog with the built-in agents and New agent](https://totaljs-es.github.io/totem/img/shots/agents-light.webp)
+
+## A whole application
+
+`/project` followed by what you want turns the request into a short plan, and `/build` makes its tasks one by one, one file each, checked before the next. The page about [projects](projects.md) explains the card, the tasks, the checks and how another agent can drive it.
+
+![Totem building an application task by task](https://totaljs-es.github.io/totem/img/shots/project-light.webp)
+
 ## You stay in control
 
 - **Permissions.** Reading is free inside the project. Writing a file, running a command that is not read-only, fetching a page and reading a `.env` ask first. A path outside the project is always refused.
