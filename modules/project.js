@@ -217,7 +217,7 @@ exports.pluginindex = pluginindex;
 function shell(card) {
 	var title = capitalize(card.app.replace(/-/g, ' '));
 	return [
-		{ path: 'package.json', content: JSON.stringify({ name: card.app, version: '1.0.0', private: true, scripts: { start: 'node index.js 8000' }, dependencies: { total5: '>=0.0.20-2' } }, null, '\t') + '\n' },
+		{ path: 'package.json', content: JSON.stringify({ name: card.app, version: '1.0.0', private: true, scripts: { start: 'node index.js 8000' }, dependencies: { total5: '>=0.0.20-4' } }, null, '\t') + '\n' },
 		{ path: 'index.js', content: Total.Fs.readFileSync(PATH.root('private/start/index.js'), 'utf8') },
 		{ path: 'config', content: 'name              : ' + title + '\n\n// The application listens only on this computer: it has one user and no sign in\n$ip               : 127.0.0.1\n' },
 		{ path: 'controllers/default.js', content: read('shell/controllers/default.js') },

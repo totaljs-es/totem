@@ -163,7 +163,7 @@ exports.scaffold = function(root, name, request) {
 	var title = (name || '').trim().toLowerCase().replace(/[^a-z0-9-]+/g, '-').replace(/^-+|-+$/g, '') || (Total.Path.basename(root).toLowerCase().replace(/[^a-z0-9-]+/g, '-').replace(/^-+|-+$/g, '') || 'app');
 	// Total.js 5 0.0.20 or later: its beta today and the stable version when it is published, never 0.0.19 (the step of CRON, LOGMAIL with an
 	// object and @{csrf} in a view are fixed in 0.0.20)
-	var version = '>=0.0.20-2';
+	var version = '>=0.0.20-4';
 
 	var all = [
 		{ path: 'package.json', content: JSON.stringify({ name: title, version: '1.0.0', private: true, scripts: { start: 'node index.js' }, dependencies: { total5: version } }, null, '\t') + '\n' },

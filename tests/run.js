@@ -2620,7 +2620,7 @@ Test.push('/new makes the files of an application and /init makes AGENTS.md for 
 	var plan = MODS.commands.scaffold(dir, 'My Tasks');
 	check('the scaffold has the files of an application and leaves the ones that exist', plan.files.some(f => f.path === 'package.json') && !plan.files.some(f => f.path === 'index.js') && plan.skipped.join() === 'index.js');
 	var pkg = JSON.parse(plan.files.find(f => f.path === 'package.json').content);
-	check('its package.json depends on Total.js 5 0.0.20 or later and the name is a slug', pkg.dependencies.total5 === '>=0.0.20-2' && pkg.name === 'my-tasks' && pkg.scripts.start === 'node index.js');
+	check('its package.json depends on Total.js 5 0.0.20 or later and the name is a slug', pkg.dependencies.total5 === '>=0.0.20-4' && pkg.name === 'my-tasks' && pkg.scripts.start === 'node index.js');
 	// The start script is the official one of Total.js 5, whole: in the scaffold and in the recipes that show it
 	var official = Total.Fs.readFileSync(PATH.root('private/start/index.js'), 'utf8');
 	var fresh = MODS.commands.scaffold(Total.Path.join(TMP, 'scaffold-new'), 'Fresh');
@@ -3015,7 +3015,7 @@ Test.push('a project in small tasks: the card, the plan and the build task by ta
 	saved = P.load(dir);
 	var exists = name => Total.Fs.existsSync(Total.Path.join(dir, name));
 	check('every task is done', saved.tasks.every(t => t.status === 'done'));
-	check('the shell is written without the model: the start script, the menu and the layout', ['package.json', 'index.js', 'config', 'controllers/default.js', 'definitions/auth.js', 'definitions/init.js', 'views/index.html', 'public/css/default.css'].every(exists) && JSON.parse(Total.Fs.readFileSync(Total.Path.join(dir, 'package.json'), 'utf8')).dependencies.total5 === '>=0.0.20-2');
+	check('the shell is written without the model: the start script, the menu and the layout', ['package.json', 'index.js', 'config', 'controllers/default.js', 'definitions/auth.js', 'definitions/init.js', 'views/index.html', 'public/css/default.css'].every(exists) && JSON.parse(Total.Fs.readFileSync(Total.Path.join(dir, 'package.json'), 'utf8')).dependencies.total5 === '>=0.0.20-4');
 	check('the server part of the plugin is written without the model, with its routes', /Products\|save/.test(Total.Fs.readFileSync(Total.Path.join(dir, 'plugins/products/index.js'), 'utf8')));
 	check('the three files of the model are there, the actions from the second try', Total.Fs.readFileSync(Total.Path.join(dir, 'plugins/products/actions/products.js'), 'utf8') === schemas && exists('plugins/products/public/index.html') && exists('plugins/products/public/form.html'));
 	var asked = requests.slice(before);

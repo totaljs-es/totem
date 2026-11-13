@@ -15,7 +15,7 @@ These four files make a working minimal Total.js 5 application. Adapt the route 
 	"version": "1.0.0",
 	"private": true,
 	"scripts": { "start": "node index.js" },
-	"dependencies": { "total5": ">=0.0.20-2" }
+	"dependencies": { "total5": ">=0.0.20-4" }
 }
 ```
 

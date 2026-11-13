@@ -59,6 +59,6 @@
 		"prepublishOnly": "node scripts/release-check.js"
 	},
 	"dependencies": {
-		"total5": "0.0.20-3"
+		"total5": "0.0.20-4"
 	}
 }

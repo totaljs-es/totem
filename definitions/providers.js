@@ -64,7 +64,37 @@ FUNC.providers = function(callback) {
 // - a model of the provider that Totem knows nothing about (its name was typed by hand in the form) gets what the server says of it: whether
 //   it calls tools, whether it thinks, its context. Without that, the thinking of a small model is not switched off and its answer stays there.
 // Only Ollama (the models of this computer, which the person installed). callback(added)
+// One look at a time: a call while one runs waits for it and asks for one more look after it (a provider saved, a model installed in
+// between), and every caller gets the number of models that all those looks added. Two looks at the same time would add a model twice
+// or tell the second caller that nothing was added.
+var NEWMODELS = null;
+
 FUNC.newmodels = function(callback) {
+
+	if (NEWMODELS) {
+		NEWMODELS.again = true;
+		callback && NEWMODELS.callbacks.push(callback);
+		return;
+	}
+
+	NEWMODELS = { again: false, added: 0, callbacks: callback ? [callback] : [] };
+
+	(function look() {
+		NEWMODELS.again = false;
+		newmodels(function(added) {
+			NEWMODELS.added += added;
+			if (NEWMODELS.again) {
+				look();
+				return;
+			}
+			var done = NEWMODELS;
+			NEWMODELS = null;
+			done.callbacks.forEach(fn => fn(done.added));
+		});
+	})();
+};
+
+function newmodels(callback) {
 
 	var added = 0;
 	var changed = false;
@@ -119,4 +149,4 @@ FUNC.newmodels = function(callback) {
 				callback && callback(added);
 		});
 	});
-};
+}
